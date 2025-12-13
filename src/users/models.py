@@ -2,6 +2,9 @@
 This module defines a Custom User Model with Email OR Phone Number Authentication
 :users can login with either email or phone number.
 """
+import random
+from datetime import timedelta
+
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
@@ -74,8 +77,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         Custom User Model that supports using email or phone number for authentication.
     """
     username = None # Remove username
-    email = models.EmailField('email address', unique=True, null=True, blank=True, validators=[EmailValidator()])
-    phone = models.CharField('phone number', unique=True, max_length=17, null=True, blank=True, validators=[RegexValidator(regex=r'^\+?1?\d{9,17}$', message="Phone number must be entered in the format: '+129999999'. Up to 17 digits allowed.")])
+    email = models.EmailField('email address', unique=True, null=True, blank=True, db_index=True, validators=[EmailValidator()])
+    phone = models.CharField('phone number', unique=True, max_length=17, null=True, db_index=True,  blank=True, validators=[RegexValidator(regex=r'^\+?1?\d{9,17}$', message="Phone number must be entered in the format: '+129999999'. Up to 17 digits allowed.")])
     first_name = models.CharField('first name', max_length=30, null=True, blank=True)
     last_name = models.CharField('last name', max_length=30, null=True, blank=True)
     date_of_birth = models.DateField('date of birth', null=True, blank=True)
@@ -141,4 +144,88 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             age = today.year - self.date_of_birth.year - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
             return age
         return None
+
+
+
+class OTP(models.Model):
+    """OTP Model One-Time Password model for email/phone verification"""
+    email = models.EmailField(max_length=254, null=True, blank=True, db_index=True, help_text='Email address to verify')
+    phone = models.CharField(max_length=17, null=True, blank=True, db_index=True, help_text='Phone number to verify')
+    # Track usage of OTP
+    is_used = models.BooleanField(default=False, help_text='OTP has been used')
+    attempt_count = models.IntegerField(default=0, help_text='Number of failed attempts to verify OTP')
+    # OTP expiration time is set to 5 minutes from creation
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(help_text='OTP expiration time (5 minutes from creation)')
+    otp = models.CharField(max_length=6)
+
+    def __str__(self):
+        identifier = self.email if self.email else self.phone
+        return f'OTP for {identifier} - {'Verified' if self.is_used else "Pending"}'
+
+    @staticmethod
+    def generate_code():
+        """Generate a random six digit code"""
+        return str(random.randint(100000, 999999))
+
+    def verify(self, code):
+        """Verify OTP code provided by user"""
+        # Check if the OTP has been used or expired
+        if self.is_used or self.expires_at < timezone.now():
+            return False, "OTP verification failed. OTP has expired."
+
+        # Check if attempt count exceeds the limit 3
+        if self.attempt_count >= 3:
+            return False, "OTP verification failed. Maximum attempts exceeded."
+        else:
+            # increment attempt count
+            self.attempt_count += 1
+
+        # Compare OTP code with generated code
+        if self.otp == code:
+            self.is_used = True
+            self.save()
+            return True, "OTP verified successfully"
+        else:
+            self.save()
+            remainer = 3 - self.attempt_count
+            return False, "Invalid OTP. Remaining attempts: " + str(remainer) + "."
+
+    @classmethod
+    def create_otp(cls, email=None, phone=None):
+        """Create a new OTP instance"""
+        # Ensure that at least one of email or phone is provided
+        if not email and not phone:
+            raise ValueError('Either email or phone number must be provided.')
+        if email:
+            email = email.lower()
+            # Delete existing OTP for the same email
+            cls.objects.filter(email=email).delete()
+        if phone:
+            # Delete existing OTP for the same phone number
+            cls.objects.filter(phone=phone).delete()
+
+        # Create a new OTP instance
+        code = cls.generate_code()
+        expires_at = timezone.now() + timedelta(minutes=5)
+        return cls.objects.create(email=email, phone=phone, otp=cls.generate_code(), expires_at=expires_at)
+
+    def is_expired(self):
+        """Check if OTP has expired"""
+        return self.expires_at < timezone.now()
+
+    def is_valid(self):
+        """Check if OTP is valid"""
+        return not self.is_used and not self.is_expired() and self.attempt_count < 3
+
+    @classmethod
+    def cleanup_expired_otp(cls):
+        """Delete expired OTPs"""
+        expired = cls.objects.filter(expires_at__lte=timezone.now())
+        count = expired.count()
+        expired.delete()
+        return count
+
+
+
 
