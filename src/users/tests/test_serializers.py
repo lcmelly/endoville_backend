@@ -43,7 +43,7 @@ def test_user_serializer_read_only_fields():
     assert user.is_active is True
 
 
-# OTPSerializer Tests
+################ OTPSerializer Tests  ################
 @pytest.mark.django_db
 def test_otp_serializer_fields():
     """OTPSerializer has correct fields"""
@@ -71,7 +71,7 @@ def test_otp_serializer_read_only_fields():
     assert otp.attempt_count == 0
 
 
-# RequestOTPSerializer Tests
+## RequestOTPSerializer Tests
 @pytest.mark.django_db
 def test_request_otp_with_email():
     """RequestOTPSerializer accepts email"""
@@ -112,7 +112,7 @@ def test_request_otp_strips_whitespace():
     assert serializer.validated_data['email'] == 'test@example.com'
 
 
-# VerifyOTPSerializer Tests
+# # VerifyOTPSerializer Tests
 @pytest.mark.django_db
 def test_verify_otp_with_valid_code():
     """VerifyOTPSerializer validates correct OTP"""
@@ -183,7 +183,7 @@ def test_verify_otp_with_used_otp():
     assert 'No OTP found' in str(serializer.errors['otp'])
 
 
-# SignupSerializer Tests
+## SignupSerializer Tests
 @pytest.mark.django_db
 def test_signup_with_email_and_password():
     """SignupSerializer creates user with email and password"""

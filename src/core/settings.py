@@ -71,6 +71,9 @@ EMAIL_BACKEND = 'zoho_zeptomail.backend.zeptomail_backend.ZohoZeptoMailEmailBack
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 ZOHO_ZEPTOMAIL_API_KEY_TOKEN = config('ZOHO_ZEPTOMAIL_API_KEY_TOKEN')
 ZOHO_ZEPTOMAIL_HOSTED_REGION = config('ZOHO_ZEPTOMAIL_HOSTED_REGION', default='zeptomail.zoho.com')
+OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', cast=int, default=5)
+# Email templates
+ZEPTOMAIL_OTP_TEMPLATE_KEY = config('ZEPTOMAIL_OTP_TEMPLATE_KEY')
 
 
 MIDDLEWARE = [

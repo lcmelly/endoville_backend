@@ -36,6 +36,10 @@ class RequestOTPSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     phone = serializers.CharField(required=False, allow_blank=True, max_length=17)
 
+    class Meta:
+        model = OTP
+        fields = ['email', 'phone']
+
     def validate(self, data):
         """Validate at least one identifier provided"""
         email = data.get('email', '').strip()
@@ -95,7 +99,7 @@ class VerifyOTPSerializer(serializers.Serializer):
         return data
 
 
-class SignupSerializer(serializers.Serializer):
+class SignupSerializer(serializers.ModelSerializer):
     """Serializer for user signup
     WHAT THIS DOES:
     - Accepts user details (identifier, password, profile fields)
