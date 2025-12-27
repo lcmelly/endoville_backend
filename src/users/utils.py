@@ -8,7 +8,7 @@ import requests
 from django.conf import settings
 
 
-def send_template_email(to_email, template_key, merge_data, to_name=None):
+def send_template_email(to_email, template_key, merge_data, to_name=None, action=None):
     """
     Send email using ZeptoMail template API.
 
@@ -22,6 +22,7 @@ def send_template_email(to_email, template_key, merge_data, to_name=None):
         template_key (str): ZeptoMail template key
         merge_data (dict): Template merge variables as key-value pairs
         to_name (str): Recipient name (optional)
+        action (str): Action to be taken by the user (optional)
 
     Returns:
         bool: True if sent successfully, False otherwise
@@ -72,7 +73,7 @@ def send_template_email(to_email, template_key, merge_data, to_name=None):
         return False
 
 
-def send_otp_email(email, otp_code, name=None, template_key=None):
+def send_otp_email(email, otp_code, name=None, template_key=None, action=None):
     """
     Send OTP email using template or HTML fallback.
 
@@ -124,6 +125,7 @@ def send_otp_email(email, otp_code, name=None, template_key=None):
                 'name': recipient_name,
                 'OTP': otp_code,
                 'product_name': 'Endoville Health',
+                'action': action,
                 'team': 'Endoville Health Team'
             },
             to_name=recipient_name
