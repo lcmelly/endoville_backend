@@ -1,0 +1,77 @@
+site_name: Endoville Backend API Documentation
+site_description: API documentation for the Endoville backend system
+site_author: Endoville Team
+site_url: https://endoville.com
+
+repo_name: Endoville/endoville_backend
+repo_url: https://github.com/Endoville/endoville_backend
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Configuration: getting-started/configuration.md
+    - Project Structure: getting-started/project-structure.md
+  - API Reference:
+    - Authentication: api/authentication.md
+    - Users: api/users.md
+    - OTP: api/otp.md
+  - Models:
+    - CustomUser: models/custom-user.md
+    - OTP: models/otp.md
+  - Development:
+    - Testing: development/testing.md
+    - Contributing: development/contributing.md
+  - Guides:
+    - Email Integration: guides/email-integration.md
+    - JWT Authentication: guides/jwt-authentication.md
+
