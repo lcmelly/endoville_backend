@@ -53,13 +53,13 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, phone, password, **extra_fields):
+    def create_superuser(self, email, password, phone=None, **extra_fields):
         """
-        Create and save a SuperUser with the given email, phone and password.
+        Create and save a SuperUser with the given email and password.
         Args:
             email (str): The email of the superuser.
-            phone (str): The phone number of the superuser.
             password (str): The password of the superuser.
+            phone (str, optional): The phone number of the superuser.
             **extra_fields: Additional fields for the superuser.
         """
         extra_fields['is_staff'] = True
@@ -161,7 +161,8 @@ class OTP(models.Model):
 
     def __str__(self):
         identifier = self.email if self.email else self.phone
-        return f'OTP for {identifier} - {'Verified' if self.is_used else "Pending"}'
+        status = 'Verified' if self.is_used else 'Pending'
+        return f'OTP for {identifier} - {status}'
 
     @staticmethod
     def generate_code():
