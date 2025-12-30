@@ -210,3 +210,135 @@ def login_view(request):
         )
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_login_view(request):
+    """
+    Sign in/Sign up with Google OAuth.
+    
+    POST /api/users/google-login/
+    
+    Request Body:
+    {
+        "access_token": "google_access_token_from_client"
+    }
+    
+    Response:
+    {
+        "access": "jwt_access_token",
+        "refresh": "jwt_refresh_token",
+        "user": {
+            "id": 1,
+            "email": "user@gmail.com",
+            "first_name": "John",
+            "last_name": "Doe",
+            "is_active": true,
+            ...
+        }
+    }
+    
+    Note: The client should first complete Google OAuth flow to get access_token,
+    then send that token to this endpoint.
+    """
+    access_token = request.data.get('access_token')
+    
+    if not access_token:
+        return Response(
+            {'error': 'access_token is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        import requests
+        from allauth.socialaccount.models import SocialAccount
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from django.utils import timezone
+        
+        # Verify token and get user info from Google
+        user_info_response = requests.get(
+            'https://www.googleapis.com/oauth2/v2/userinfo',
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=10
+        )
+        
+        if user_info_response.status_code != 200:
+            return Response(
+                {'error': 'Invalid or expired Google access token'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user_info = user_info_response.json()
+        email = user_info.get('email')
+        google_id = user_info.get('id')
+        
+        if not email:
+            return Response(
+                {'error': 'Email not provided by Google'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Normalize email
+        email = email.lower()
+        
+        # Try to find existing user by email
+        user = None
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Create new user
+            user = User.objects.create_user(
+                email=email,
+                first_name=user_info.get('given_name', ''),
+                last_name=user_info.get('family_name', ''),
+                is_active=True,  # Google verifies email
+                phone=None
+            )
+            # Set unusable password for OAuth users
+            user.set_unusable_password()
+            user.save()
+        
+        # Create or update social account
+        social_account, created = SocialAccount.objects.get_or_create(
+            user=user,
+            provider='google',
+            defaults={
+                'uid': str(google_id),
+                'extra_data': user_info
+            }
+        )
+        
+        if not created:
+            # Update existing social account
+            social_account.uid = str(google_id)
+            social_account.extra_data = user_info
+            social_account.save()
+        
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        
+        # Update last login
+        if hasattr(user, 'last_login'):
+            user.last_login = timezone.now()
+            user.save(update_fields=['last_login'])
+        
+        return Response(
+            {
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': UserSerializer(user).data
+            },
+            status=status.HTTP_200_OK
+        )
+        
+    except requests.exceptions.RequestException as e:
+        return Response(
+            {'error': f'Failed to verify Google token: {str(e)}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    except Exception as e:
+        return Response(
+            {'error': f'Authentication failed: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

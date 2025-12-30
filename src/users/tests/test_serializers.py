@@ -7,7 +7,8 @@ from users.serializers import (
     OTPSerializer,
     RequestOTPSerializer,
     VerifyOTPSerializer,
-    SignupSerializer
+    SignupSerializer,
+    LoginSerializer
 )
 from users.models import OTP
 
