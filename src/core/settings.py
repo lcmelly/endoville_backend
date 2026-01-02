@@ -26,8 +26,12 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool)
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
-if not ALLOWED_HOSTS:
+# ALLOWED_HOSTS should be a list of strings
+# In .env file, use: ALLOWED_HOSTS=localhost,127.0.0.1,example.com
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
+# Default to allowing all hosts only if DEBUG is True (development)
+if not ALLOWED_HOSTS and DEBUG:
     ALLOWED_HOSTS = ['*']
 
 # Change auth user
