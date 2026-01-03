@@ -214,12 +214,16 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-#SSL settings
-SECURE_SSL_REDIRECT = True
+# SSL settings
+# Note: SECURE_SSL_REDIRECT is False because Nginx handles SSL termination and redirects
+# Nginx redirects domain to HTTPS, but allows IP access via HTTP
+SECURE_SSL_REDIRECT = False
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# Only set secure cookies when accessed via HTTPS (Nginx sets X-Forwarded-Proto)
+SESSION_COOKIE_SECURE = False  # Let Django detect from X-Forwarded-Proto
+CSRF_COOKIE_SECURE = False  # Let Django detect from X-Forwarded-Proto
