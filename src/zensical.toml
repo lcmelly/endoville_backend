@@ -1,0 +1,42 @@
+[project]
+site_name = "Endoville Backend Documentation"
+site_url = "https://api.endovillehealth.com"
+nav = [
+  {"Home" = "index.md"},
+  {"Getting Started" = "guides/getting-started.md"},
+  { "API" = [
+        { "Users" = [
+            "api/registration.md",
+            "api/otp.md",
+            "api/activation.md",
+            "api/login.md",
+            "api/google-login.md"
+        ]}
+    ]}
+]
+extra_css = ["assets/css/custom.css"]
+
+[theme]
+palette.primary = "indigo"
+palette.accent = "indigo"
+features = [
+    "navigation.tabs",
+    "navigation.tabs.sticky",
+    "navigation.sections",
+    "navigation.top",
+    "navigation.expand",
+    "navigation.path",
+    "search.suggest",
+    "search.highlight",
+    "content.code.copy",
+    "content.code.annotate"
+]
+
+[markdown]
+extensions = [
+    "pymdownx.highlight",
+    "pymdownx.superfences",
+    "pymdownx.tabbed",
+    "tables",
+    "toc"
+]

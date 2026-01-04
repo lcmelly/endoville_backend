@@ -225,5 +225,5 @@ SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 # Only set secure cookies when accessed via HTTPS (Nginx sets X-Forwarded-Proto)
-SESSION_COOKIE_SECURE = False  # Let Django detect from X-Forwarded-Proto
-CSRF_COOKIE_SECURE = False  # Let Django detect from X-Forwarded-Proto
+SESSION_COOKIE_SECURE = True  
+CSRF_COOKIE_SECURE = True

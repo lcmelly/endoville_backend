@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>https://api.endovillehealth.com/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/guides/getting-started/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/registration/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/otp/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/activation/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/login/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/google-login/</loc>
+      </url>
+</urlset>
