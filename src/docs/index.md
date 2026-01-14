@@ -4,15 +4,14 @@ Welcome to the Endoville Backend API Documentation.
 
 ## Overview
 
-This API provides user management, authentication, and account activation functionality.
+This API provides user management, authentication, account activation, and blog content.
 
 ## Getting Started
 
-### Base URL
+### Base URLs
 
-```
-https://api.endovillehealth.com/api/users/
-```
+- Users: `https://api.endovillehealth.com/api/users/`
+- Blogs: `https://api.endovillehealth.com/api/blogs/`
 
 ### Authentication
 
@@ -25,6 +24,7 @@ Most endpoints require JWT authentication. You'll receive access and refresh tok
 - [OTP Management](api/otp.md)
 - [Authentication](api/authentication.md)
 - [Google OAuth Login](api/google-login.md)
+- [Blogs](api/blogs.md)
 
 ## Response Format
 

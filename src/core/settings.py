@@ -49,6 +49,9 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'rest_framework',
     
+    # Django Import/Export
+    'import_export',
+    
     # Django Allauth
     'allauth',
     'allauth.account',
@@ -56,6 +59,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     
     'users',
+    'blogs',
 ]
 
 # REST Framework

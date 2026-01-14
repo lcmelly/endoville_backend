@@ -11,7 +11,8 @@ nav = [
             "api/activation.md",
             "api/login.md",
             "api/google-login.md"
-        ]}
+        ]},
+        {"Blogs" = "api/blogs.md"}
     ]}
 ]
 extra_css = ["assets/css/custom.css"]
