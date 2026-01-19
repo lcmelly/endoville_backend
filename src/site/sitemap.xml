@@ -24,4 +24,16 @@
       <url>
         <loc>https://api.endovillehealth.com/api/blogs/</loc>
       </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/products/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/orders/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/payments/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/shipments/</loc>
+      </url>
 </urlset>

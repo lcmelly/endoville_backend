@@ -60,6 +60,8 @@ INSTALLED_APPS = [
     
     'users',
     'blogs',
+    'products',
+    'orders',
 ]
 
 # REST Framework

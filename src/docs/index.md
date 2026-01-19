@@ -12,6 +12,8 @@ This API provides user management, authentication, account activation, and blog 
 
 - Users: `https://api.endovillehealth.com/api/users/`
 - Blogs: `https://api.endovillehealth.com/api/blogs/`
+- Products: `https://api.endovillehealth.com/api/products/`
+- Orders: `https://api.endovillehealth.com/api/orders/`
 
 ### Authentication
 
@@ -25,6 +27,10 @@ Most endpoints require JWT authentication. You'll receive access and refresh tok
 - [Authentication](api/authentication.md)
 - [Google OAuth Login](api/google-login.md)
 - [Blogs](api/blogs.md)
+- [Products](api/products.md)
+- [Orders](api/orders.md)
+- [Payments](api/payments.md)
+- [Shipments](api/shipments.md)
 
 ## Response Format
 

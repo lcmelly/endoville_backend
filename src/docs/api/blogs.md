@@ -2,7 +2,16 @@
 
 Manage blog posts, authors, and comments.
 
-Base path: `/api/blogs/`
+=== "Base URL"
+
+    ```
+    /api/blogs/
+    ```
+
+=== "Authentication"
+
+    - Reads are public.
+    - Writes depend on staff/ownership rules below.
 
 ## Permissions Summary
 
@@ -164,8 +173,8 @@ Base path: `/api/blogs/`
     DELETE /api/blogs/comments/{id}/
     ```
 
-=== "Notes"
+## Notes
 
 - Unauthenticated users can only read posts and comments.
 - Non-staff authenticated users can create comments; they may delete only their own comments.
-- Only staff can create, update, or delete authors and posts, and only staff can edit comments.
+- Only staff can create/update/delete authors and posts, and only staff can edit comments.

@@ -12,7 +12,11 @@ nav = [
             "api/login.md",
             "api/google-login.md"
         ]},
-        {"Blogs" = "api/blogs.md"}
+        {"Blogs" = "api/blogs.md"},
+        {"Products" = "api/products.md"},
+        {"Orders" = "api/orders.md"},
+        {"Payments" = "api/payments.md"},
+        {"Shipments" = "api/shipments.md"}
     ]}
 ]
 extra_css = ["assets/css/custom.css"]
@@ -41,3 +45,13 @@ extensions = [
     "tables",
     "toc"
 ]
+
+[[project.theme.palette]] 
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
