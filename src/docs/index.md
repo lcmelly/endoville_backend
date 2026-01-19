@@ -26,6 +26,7 @@ Most endpoints require JWT authentication. You'll receive access and refresh tok
 - [OTP Management](api/otp.md)
 - [Authentication](api/authentication.md)
 - [Google OAuth Login](api/google-login.md)
+- [User Profile](api/profile.md)
 - [Blogs](api/blogs.md)
 - [Products](api/products.md)
 - [Orders](api/orders.md)

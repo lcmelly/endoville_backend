@@ -13,8 +13,20 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'phone', 'first_name', 'last_name', 'gender', 'date_of_birth', 'is_active', 'created_at']
+        fields = ['id', 'email', 'phone', 'first_name', 'last_name', 'image_url', 'gender', 'date_of_birth', 'is_active', 'created_at']
         read_only_fields = ['id', 'is_active', 'created_at']
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Profile serializer for the currently authenticated user.
+    Email and phone are read-only for now.
+    """
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "phone", "first_name", "last_name", "image_url", "created_at", "updated_at"]
+        read_only_fields = ["id", "email", "phone", "created_at", "updated_at"]
 
 
 class OTPSerializer(serializers.ModelSerializer):

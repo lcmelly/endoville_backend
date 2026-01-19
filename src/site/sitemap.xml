@@ -22,6 +22,9 @@
         <loc>https://api.endovillehealth.com/api/google-login/</loc>
       </url>
       <url>
+        <loc>https://api.endovillehealth.com/api/profile/</loc>
+      </url>
+      <url>
         <loc>https://api.endovillehealth.com/api/blogs/</loc>
       </url>
       <url>

@@ -81,6 +81,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     phone = models.CharField('phone number', unique=True, max_length=17, null=True, db_index=True,  blank=True, validators=[RegexValidator(regex=r'^\+?1?\d{9,17}$', message="Phone number must be entered in the format: '+129999999'. Up to 17 digits allowed.")])
     first_name = models.CharField('first name', max_length=30, null=True, blank=True)
     last_name = models.CharField('last name', max_length=30, null=True, blank=True)
+    image_url = models.URLField('profile image url', max_length=500, null=True, blank=True)
     date_of_birth = models.DateField('date of birth', null=True, blank=True)
     GENDER_CHOICES = [
         ('M', 'Male'),

@@ -3,7 +3,7 @@ API views for user management
 """
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 
@@ -12,7 +12,8 @@ from .serializers import (
     ActivateAccountSerializer,
     ResendOTPSerializer,
     LoginSerializer,
-    UserSerializer
+    UserSerializer,
+    UserProfileSerializer,
 )
 
 User = get_user_model()
@@ -342,3 +343,33 @@ def google_login_view(request):
             {'error': f'Authentication failed: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(["GET", "PATCH"])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    """
+    Get or update the authenticated user's profile.
+
+    GET /api/users/me/
+    PATCH /api/users/me/
+
+    Editable fields:
+    - first_name
+    - last_name
+    - image_url
+
+    Read-only (for now):
+    - email
+    - phone
+    """
+    user = request.user
+
+    if request.method == "GET":
+        return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
+
+    serializer = UserProfileSerializer(user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

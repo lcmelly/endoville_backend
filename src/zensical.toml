@@ -10,7 +10,8 @@ nav = [
             "api/otp.md",
             "api/activation.md",
             "api/login.md",
-            "api/google-login.md"
+            "api/google-login.md",
+            "api/profile.md"
         ]},
         {"Blogs" = "api/blogs.md"},
         {"Products" = "api/products.md"},

@@ -12,5 +12,6 @@ urlpatterns = [
     path('send-otp/', views.send_otp_view, name='send-otp'),
     path('login/', views.login_view, name='login'),
     path('google-login/', views.google_login_view, name='google-login'),
+    path('me/', views.me_view, name='me'),
 ]
 
