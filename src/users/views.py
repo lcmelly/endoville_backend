@@ -358,6 +358,8 @@ def me_view(request):
     - first_name
     - last_name
     - image_url
+    - gender
+    - date_of_birth
 
     Read-only (for now):
     - email
