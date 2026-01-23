@@ -8,10 +8,14 @@ click==8.3.1
 colorama==0.4.6
 coverage==7.13.0
 cryptography==46.0.3
+deepmerge==2.0
 defusedxml==0.7.1
+diff-match-patch==20241021
 dj-database-url==3.0.1
 Django
 django-allauth==0.57.0
+django-cors-headers==4.4.0
+django-import-export==4.3.14
 django-zoho-zeptomail==0.0.3
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
@@ -57,6 +61,8 @@ requests==2.32.5
 requests-oauthlib==2.0.0
 six==1.17.0
 sqlparse==0.5.4
+tablib==3.9.0
 termcolor==3.2.0
 urllib3==2.6.2
 watchdog==6.0.0
+zensical==0.0.15

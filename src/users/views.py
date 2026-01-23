@@ -375,3 +375,14 @@ def me_view(request):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def is_staff_view(request):
+    """
+    Check if the authenticated user is staff.
+
+    GET /api/users/is-staff/
+    """
+    return Response({"is_staff": bool(request.user.is_staff)}, status=status.HTTP_200_OK)
