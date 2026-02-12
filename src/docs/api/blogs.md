@@ -29,10 +29,59 @@ Manage blog posts, authors, and comments.
     GET /api/blogs/authors/
     ```
 
+    Success (200 OK):
+
+    ```json
+    [
+      {
+        "id": 1,
+        "name": "Dr. Jane Doe",
+        "title": "Chief Medical Officer",
+        "email": "jane@example.com",
+        "bio": "Brief bio...",
+        "image_url": "https://cdn.example.com/authors/jane.png",
+        "image_ref": "authors/jane.png",
+        "image_alt": "Dr. Jane Doe",
+        "image_title": "Dr. Jane Doe",
+        "created_at": "2026-01-19T10:00:00Z",
+        "updated_at": "2026-01-19T10:00:00Z"
+      }
+    ]
+    ```
+
 === "Retrieve"
 
     ```
     GET /api/blogs/authors/{id}/
+    ```
+
+    Success (200 OK) includes nested `posts`:
+
+    ```json
+    {
+      "id": 1,
+      "name": "Dr. Jane Doe",
+      "title": "Chief Medical Officer",
+      "email": "jane@example.com",
+      "bio": "Brief bio...",
+      "image_url": "https://cdn.example.com/authors/jane.png",
+      "image_ref": "authors/jane.png",
+      "image_alt": "Dr. Jane Doe",
+      "image_title": "Dr. Jane Doe",
+      "created_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-01-19T10:00:00Z",
+      "posts": [
+        {
+          "id": 10,
+          "title": "Healthy Living Tips",
+          "slug": "healthy-living-tips",
+          "is_published": true,
+          "views": 12,
+          "created_at": "2026-01-19T10:00:00Z",
+          "updated_at": "2026-01-19T10:00:00Z"
+        }
+      ]
+    }
     ```
 
 === "Create (staff)"
@@ -46,7 +95,19 @@ Manage blog posts, authors, and comments.
       "name": "Dr. Jane Doe",
       "title": "Chief Medical Officer",
       "email": "jane@example.com",
-      "bio": "Brief bio..."
+      "bio": "Brief bio...",
+      "image_url": "https://cdn.example.com/authors/jane.png",
+      "image_ref": "authors/jane.png",
+      "image_alt": "Dr. Jane Doe",
+      "image_title": "Dr. Jane Doe"
+    }
+    ```
+
+    Error (403 Forbidden) if not staff:
+
+    ```json
+    {
+      "detail": "You do not have permission to perform this action."
     }
     ```
 
@@ -62,7 +123,11 @@ Manage blog posts, authors, and comments.
       "name": "Dr. Jane Doe",
       "title": "Chief Medical Officer",
       "email": "jane@example.com",
-      "bio": "Updated bio..."
+      "bio": "Updated bio...",
+      "image_url": "https://cdn.example.com/authors/jane.png",
+      "image_ref": "authors/jane.png",
+      "image_alt": "Dr. Jane Doe",
+      "image_title": "Dr. Jane Doe"
     }
     ```
 
@@ -83,6 +148,30 @@ Manage blog posts, authors, and comments.
     GET /api/blogs/posts/
     ```
 
+    Success (200 OK):
+
+    ```json
+    [
+      {
+        "id": 10,
+        "title": "Healthy Living Tips",
+        "slug": "healthy-living-tips",
+        "author": 1,
+        "author_name": "Dr. Jane Doe",
+        "content": "Post body...",
+        "excerpt": "SEO description up to 160 chars",
+        "featured_image_ref": "",
+        "featured_image_alt": "",
+        "featured_image_title": "",
+        "meta_keywords": "health,wellness",
+        "is_published": true,
+        "views": 12,
+        "created_at": "2026-01-19T10:00:00Z",
+        "updated_at": "2026-01-19T10:00:00Z"
+      }
+    ]
+    ```
+
 === "Retrieve"
 
     ```
@@ -99,6 +188,7 @@ Manage blog posts, authors, and comments.
     {
       "title": "Healthy Living Tips",
       "author": 1,
+      "subcategories": [1, 2],
       "content": "Post body...",
       "excerpt": "SEO description up to 160 chars",
       "featured_image_ref": "s3://bucket/key",
@@ -106,6 +196,22 @@ Manage blog posts, authors, and comments.
       "featured_image_title": "image title",
       "meta_keywords": "health,wellness",
       "is_published": true
+    }
+    ```
+
+    Error (401 Unauthorized) if not authenticated:
+
+    ```json
+    {
+      "detail": "Authentication credentials were not provided."
+    }
+    ```
+
+    Error (403 Forbidden) if authenticated but not staff:
+
+    ```json
+    {
+      "detail": "You do not have permission to perform this action."
     }
     ```
 
@@ -120,6 +226,7 @@ Manage blog posts, authors, and comments.
     {
       "title": "Healthy Living Tips (Updated)",
       "author": 1,
+      "subcategories": [1, 2],
       "content": "Revised post body...",
       "excerpt": "Updated SEO description",
       "featured_image_ref": "s3://bucket/new-key",
@@ -148,6 +255,22 @@ Manage blog posts, authors, and comments.
     GET /api/blogs/comments/?post={post_id}
     ```
 
+    Success (200 OK):
+
+    ```json
+    [
+      {
+        "id": 100,
+        "post": 10,
+        "author": 1,
+        "author_display": "John Doe",
+        "content": "Great article!",
+        "created_at": "2026-01-19T10:05:00Z",
+        "updated_at": "2026-01-19T10:05:00Z"
+      }
+    ]
+    ```
+
 === "Retrieve"
 
     ```
@@ -167,6 +290,14 @@ Manage blog posts, authors, and comments.
     }
     ```
 
+    Error (401 Unauthorized) if not authenticated:
+
+    ```json
+    {
+      "detail": "Authentication credentials were not provided."
+    }
+    ```
+
 === "Delete (owner or staff)"
 
     ```
@@ -178,3 +309,16 @@ Manage blog posts, authors, and comments.
 - Unauthenticated users can only read posts and comments.
 - Non-staff authenticated users can create comments; they may delete only their own comments.
 - Only staff can create/update/delete authors and posts, and only staff can edit comments.
+
+## Categories & Subcategories
+
+Blogs support categories and subcategories:
+
+- Categories:
+  - `GET /api/blogs/categories/` (public)
+  - Staff CRUD at `/api/blogs/categories/{id}/`
+- Subcategories:
+  - `GET /api/blogs/subcategories/` (public)
+  - Staff CRUD at `/api/blogs/subcategories/{id}/`
+
+A post can belong to **multiple** subcategories using the `subcategories` field on the post endpoints.

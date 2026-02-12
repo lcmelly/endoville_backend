@@ -13,6 +13,13 @@ Manage product catalog: categories, subcategories, products, and variants (with 
     - Reads are public.
     - Writes require `is_staff=true`.
 
+## Cost Price (Staff-only)
+
+Products and variants include a `cost_price` field, but it is **only returned in API responses when the requester is a staff user**.
+
+- Public/non-staff: `cost_price` is omitted from responses.
+- Staff: `cost_price` is included for both products and nested variants.
+
 ## Permissions Summary
 
 | Resource | Read | Create | Update | Delete |
@@ -148,6 +155,7 @@ Manage product catalog: categories, subcategories, products, and variants (with 
       "name": "Vitamin C 1000mg",
       "description": "High-strength Vitamin C",
       "price": "19.99",
+      "cost_price": "12.00",
       "stock": 100,
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "subcategories": [1, 2],
@@ -168,6 +176,7 @@ Manage product catalog: categories, subcategories, products, and variants (with 
       "name": "Vitamin C 1000mg",
       "description": "Updated description",
       "price": "21.99",
+      "cost_price": "13.00",
       "stock": 80,
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "subcategories": [1],
@@ -267,6 +276,7 @@ Manage product catalog: categories, subcategories, products, and variants (with 
       "sku": "SKU-RED-XL",
       "barcode": "0123456789012",
       "price": "24.99",
+      "cost_price": "15.00",
       "stock": 10,
       "image_urls": ["https://cdn.example.com/p/vit-c-red-xl.png"],
       "is_active": true
@@ -287,6 +297,7 @@ Manage product catalog: categories, subcategories, products, and variants (with 
       "sku": "SKU-RED-XL",
       "barcode": "0123456789012",
       "price": "24.99",
+      "cost_price": "16.00",
       "stock": 12,
       "image_urls": ["https://cdn.example.com/p/vit-c-red-xl.png"],
       "is_active": true

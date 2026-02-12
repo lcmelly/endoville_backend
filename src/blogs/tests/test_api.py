@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from blogs.models import Author, Comment, Post
+from blogs.models import Author, Category, Comment, Post, Subcategory
 from blogs.serializers import PostSerializer
 from users.models import CustomUser
 
@@ -58,6 +58,16 @@ def post(author):
     )
 
 
+@pytest.fixture
+def category():
+    return Category.objects.create(name="Health", description="d")
+
+
+@pytest.fixture
+def subcategory(category):
+    return Subcategory.objects.create(name="Wellness", category=category, description="d")
+
+
 def test_urls_resolve():
     assert reverse("blogs:post-list") == "/api/blogs/posts/"
     assert reverse("blogs:author-list") == "/api/blogs/authors/"
@@ -72,6 +82,30 @@ def test_post_serializer_includes_author_name(author, post):
 def test_posts_list_public(api_client):
     resp = api_client.get("/api/blogs/posts/")
     assert resp.status_code == status.HTTP_200_OK
+
+
+def test_post_unique_views_increments_for_non_staff(api_client, post, user):
+    # Anonymous views should increment on every request
+    resp = api_client.get(f"/api/blogs/posts/{post.id}/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["views"] == 1
+
+    resp = api_client.get(f"/api/blogs/posts/{post.id}/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["views"] == 2
+
+    # Authenticated non-staff should increment on every request
+    api_client.force_authenticate(user=user)
+    resp = api_client.get(f"/api/blogs/posts/{post.id}/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["views"] == 3
+
+
+def test_post_unique_views_does_not_increment_for_staff(api_client, post, staff_user):
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.get(f"/api/blogs/posts/{post.id}/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert resp.json()["views"] == 0
 
 
 def test_posts_create_requires_staff(api_client, user, staff_user, author):
@@ -104,6 +138,38 @@ def test_posts_create_requires_staff(api_client, user, staff_user, author):
         format="json",
     )
     assert resp.status_code == status.HTTP_201_CREATED
+
+
+def test_post_can_have_multiple_subcategories(api_client, staff_user, author, subcategory):
+    sub2 = Subcategory.objects.create(name="Nutrition", category=subcategory.category, description="d")
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.post(
+        "/api/blogs/posts/",
+        {
+            "title": "Staff Post",
+            "author": author.id,
+            "subcategories": [subcategory.id, sub2.id],
+            "content": "Body",
+            "excerpt": "SEO",
+            "meta_keywords": "a,b",
+            "is_published": True,
+        },
+        format="json",
+    )
+    assert resp.status_code == status.HTTP_201_CREATED
+    post_id = resp.json()["id"]
+    resp = api_client.get(f"/api/blogs/posts/{post_id}/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert len(resp.json()["subcategories_details"]) == 2
+
+
+def test_author_retrieve_includes_posts(api_client, staff_user, author, post):
+    # staff can see posts list
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.get(f"/api/blogs/authors/{author.id}/")
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    assert "posts" in data
 
 
 def test_comments_create_permissions(api_client, post, user):

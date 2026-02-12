@@ -56,6 +56,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             "sku",
             "barcode",
             "price",
+            "cost_price",
             "stock",
             "image_urls",
             "is_active",
@@ -64,12 +65,19 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if not request or not getattr(request, "user", None) or not request.user.is_staff:
+            data.pop("cost_price", None)
+        return data
+
 
 class ProductSerializer(serializers.ModelSerializer):
     subcategories = serializers.PrimaryKeyRelatedField(
         queryset=Subcategory.objects.all(), many=True, required=False
     )
-    variants = ProductVariantSerializer(many=True, read_only=True)
+    variants = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -78,6 +86,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "price",
+            "cost_price",
             "stock",
             "image_urls",
             "subcategories",
@@ -89,3 +98,14 @@ class ProductSerializer(serializers.ModelSerializer):
             "variants",
         ]
         read_only_fields = ["id", "slug", "created_at", "updated_at"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        if not request or not getattr(request, "user", None) or not request.user.is_staff:
+            data.pop("cost_price", None)
+        return data
+
+    def get_variants(self, obj):
+        qs = obj.variants.all()
+        return ProductVariantSerializer(qs, many=True, context=self.context).data

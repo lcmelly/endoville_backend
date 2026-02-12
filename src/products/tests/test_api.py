@@ -125,6 +125,22 @@ def test_product_detail_includes_variants(api_client, product, variant):
     assert len(data["variants"]) == 1
     assert data["variants"][0]["barcode"] == "BARCODE-1"
     assert data["variants"][0]["options_details"][0]["value"] == "Red"
+    assert "cost_price" not in data
+    assert "cost_price" not in data["variants"][0]
+
+
+def test_cost_price_visible_to_staff(api_client, staff_user, product, variant):
+    product.cost_price = "6.00"
+    product.save(update_fields=["cost_price"])
+    variant.cost_price = "7.00"
+    variant.save(update_fields=["cost_price"])
+
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.get(f"/api/products/products/{product.id}/")
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    assert data["cost_price"] == "6.00"
+    assert data["variants"][0]["cost_price"] == "7.00"
 
 
 def test_writes_are_staff_only(api_client, user, staff_user):

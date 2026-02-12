@@ -1,15 +1,31 @@
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
 
-from .models import Author, Comment, Post
+from .models import Author, Category, Comment, Post, Subcategory
 
 
 @admin.register(Author)
 class AuthorAdmin(ImportExportModelAdmin):
-    list_display = ["name", "title", "email", "created_at", "updated_at"]
+    list_display = ["name", "title", "email", "image_url", "created_at", "updated_at"]
     list_filter = ["created_at", "updated_at"]
-    search_fields = ["name", "title", "email"]
+    search_fields = ["name", "title", "email", "image_url", "image_ref", "image_alt", "image_title"]
     ordering = ["-created_at"]
+
+
+@admin.register(Category)
+class CategoryAdmin(ImportExportModelAdmin):
+    list_display = ["name", "created_at", "updated_at"]
+    search_fields = ["name", "description"]
+    ordering = ["name"]
+
+
+@admin.register(Subcategory)
+class SubcategoryAdmin(ImportExportModelAdmin):
+    list_display = ["name", "category", "created_at", "updated_at"]
+    list_filter = ["category", "created_at"]
+    search_fields = ["name", "category__name", "description"]
+    ordering = ["category__name", "name"]
+    list_select_related = ["category"]
 
 
 @admin.register(Post)
@@ -19,6 +35,7 @@ class PostAdmin(ImportExportModelAdmin):
         "slug",
         "author",
         "is_published",
+        "views",
         "created_at",
         "updated_at",
     ]
@@ -38,3 +55,5 @@ class CommentAdmin(ImportExportModelAdmin):
     ordering = ["-created_at"]
     raw_id_fields = ["post", "author"]
     list_select_related = ["post", "author"]
+
+
