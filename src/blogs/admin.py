@@ -45,6 +45,7 @@ class PostAdmin(ImportExportModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
     raw_id_fields = ["author"]
     list_select_related = ["author"]
+    filter_horizontal = ["related_products"]
 
 
 @admin.register(Comment)

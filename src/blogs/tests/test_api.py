@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 
 from blogs.models import Author, Category, Comment, Post, Subcategory
 from blogs.serializers import PostSerializer
+from products.models import Product
 from users.models import CustomUser
 
 
@@ -138,6 +139,42 @@ def test_posts_create_requires_staff(api_client, user, staff_user, author):
         format="json",
     )
     assert resp.status_code == status.HTTP_201_CREATED
+
+
+@pytest.fixture
+def product():
+    return Product.objects.create(
+        name="Test Product",
+        description="Desc",
+        price=9.99,
+        stock=10,
+        slug="test-product",
+    )
+
+
+def test_post_can_have_related_products(api_client, staff_user, author, product):
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.post(
+        "/api/blogs/posts/",
+        {
+            "title": "Staff Post",
+            "author": author.id,
+            "related_products": [product.id],
+            "content": "Body",
+            "excerpt": "SEO",
+            "meta_keywords": "a,b",
+            "is_published": True,
+        },
+        format="json",
+    )
+    assert resp.status_code == status.HTTP_201_CREATED
+    post_id = resp.json()["id"]
+    resp = api_client.get(f"/api/blogs/posts/{post_id}/")
+    assert resp.status_code == status.HTTP_200_OK
+    details = resp.json()["related_products_details"]
+    assert len(details) == 1
+    assert details[0]["id"] == product.id
+    assert details[0]["name"] == product.name
 
 
 def test_post_can_have_multiple_subcategories(api_client, staff_user, author, subcategory):

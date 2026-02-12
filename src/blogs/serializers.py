@@ -1,6 +1,17 @@
 from rest_framework import serializers
 
+from products.models import Product
+
 from .models import Author, Category, Comment, Post, Subcategory
+
+
+class RelatedProductSerializer(serializers.ModelSerializer):
+    """Lightweight product representation for related products in blog posts."""
+
+    class Meta:
+        model = Product
+        fields = ["id", "name", "slug", "price", "image_urls"]
+        read_only_fields = fields
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -70,6 +81,12 @@ class PostSerializer(serializers.ModelSerializer):
         queryset=Subcategory.objects.all(), many=True, required=False
     )
     subcategories_details = SubcategorySerializer(source="subcategories", many=True, read_only=True)
+    related_products = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), many=True, required=False
+    )
+    related_products_details = RelatedProductSerializer(
+        source="related_products", many=True, read_only=True
+    )
 
     class Meta:
         model = Post
@@ -81,6 +98,8 @@ class PostSerializer(serializers.ModelSerializer):
             "author_name",
             "subcategories",
             "subcategories_details",
+            "related_products",
+            "related_products_details",
             "content",
             "excerpt",
             "featured_image_ref",

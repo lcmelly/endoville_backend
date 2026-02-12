@@ -48,6 +48,9 @@ class Post(models.Model):
     slug = models.SlugField(unique=True, blank=True, db_index=True)
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='posts')
     subcategories = models.ManyToManyField(Subcategory, related_name="posts", blank=True)
+    related_products = models.ManyToManyField(
+        "products.Product", related_name="blog_posts", blank=True
+    )
     content = models.TextField()
     excerpt = models.CharField(max_length=160, help_text="SEO Meta Description")
     featured_image_ref = models.CharField(max_length=255, blank=True)
