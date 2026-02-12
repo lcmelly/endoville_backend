@@ -49,6 +49,15 @@ class SubcategorySerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
+class CategoryWithSubcategoriesSerializer(CategorySerializer):
+    """Category with nested subcategories."""
+
+    subcategories = SubcategorySerializer(many=True, read_only=True)
+
+    class Meta(CategorySerializer.Meta):
+        fields = CategorySerializer.Meta.fields + ["subcategories"]
+
+
 class PostListItemSerializer(serializers.ModelSerializer):
     """
     Lightweight post serializer for nesting under Author.

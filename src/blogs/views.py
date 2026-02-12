@@ -12,6 +12,7 @@ from .serializers import (
     AuthorDetailSerializer,
     AuthorSerializer,
     CategorySerializer,
+    CategoryWithSubcategoriesSerializer,
     CommentSerializer,
     PostSerializer,
     SubcategorySerializer,
@@ -33,9 +34,13 @@ class AuthorViewSet(viewsets.ModelViewSet):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all().order_by("name")
-    serializer_class = CategorySerializer
+    queryset = Category.objects.prefetch_related("subcategories").order_by("name")
     permission_classes = [PostPermission]  # staff write, public read
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return CategoryWithSubcategoriesSerializer
+        return CategorySerializer
 
 
 class SubcategoryViewSet(viewsets.ModelViewSet):

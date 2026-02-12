@@ -158,6 +158,16 @@ Manage blog posts, authors, and comments.
         "slug": "healthy-living-tips",
         "author": 1,
         "author_name": "Dr. Jane Doe",
+        "subcategories": [1, 2],
+        "subcategories_details": [
+          {"id": 1, "name": "Wellness", "category": 1, "category_name": "Health", "description": "", "created_at": "2026-01-19T10:00:00Z", "updated_at": "2026-01-19T10:00:00Z"},
+          {"id": 2, "name": "Nutrition", "category": 1, "category_name": "Health", "description": "", "created_at": "2026-01-19T10:00:00Z", "updated_at": "2026-01-19T10:00:00Z"}
+        ],
+        "related_products": [1, 5],
+        "related_products_details": [
+          {"id": 1, "name": "Vitamin D Supplement", "slug": "vitamin-d-supplement", "price": "19.99", "image_urls": []},
+          {"id": 5, "name": "Omega-3 Capsules", "slug": "omega-3-capsules", "price": "24.99", "image_urls": []}
+        ],
         "content": "Post body...",
         "excerpt": "SEO description up to 160 chars",
         "featured_image_ref": "",
@@ -176,6 +186,37 @@ Manage blog posts, authors, and comments.
 
     ```
     GET /api/blogs/posts/{id}/
+    ```
+
+    Success (200 OK) returns the full post object with the same structure as list items:
+
+    ```json
+    {
+      "id": 10,
+      "title": "Healthy Living Tips",
+      "slug": "healthy-living-tips",
+      "author": 1,
+      "author_name": "Dr. Jane Doe",
+      "subcategories": [1, 2],
+      "subcategories_details": [
+        {"id": 1, "name": "Wellness", "category": 1, "category_name": "Health", "description": "", "created_at": "2026-01-19T10:00:00Z", "updated_at": "2026-01-19T10:00:00Z"}
+      ],
+      "related_products": [1, 5],
+      "related_products_details": [
+        {"id": 1, "name": "Vitamin D Supplement", "slug": "vitamin-d-supplement", "price": "19.99", "image_urls": []},
+        {"id": 5, "name": "Omega-3 Capsules", "slug": "omega-3-capsules", "price": "24.99", "image_urls": []}
+      ],
+      "content": "Post body...",
+      "excerpt": "SEO description up to 160 chars",
+      "featured_image_ref": "",
+      "featured_image_alt": "",
+      "featured_image_title": "",
+      "meta_keywords": "health,wellness",
+      "is_published": true,
+      "views": 12,
+      "created_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-01-19T10:00:00Z"
+    }
     ```
 
 === "Create (staff)"
@@ -314,13 +355,72 @@ Manage blog posts, authors, and comments.
 
 ## Categories & Subcategories
 
-Blogs support categories and subcategories:
+Blogs support categories and subcategories. Categories list and retrieve responses include nested subcategories.
 
-- Categories:
-  - `GET /api/blogs/categories/` (public)
-  - Staff CRUD at `/api/blogs/categories/{id}/`
-- Subcategories:
-  - `GET /api/blogs/subcategories/` (public)
-  - Staff CRUD at `/api/blogs/subcategories/{id}/`
+=== "Categories – List"
 
-A post can belong to **multiple** subcategories using the `subcategories` field on the post endpoints.
+    ```
+    GET /api/blogs/categories/
+    ```
+
+    Success (200 OK):
+
+    ```json
+    [
+      {
+        "id": 1,
+        "name": "Health",
+        "description": "Health and wellness topics",
+        "created_at": "2026-01-19T10:00:00Z",
+        "updated_at": "2026-01-19T10:00:00Z",
+        "subcategories": [
+          {
+            "id": 1,
+            "name": "Wellness",
+            "category": 1,
+            "category_name": "Health",
+            "description": "",
+            "created_at": "2026-01-19T10:00:00Z",
+            "updated_at": "2026-01-19T10:00:00Z"
+          },
+          {
+            "id": 2,
+            "name": "Nutrition",
+            "category": 1,
+            "category_name": "Health",
+            "description": "",
+            "created_at": "2026-01-19T10:00:00Z",
+            "updated_at": "2026-01-19T10:00:00Z"
+          }
+        ]
+      }
+    ]
+    ```
+
+=== "Categories – Retrieve"
+
+    ```
+    GET /api/blogs/categories/{id}/
+    ```
+
+    Returns the same structure as list items: category fields plus a `subcategories` array.
+
+=== "Subcategories"
+
+    ```
+    GET /api/blogs/subcategories/
+    GET /api/blogs/subcategories/{id}/
+    ```
+
+    Subcategories have their own endpoints. Each includes `category` (ID) and `category_name`.
+
+- Categories: Staff CRUD at `/api/blogs/categories/{id}/` for create, update, delete.
+- Subcategories: Staff CRUD at `/api/blogs/subcategories/{id}/` for create, update, delete.
+- A post can belong to **multiple** subcategories using the `subcategories` field on the post endpoints.
+
+## Related Products
+
+Posts support a many-to-many relationship with products:
+
+- **`related_products`** (writable): Array of product IDs. Use when creating or updating a post.
+- **`related_products_details`** (read-only): Array of lightweight product objects `{id, name, slug, price, image_urls}` for display.

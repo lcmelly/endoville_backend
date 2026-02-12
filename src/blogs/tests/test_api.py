@@ -75,6 +75,20 @@ def test_urls_resolve():
     assert reverse("blogs:comment-list") == "/api/blogs/comments/"
 
 
+def test_categories_list_includes_subcategories(api_client, category, subcategory):
+    Subcategory.objects.create(name="Nutrition", category=category, description="")
+    resp = api_client.get("/api/blogs/categories/")
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    assert len(data) >= 1
+    cat = next(c for c in data if c["id"] == category.id)
+    assert "subcategories" in cat
+    assert len(cat["subcategories"]) == 2
+    names = [s["name"] for s in cat["subcategories"]]
+    assert "Wellness" in names
+    assert "Nutrition" in names
+
+
 def test_post_serializer_includes_author_name(author, post):
     data = PostSerializer(instance=post).data
     assert data["author_name"] == author.name
