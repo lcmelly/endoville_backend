@@ -53,6 +53,7 @@ class Post(models.Model):
     )
     content = models.TextField()
     excerpt = models.CharField(max_length=160, help_text="SEO Meta Description")
+    featured_image_url = models.URLField(max_length=500, blank=True)
     featured_image_ref = models.CharField(max_length=255, blank=True)
     featured_image_alt = models.CharField(max_length=255, blank=True)
     featured_image_title = models.CharField(max_length=255, blank=True)

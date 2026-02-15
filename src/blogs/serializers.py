@@ -65,7 +65,7 @@ class PostListItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ["id", "title", "slug", "is_published", "views", "created_at", "updated_at"]
+        fields = ["id", "title", "slug", "featured_image_url", "is_published", "views", "created_at", "updated_at"]
         read_only_fields = fields
 
 
@@ -111,6 +111,7 @@ class PostSerializer(serializers.ModelSerializer):
             "related_products_details",
             "content",
             "excerpt",
+            "featured_image_url",
             "featured_image_ref",
             "featured_image_alt",
             "featured_image_title",
