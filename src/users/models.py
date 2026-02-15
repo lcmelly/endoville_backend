@@ -82,6 +82,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField('first name', max_length=30, null=True, blank=True)
     last_name = models.CharField('last name', max_length=30, null=True, blank=True)
     image_url = models.URLField('profile image url', max_length=500, null=True, blank=True)
+    image_ref = models.CharField('profile image ref', max_length=500, null=True, blank=True, help_text='Storage key or path for the profile image')
     date_of_birth = models.DateField('date of birth', null=True, blank=True)
     GENDER_CHOICES = [
         ('M', 'Male'),

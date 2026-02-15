@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'phone', 'first_name', 'last_name', 'image_url', 'gender', 'date_of_birth', 'is_active', 'created_at']
+        fields = ['id', 'email', 'phone', 'first_name', 'last_name', 'image_url', 'image_ref', 'gender', 'date_of_birth', 'is_active', 'created_at']
         read_only_fields = ['id', 'is_active', 'created_at']
 
 
@@ -32,6 +32,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "image_url",
+            "image_ref",
             "gender",
             "date_of_birth",
             "created_at",
@@ -346,7 +347,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'phone', 'password', 'first_name', 'last_name', 'gender', 'date_of_birth']
+        fields = ['email', 'phone', 'password', 'first_name', 'last_name', 'image_url', 'image_ref', 'gender', 'date_of_birth']
         extra_kwargs = {
             'email': {'required': False},
             'phone': {'required': False}

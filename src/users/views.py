@@ -358,6 +358,7 @@ def me_view(request):
     - first_name
     - last_name
     - image_url
+    - image_ref
     - gender
     - date_of_birth
 

@@ -39,6 +39,8 @@ Login or sign up using Google OAuth.
         "email": "user@gmail.com",
         "first_name": "John",
         "last_name": "Doe",
+        "image_url": null,
+        "image_ref": null,
         "is_active": true
       }
     }

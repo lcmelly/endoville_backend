@@ -4,9 +4,9 @@ from import_export.admin import ImportExportModelAdmin
 
 @admin.register(CustomUser)
 class CustomUserAdmin(ImportExportModelAdmin):
-    list_display = ['email', 'phone', 'first_name', 'last_name', 'is_active', 'is_staff', 'created_at']
+    list_display = ['email', 'phone', 'first_name', 'last_name', 'image_url', 'image_ref', 'is_active', 'is_staff', 'created_at']
     list_filter = ['is_active', 'is_staff', 'created_at']
-    search_fields = ['email', 'phone', 'first_name', 'last_name']
+    search_fields = ['email', 'phone', 'first_name', 'last_name', 'image_ref']
     ordering = ['-created_at']
 
 @admin.register(OTP)

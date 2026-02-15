@@ -44,8 +44,9 @@ Register a new user account.
         "email": "user@example.com",
         "first_name": "John",
         "last_name": "Doe",
+        "image_url": null,
+        "image_ref": null,
         "is_active": false,
-        "is_staff": false,
         "created_at": "2026-01-03T12:00:00Z"
       }
     }

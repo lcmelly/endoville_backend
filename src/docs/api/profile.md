@@ -20,6 +20,7 @@ Get and update the currently authenticated user's profile.
     | `first_name` | string | No | User first name |
     | `last_name` | string | No | User last name |
     | `image_url` | string | No | Profile image URL |
+    | `image_ref` | string | No | Profile image storage key or path |
     | `gender` | string | No | `M`, `F`, `O`, or `N` |
     | `date_of_birth` | string | No | Date in `YYYY-MM-DD` format |
 
@@ -42,6 +43,7 @@ Get and update the currently authenticated user's profile.
       "first_name": "John",
       "last_name": "Doe",
       "image_url": "https://cdn.example.com/u/1.png",
+      "image_ref": "u/1.png",
       "gender": "M",
       "date_of_birth": "1998-02-25",
       "created_at": "2026-01-19T10:00:00Z",
@@ -67,6 +69,7 @@ curl -X PATCH https://api.endovillehealth.com/api/users/me/ \
     "first_name": "Jane",
     "last_name": "Doe",
     "image_url": "https://cdn.example.com/u/1-new.png",
+    "image_ref": "u/1-new.png",
     "gender": "F",
     "date_of_birth": "1998-02-25"
   }'

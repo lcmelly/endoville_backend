@@ -40,8 +40,9 @@ Activate a user account using the OTP received via email.
         "email": "user@example.com",
         "first_name": "John",
         "last_name": "Doe",
-        "is_active": true,
-        "is_staff": false
+        "image_url": null,
+        "image_ref": null,
+        "is_active": true
       }
     }
     ```

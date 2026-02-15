@@ -43,6 +43,8 @@ Login with email, password, and OTP to receive JWT tokens.
         "email": "user@example.com",
         "first_name": "John",
         "last_name": "Doe",
+        "image_url": "https://cdn.example.com/u/1.png",
+        "image_ref": "u/1.png",
         "is_active": true
       }
     }
