@@ -39,7 +39,7 @@ Login or sign up using Google OAuth.
         "email": "user@gmail.com",
         "first_name": "John",
         "last_name": "Doe",
-        "image_url": null,
+        "image_url": "https://lh3.googleusercontent.com/a/...",
         "image_ref": null,
         "is_active": true
       }
@@ -103,6 +103,7 @@ google.accounts.oauth2.initTokenClient({
 - If the user doesn't exist, a new account will be created automatically
 - The account is automatically activated (`is_active=True`)
 - If a user with the same email exists, the Google account will be linked
+- The user's profile image (`image_url`) is set from Google's profile picture on sign-up and updated on each Google sign-in
 - JWT tokens work the same as regular email/password login
 - The Google access token is only used for verification, not stored
 

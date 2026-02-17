@@ -283,16 +283,20 @@ def google_login_view(request):
         # Normalize email
         email = email.lower()
         
+        # Get profile picture from Google (userinfo includes 'picture' URL)
+        picture_url = user_info.get('picture') or ''
+
         # Try to find existing user by email
         user = None
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            # Create new user
+            # Create new user with Google profile data
             user = User.objects.create_user(
                 email=email,
                 first_name=user_info.get('given_name', ''),
                 last_name=user_info.get('family_name', ''),
+                image_url=picture_url,
                 is_active=True,  # Google verifies email
                 phone=None
             )
@@ -315,6 +319,11 @@ def google_login_view(request):
             social_account.uid = str(google_id)
             social_account.extra_data = user_info
             social_account.save()
+
+        # Keep profile image in sync with Google when they sign in with Google
+        if picture_url and user.image_url != picture_url:
+            user.image_url = picture_url
+            user.save(update_fields=['image_url'])
         
         # Generate JWT tokens
         refresh = RefreshToken.for_user(user)
