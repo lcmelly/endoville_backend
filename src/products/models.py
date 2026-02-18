@@ -62,6 +62,7 @@ class Product(models.Model):
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     stock = models.PositiveIntegerField()
     image_urls = models.JSONField(default=list, blank=True)
+    image_refs = models.JSONField(default=list, blank=True, help_text="Storage keys/paths for images, same order as image_urls")
     subcategories = models.ManyToManyField(
         Subcategory, related_name='products', blank=True
     )
@@ -128,6 +129,7 @@ class ProductVariant(models.Model):
     cost_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     stock = models.PositiveIntegerField(null=True, blank=True)
     image_urls = models.JSONField(default=list, blank=True)
+    image_refs = models.JSONField(default=list, blank=True, help_text="Storage keys/paths for images, same order as image_urls")
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

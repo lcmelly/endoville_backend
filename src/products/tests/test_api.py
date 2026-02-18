@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 
 from products.models import (
     Category,
+    Currency,
     Product,
     ProductVariant,
     Subcategory,
@@ -127,6 +128,22 @@ def test_product_detail_includes_variants(api_client, product, variant):
     assert data["variants"][0]["options_details"][0]["value"] == "Red"
     assert "cost_price" not in data
     assert "cost_price" not in data["variants"][0]
+    assert "image_refs" in data
+    assert "image_refs" in data["variants"][0]
+
+
+def test_product_detail_currency_conversion_non_staff(api_client, product, variant):
+    """Non-staff GET with ?currency= returns converted price and display_currency."""
+    Currency.objects.create(code="KES", name="Kenyan Shilling", usd_rate=160.50, is_active=True)
+    resp = api_client.get(f"/api/products/products/{product.id}/", {"currency": "KES"})
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    # product.price is 10.00 (USD); 10 * 160.50 = 1605.00
+    assert data["price"] == "1605.00"
+    assert data["display_currency"] == "KES"
+    # variant price 12.50 -> 12.50 * 160.50 = 2006.25
+    assert data["variants"][0]["price"] == "2006.25"
+    assert data["variants"][0]["display_currency"] == "KES"
 
 
 def test_cost_price_visible_to_staff(api_client, staff_user, product, variant):

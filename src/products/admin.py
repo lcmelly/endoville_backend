@@ -29,7 +29,7 @@ class SubcategoryAdmin(ImportExportModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(ImportExportModelAdmin):
-    list_display = ["name", "price", "stock", "slug", "created_at", "updated_at"]
+    list_display = ["name", "price", "stock", "image_refs_count", "slug", "created_at", "updated_at"]
     list_filter = ["created_at", "updated_at"]
     search_fields = [
         "name",
@@ -40,6 +40,11 @@ class ProductAdmin(ImportExportModelAdmin):
     ]
     ordering = ["-created_at"]
     prepopulated_fields = {"slug": ("name",)}
+
+    @admin.display(description="Image refs")
+    def image_refs_count(self, obj):
+        refs = obj.image_refs or []
+        return len(refs) if refs else "-"
 
 
 @admin.register(VariationAttribute)
@@ -60,8 +65,13 @@ class VariationOptionAdmin(ImportExportModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(ImportExportModelAdmin):
-    list_display = ["product", "sku", "barcode", "price", "stock", "is_active", "updated_at"]
+    list_display = ["product", "sku", "barcode", "price", "stock", "image_refs_count", "is_active", "updated_at"]
     list_filter = ["is_active", "created_at", "updated_at"]
     search_fields = ["barcode", "sku", "product__name"]
     ordering = ["-created_at"]
     list_select_related = ["product"]
+
+    @admin.display(description="Image refs")
+    def image_refs_count(self, obj):
+        refs = obj.image_refs or []
+        return len(refs) if refs else "-"
