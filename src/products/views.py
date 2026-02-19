@@ -6,6 +6,7 @@ from rest_framework import viewsets
 
 from .models import (
     Category,
+    Currency,
     Product,
     ProductVariant,
     Subcategory,
@@ -15,12 +16,19 @@ from .models import (
 from .permissions import StaffWriteReadOnly
 from .serializers import (
     CategorySerializer,
+    CurrencySerializer,
     ProductSerializer,
     ProductVariantSerializer,
     SubcategorySerializer,
     VariationAttributeSerializer,
     VariationOptionSerializer,
 )
+
+
+class CurrencyViewSet(viewsets.ModelViewSet):
+    queryset = Currency.objects.all().order_by("code")
+    serializer_class = CurrencySerializer
+    permission_classes = [StaffWriteReadOnly]
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

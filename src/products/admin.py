@@ -3,12 +3,21 @@ from import_export.admin import ImportExportModelAdmin
 
 from .models import (
     Category,
+    Currency,
     Product,
     ProductVariant,
     Subcategory,
     VariationAttribute,
     VariationOption,
 )
+
+
+@admin.register(Currency)
+class CurrencyAdmin(ImportExportModelAdmin):
+    list_display = ["code", "name", "symbol", "usd_rate", "is_primary", "is_active", "created_at", "updated_at"]
+    list_filter = ["is_primary", "is_active"]
+    search_fields = ["code", "name", "symbol"]
+    ordering = ["code"]
 
 
 @admin.register(Category)

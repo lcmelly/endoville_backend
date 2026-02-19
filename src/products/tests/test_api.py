@@ -93,6 +93,7 @@ def variant(product, red_option):
 
 
 def test_urls_resolve():
+    assert reverse("products:currency-list") == "/api/products/currencies/"
     assert reverse("products:product-list") == "/api/products/products/"
     assert reverse("products:variant-list") == "/api/products/variants/"
     assert reverse("products:category-list") == "/api/products/categories/"
@@ -105,6 +106,28 @@ def test_urls_resolve():
         reverse("products:variation-option-list")
         == "/api/products/variation-options/"
     )
+
+
+def test_currencies_list_public(api_client):
+    Currency.objects.create(code="USD", name="US Dollar", symbol="$", usd_rate=1, is_primary=True)
+    resp = api_client.get("/api/products/currencies/")
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    assert len(data) >= 1
+    assert data[0]["code"] == "USD"
+    assert data[0]["usd_rate"] == "1.000000"
+
+
+def test_currencies_crud_staff_only(api_client, staff_user):
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.post(
+        "/api/products/currencies/",
+        {"code": "KES", "name": "Kenyan Shilling", "symbol": "KSh", "usd_rate": "160.50"},
+        format="json",
+    )
+    assert resp.status_code == status.HTTP_201_CREATED
+    assert resp.json()["code"] == "KES"
+    assert resp.json()["usd_rate"] == "160.500000"
 
 
 def test_products_list_public(api_client, product):
@@ -132,18 +155,108 @@ def test_product_detail_includes_variants(api_client, product, variant):
     assert "image_refs" in data["variants"][0]
 
 
+def test_product_list_returns_currency_and_symbol(api_client, product, staff_user):
+    """Product list includes display_currency and currency_symbol for non-staff and staff."""
+    Currency.objects.create(code="USD", name="US Dollar", symbol="$", usd_rate=1, is_primary=True)
+    # Non-staff list
+    resp = api_client.get("/api/products/products/")
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    assert len(data) >= 1
+    assert data[0]["display_currency"] == "USD"
+    assert data[0]["currency_symbol"] == "$"
+    # Staff list
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.get("/api/products/products/")
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    assert data[0]["display_currency"] == "USD"
+    assert data[0]["currency_symbol"] == "$"
+
+
+def test_product_currency_param_returns_correct_currency_and_symbol(api_client, product, variant):
+    """?currency= param returns correct display_currency and currency_symbol."""
+    Currency.objects.create(code="USD", name="US Dollar", symbol="$", usd_rate=1, is_primary=True)
+    Currency.objects.create(code="KES", name="Kenyan Shilling", symbol="KSh", usd_rate=160.50, is_active=True)
+    Currency.objects.create(code="EUR", name="Euro", symbol="€", usd_rate=0.92, is_active=True)
+    # KES
+    resp = api_client.get(f"/api/products/products/{product.id}/", {"currency": "KES"})
+    data = resp.json()
+    assert data["display_currency"] == "KES"
+    assert data["currency_symbol"] == "KSh"
+    assert data["variants"][0]["display_currency"] == "KES"
+    assert data["variants"][0]["currency_symbol"] == "KSh"
+    # EUR
+    resp = api_client.get(f"/api/products/products/{product.id}/", {"currency": "EUR"})
+    data = resp.json()
+    assert data["display_currency"] == "EUR"
+    assert data["currency_symbol"] == "€"
+    # Case insensitive
+    resp = api_client.get(f"/api/products/products/{product.id}/", {"currency": "kes"})
+    data = resp.json()
+    assert data["display_currency"] == "KES"
+    assert data["currency_symbol"] == "KSh"
+
+
+def test_product_invalid_currency_falls_back_to_primary(api_client, product):
+    """Invalid ?currency= falls back to primary currency (USD)."""
+    Currency.objects.create(code="USD", name="US Dollar", symbol="$", usd_rate=1, is_primary=True)
+    resp = api_client.get(f"/api/products/products/{product.id}/", {"currency": "XXX"})
+    assert resp.status_code == status.HTTP_200_OK
+    # No XXX currency exists, so falls back to primary USD
+    data = resp.json()
+    assert data["display_currency"] == "USD"
+    assert data["currency_symbol"] == "$"
+    assert data["price"] == "10.00"
+
+
+def test_variant_list_and_detail_return_currency_and_symbol(api_client, variant):
+    """Variant list and retrieve include display_currency and currency_symbol."""
+    Currency.objects.create(code="USD", name="US Dollar", symbol="$", usd_rate=1, is_primary=True)
+    Currency.objects.create(code="KES", name="Kenyan Shilling", symbol="KSh", usd_rate=160.50, is_active=True)
+    # List default (USD)
+    resp = api_client.get("/api/products/variants/")
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    assert len(data) >= 1
+    assert data[0]["display_currency"] == "USD"
+    assert data[0]["currency_symbol"] == "$"
+    # List with ?currency=KES
+    resp = api_client.get("/api/products/variants/", {"currency": "KES"})
+    data = resp.json()
+    assert data[0]["display_currency"] == "KES"
+    assert data[0]["currency_symbol"] == "KSh"
+    assert data[0]["price"] == "2006.25"  # 12.50 * 160.50
+    # Retrieve with ?currency=KES
+    resp = api_client.get(f"/api/products/variants/{variant.id}/", {"currency": "KES"})
+    assert resp.status_code == status.HTTP_200_OK
+    data = resp.json()
+    assert data["display_currency"] == "KES"
+    assert data["currency_symbol"] == "KSh"
+    assert data["price"] == "2006.25"
+
+
 def test_product_detail_currency_conversion_non_staff(api_client, product, variant):
-    """Non-staff GET with ?currency= returns converted price and display_currency."""
-    Currency.objects.create(code="KES", name="Kenyan Shilling", usd_rate=160.50, is_active=True)
+    """Non-staff GET with ?currency= returns converted price, display_currency, currency_symbol."""
+    Currency.objects.create(code="USD", name="US Dollar", symbol="$", usd_rate=1, is_primary=True)
+    Currency.objects.create(code="KES", name="Kenyan Shilling", symbol="KSh", usd_rate=160.50, is_active=True)
+    # With ?currency=KES: converted prices
     resp = api_client.get(f"/api/products/products/{product.id}/", {"currency": "KES"})
     assert resp.status_code == status.HTTP_200_OK
     data = resp.json()
-    # product.price is 10.00 (USD); 10 * 160.50 = 1605.00
     assert data["price"] == "1605.00"
     assert data["display_currency"] == "KES"
-    # variant price 12.50 -> 12.50 * 160.50 = 2006.25
+    assert data["currency_symbol"] == "KSh"
     assert data["variants"][0]["price"] == "2006.25"
     assert data["variants"][0]["display_currency"] == "KES"
+    assert data["variants"][0]["currency_symbol"] == "KSh"
+    # Without ?currency=: default primary (USD), symbol included
+    resp2 = api_client.get(f"/api/products/products/{product.id}/")
+    assert resp2.status_code == status.HTTP_200_OK
+    data2 = resp2.json()
+    assert data2["price"] == "10.00"
+    assert data2["display_currency"] == "USD"
+    assert data2["currency_symbol"] == "$"
 
 
 def test_cost_price_visible_to_staff(api_client, staff_user, product, variant):
@@ -151,6 +264,7 @@ def test_cost_price_visible_to_staff(api_client, staff_user, product, variant):
     product.save(update_fields=["cost_price"])
     variant.cost_price = "7.00"
     variant.save(update_fields=["cost_price"])
+    Currency.objects.create(code="USD", name="US Dollar", symbol="$", usd_rate=1, is_primary=True)
 
     api_client.force_authenticate(user=staff_user)
     resp = api_client.get(f"/api/products/products/{product.id}/")
@@ -158,6 +272,10 @@ def test_cost_price_visible_to_staff(api_client, staff_user, product, variant):
     data = resp.json()
     assert data["cost_price"] == "6.00"
     assert data["variants"][0]["cost_price"] == "7.00"
+    assert data["display_currency"] == "USD"
+    assert data["currency_symbol"] == "$"
+    assert data["variants"][0]["display_currency"] == "USD"
+    assert data["variants"][0]["currency_symbol"] == "$"
 
 
 def test_writes_are_staff_only(api_client, user, staff_user):

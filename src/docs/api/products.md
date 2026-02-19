@@ -22,15 +22,88 @@ Products and variants include a `cost_price` field, but it is **only returned in
 
 ## Currency conversion (non-staff)
 
-For **non-staff** product list and retrieve requests, prices can be returned in a display currency by passing the `currency` query parameter (e.g. `?currency=KES`). Stored prices are in the primary currency (e.g. USD). The API uses the `Currency` table’s `usd_rate` to convert.
+For **non-staff** product and variant responses, prices include `display_currency` and `currency_symbol`. Prices use the primary currency (e.g. USD) by default. Use `?currency=CODE` to convert. The API uses the Currency `usd_rate` for conversion when `?currency=` is passed.
+- **Default**: When no `?currency=` param is passed, the primary currency (typically USD) is used. Prices include `display_currency` and `currency_symbol`.
+- **With `?currency=CODE`**: Prices are converted; response includes `display_currency`, `currency_symbol`, and converted `price`.
+- **Staff**: Always see stored prices; `display_currency` and `currency_symbol` are included (primary/USD).
 
-- **Staff**: Always see stored prices; no conversion.
-- **Non-staff**: Use `GET /api/products/products/?currency=KES` (or the same param on retrieve). The response includes converted `price` and a `display_currency` field (e.g. `"KES"`). If `currency` is missing or invalid, prices are returned in the stored (primary) currency and `display_currency` is omitted.
+## Currencies
+
+Manage currencies for price conversion. Stored prices are in the primary currency (e.g. USD). `usd_rate` means 1 USD = usd_rate × &lt;currency&gt; (e.g. KES with usd_rate 160.50 → 1 USD = 160.50 KES).
+
+=== "List"
+
+    ```
+    GET /api/products/currencies/
+    ```
+
+=== "Retrieve"
+
+    ```
+    GET /api/products/currencies/{id}/
+    ```
+
+=== "Create (staff)"
+
+    ```
+    POST /api/products/currencies/
+    ```
+
+    ```json
+    {
+      "code": "KES",
+      "name": "Kenyan Shilling",
+      "symbol": "KSh",
+      "usd_rate": "160.50",
+      "is_primary": false,
+      "is_active": true
+    }
+    ```
+
+=== "Update (staff)"
+
+    ```
+    PUT /api/products/currencies/{id}/
+    PATCH /api/products/currencies/{id}/
+    ```
+
+    ```json
+    {
+      "code": "KES",
+      "name": "Kenyan Shilling",
+      "symbol": "KSh",
+      "usd_rate": "161.00",
+      "is_primary": false,
+      "is_active": true
+    }
+    ```
+
+    - `PUT` expects the full object.
+    - `PATCH` can send only the fields you want to change.
+    - Setting `is_primary=true` on one currency clears `is_primary` on others.
+
+=== "Delete (staff)"
+
+    ```
+    DELETE /api/products/currencies/{id}/
+    ```
+
+=== "Fields"
+
+    | Field | Type | Required | Description |
+    | --- | --- | --- | --- |
+    | `code` | string | Yes | Currency code (e.g. USD, KES). Unique. |
+    | `name` | string | No | Display name (e.g. US Dollar) |
+    | `symbol` | string | No | Symbol (e.g. $, KSh) |
+    | `usd_rate` | string | No | Conversion rate: 1 USD = usd_rate × this currency. Default 1. |
+    | `is_primary` | boolean | No | Primary currency (typically USD). Only one can be primary. |
+    | `is_active` | boolean | No | If false, currency is excluded from product conversion. Default true. |
 
 ## Permissions Summary
 
 | Resource | Read | Create | Update | Delete |
 | --- | --- | --- | --- | --- |
+| Currencies | Anyone | Staff only | Staff only | Staff only |
 | Categories | Anyone | Staff only | Staff only | Staff only |
 | Subcategories | Anyone | Staff only | Staff only | Staff only |
 | Products | Anyone | Staff only | Staff only | Staff only |
@@ -144,7 +217,7 @@ For **non-staff** product list and retrieve requests, prices can be returned in 
     GET /api/products/products/?currency=KES
     ```
 
-    Non-staff: use `?currency=CODE` to get converted prices and `display_currency` on each product and variant.
+    Non-staff: use `?currency=CODE` for converted prices; `display_currency` and `currency_symbol` are always included (default: primary/USD).
 
 === "Retrieve"
 
@@ -153,7 +226,7 @@ For **non-staff** product list and retrieve requests, prices can be returned in 
     GET /api/products/products/{id}/?currency=KES
     ```
 
-    Response includes a nested `variants` array. Non-staff: use `?currency=CODE` to get converted `price` and `display_currency` (e.g. `"KES"`) on product and each variant.
+    Response includes a nested `variants` array. Non-staff: use `?currency=CODE` for converted `price`; `display_currency` and `currency_symbol` are always included.
 
 === "Example response (non-staff, with currency)"
 
@@ -166,6 +239,7 @@ For **non-staff** product list and retrieve requests, prices can be returned in 
       "description": "High-strength Vitamin C",
       "price": "3208.40",
       "display_currency": "KES",
+      "currency_symbol": "KSh",
       "stock": 100,
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
@@ -174,6 +248,7 @@ For **non-staff** product list and retrieve requests, prices can be returned in 
           "id": 1,
           "price": "4010.50",
           "display_currency": "KES",
+          "currency_symbol": "KSh",
           "barcode": "0123456789012",
           "image_urls": ["https://cdn.example.com/p/vit-c-red-xl.png"],
           "image_refs": ["p/vit-c-red-xl.png"]
@@ -298,7 +373,7 @@ For **non-staff** product list and retrieve requests, prices can be returned in 
     GET /api/products/variants/?currency=KES
     ```
 
-    Non-staff: use `?currency=CODE` for converted prices and `display_currency`.
+    Non-staff: `display_currency` and `currency_symbol` always included; use `?currency=CODE` to convert.
 
 === "Retrieve"
 
@@ -307,7 +382,7 @@ For **non-staff** product list and retrieve requests, prices can be returned in 
     GET /api/products/variants/{id}/?currency=KES
     ```
 
-    Non-staff: use `?currency=CODE` for converted price and `display_currency`.
+    Non-staff: `display_currency` and `currency_symbol` always included; use `?currency=CODE` to convert.
 
 === "Create (staff)"
 
@@ -363,4 +438,4 @@ For **non-staff** product list and retrieve requests, prices can be returned in 
 
 - All product endpoints are public for reads.
 - All writes (create/update/delete) require a **staff** user.
-- Non-staff: use `?currency=CODE` on product list/retrieve to get converted prices and `display_currency`.
+- Non-staff: `display_currency` and `currency_symbol` included by default (USD); use `?currency=CODE` to convert.

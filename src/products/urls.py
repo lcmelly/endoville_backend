@@ -7,6 +7,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CategoryViewSet,
+    CurrencyViewSet,
     ProductVariantViewSet,
     ProductViewSet,
     SubcategoryViewSet,
@@ -17,6 +18,7 @@ from .views import (
 app_name = "products"
 
 router = DefaultRouter()
+router.register(r"currencies", CurrencyViewSet, basename="currency")
 router.register(r"categories", CategoryViewSet, basename="category")
 router.register(r"subcategories", SubcategoryViewSet, basename="subcategory")
 router.register(r"products", ProductViewSet, basename="product")

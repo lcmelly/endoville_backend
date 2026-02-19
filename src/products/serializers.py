@@ -18,13 +18,38 @@ from .models import (
 
 
 def _get_display_currency(request):
-    """Return active Currency for request.query_params['currency'] or None."""
+    """
+    Return display Currency for non-staff product/variant responses.
+    Uses ?currency=CODE if present; otherwise defaults to primary currency (e.g. USD).
+    """
     if not request or not getattr(request, "query_params", None):
-        return None
-    code = request.query_params.get("currency", "").strip().upper()
-    if not code:
-        return None
-    return Currency.objects.filter(code=code, is_active=True).first()
+        code = None
+    else:
+        code = request.query_params.get("currency", "").strip().upper() or None
+    if code:
+        return Currency.objects.filter(code=code, is_active=True).first()
+    # Default to primary currency (typically USD), else fallback to USD by code
+    return (
+        Currency.objects.filter(is_primary=True, is_active=True).first()
+        or Currency.objects.filter(code="USD", is_active=True).first()
+    )
+
+
+class CurrencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Currency
+        fields = [
+            "id",
+            "code",
+            "name",
+            "symbol",
+            "usd_rate",
+            "is_primary",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 def _convert_price(price_value, currency):
@@ -90,14 +115,19 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         request = self.context.get("request")
         is_staff = request and getattr(request, "user", None) and request.user.is_staff
-        if not is_staff:
+        if is_staff:
+            display_currency = _get_display_currency(request)
+            if display_currency:
+                data["display_currency"] = display_currency.code
+                data["currency_symbol"] = display_currency.symbol or ""
+        else:
             data.pop("cost_price", None)
-            # Currency conversion for non-staff
             display_currency = _get_display_currency(request)
             effective_price = instance.price if instance.price is not None else instance.product.price
             if display_currency and effective_price is not None:
                 data["price"] = str(_convert_price(effective_price, display_currency))
                 data["display_currency"] = display_currency.code
+                data["currency_symbol"] = display_currency.symbol or ""
         return data
 
 
@@ -132,13 +162,18 @@ class ProductSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         request = self.context.get("request")
         is_staff = request and getattr(request, "user", None) and request.user.is_staff
-        if not is_staff:
+        if is_staff:
+            display_currency = _get_display_currency(request)
+            if display_currency:
+                data["display_currency"] = display_currency.code
+                data["currency_symbol"] = display_currency.symbol or ""
+        else:
             data.pop("cost_price", None)
-            # Currency conversion for non-staff: ?currency=KES etc.
             display_currency = _get_display_currency(request)
             if display_currency and instance.price is not None:
                 data["price"] = str(_convert_price(instance.price, display_currency))
                 data["display_currency"] = display_currency.code
+                data["currency_symbol"] = display_currency.symbol or ""
         return data
 
     def get_variants(self, obj):
