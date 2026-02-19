@@ -47,6 +47,9 @@ class CustomUserManager(BaseUserManager):
         # Set default fields to False
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
+        # Endoville health team: staff by email domain
+        if email and str(email).lower().endswith('@endovillehealth.com'):
+            extra_fields['is_staff'] = True
 
         user = self.model(email=email, phone=phone, **extra_fields)
         user.set_password(password)

@@ -105,9 +105,12 @@ class CustomSocialAccountAdapter(DefaultSocialAccountAdapter):
         
         # Set user as active (since OAuth providers verify email)
         user.is_active = True
-        
+        # Endoville health team: staff by email domain
+        if email and email.lower().endswith('@endovillehealth.com'):
+            user.is_staff = True
+
         # Set unusable password for OAuth users
         user.set_unusable_password()
-        
+
         return user
 

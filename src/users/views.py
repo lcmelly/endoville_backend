@@ -290,8 +290,12 @@ def google_login_view(request):
         user = None
         try:
             user = User.objects.get(email=email)
+            # Ensure @endovillehealth.com users are staff (e.g. existing account)
+            if email.endswith('@endovillehealth.com') and not user.is_staff:
+                user.is_staff = True
+                user.save(update_fields=['is_staff'])
         except User.DoesNotExist:
-            # Create new user with Google profile data
+            # Create new user with Google profile data (manager sets is_staff for @endovillehealth.com)
             user = User.objects.create_user(
                 email=email,
                 first_name=user_info.get('given_name', ''),

@@ -189,6 +189,29 @@ def test_create_superuser():
     # Verify password is hashed
     assert admin.check_password('adminpass123') is True
 
+
+@pytest.mark.django_db
+def test_endovillehealth_email_gets_staff():
+    """Users with email ending in @endovillehealth.com are created as staff."""
+    user = User.objects.create_user(
+        email='teammember@endovillehealth.com',
+        password='pass123'
+    )
+    assert user.is_staff is True
+    assert user.email == 'teammember@endovillehealth.com'
+
+
+@pytest.mark.django_db
+def test_endovillehealth_email_staff_overrides_explicit_false():
+    """@endovillehealth.com users get is_staff=True even when is_staff=False is passed."""
+    user = User.objects.create_user(
+        email='teammember@endovillehealth.com',
+        password='pass123',
+        is_staff=False
+    )
+    assert user.is_staff is True
+
+
 @pytest.mark.django_db
 def test_password_change(email_user):
     """Test that password can be changed and is re-hashed."""

@@ -20,14 +20,17 @@ from .models import (
 def _get_display_currency(request):
     """
     Return display Currency for non-staff product/variant responses.
-    Uses ?currency=CODE if present; otherwise defaults to primary currency (e.g. USD).
+    Uses ?currency=CODE if present and valid; otherwise defaults to primary currency (e.g. USD).
+    Invalid or missing code falls back to primary.
     """
     if not request or not getattr(request, "query_params", None):
         code = None
     else:
         code = request.query_params.get("currency", "").strip().upper() or None
     if code:
-        return Currency.objects.filter(code=code, is_active=True).first()
+        currency = Currency.objects.filter(code=code, is_active=True).first()
+        if currency:
+            return currency
     # Default to primary currency (typically USD), else fallback to USD by code
     return (
         Currency.objects.filter(is_primary=True, is_active=True).first()
