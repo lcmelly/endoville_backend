@@ -99,6 +99,40 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
     | `is_primary` | boolean | No | Primary currency (typically USD). Only one can be primary. |
     | `is_active` | boolean | No | If false, currency is excluded from product conversion. Default true. |
 
+=== "Example: Create currency (staff)"
+
+    ```bash
+    curl -X POST https://api.endovillehealth.com/api/products/currencies/ \
+      -H "Authorization: Bearer <access_token>" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "code": "KES",
+        "name": "Kenyan Shilling",
+        "symbol": "KSh",
+        "usd_rate": "160.50",
+        "is_primary": false,
+        "is_active": true
+      }'
+    ```
+
+=== "Example: Update currency (staff)"
+
+    ```bash
+    curl -X PATCH https://api.endovillehealth.com/api/products/currencies/1/ \
+      -H "Authorization: Bearer <access_token>" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "usd_rate": "161.00"
+      }'
+    ```
+
+=== "Example: Delete currency (staff)"
+
+    ```bash
+    curl -X DELETE https://api.endovillehealth.com/api/products/currencies/1/ \
+      -H "Authorization: Bearer <access_token>"
+    ```
+
 ## Permissions Summary
 
 | Resource | Read | Create | Update | Delete |
