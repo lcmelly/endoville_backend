@@ -86,10 +86,26 @@ Place and view orders.
               "occurred_at": "2026-01-19T10:00:00Z"
             }
           ]
-        }
+        },
+        "payments": [
+          {
+            "id": 1,
+            "provider": "intasend",
+            "status": "pending",
+            "amount": "40.00",
+            "currency": "KES",
+            "checkout_url": "https://pay.intasend.com/...",
+            "provider_payment_id": "",
+            "provider_invoice_id": "",
+            "created_at": "2026-01-19T10:00:00Z",
+            "updated_at": "2026-01-19T10:00:00Z"
+          }
+        ]
       }
     ]
     ```
+
+    Each order includes a **`payments`** array: payment attempts for that order (non–soft-deleted only), ordered by most recent first. Each payment object has: `id`, `provider`, `status`, `amount`, `currency`, `checkout_url`, `provider_payment_id`, `provider_invoice_id`, `created_at`, `updated_at`.
 
 ## Notes
 
@@ -107,6 +123,7 @@ Place and view orders.
     - `items[]`
     - `shipping_address`
     - `shipment` (with `events[]`)
+    - `payments[]` — payment attempts for this order (same shape as in list; soft-deleted payments excluded)
 
 === "Create (authenticated)"
 
@@ -199,9 +216,12 @@ Place and view orders.
             "occurred_at": "2026-01-19T10:00:00Z"
           }
         ]
-      }
+      },
+      "payments": []
     }
     ```
+
+    The created order includes `payments` (empty until payment attempts are created via the payments API).
 
 ## Related docs
 

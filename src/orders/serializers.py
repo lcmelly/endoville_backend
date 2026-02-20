@@ -84,10 +84,42 @@ class OrderItemSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "product_name", "variant_description", "barcode", "line_total"]
 
 
+class OrderPaymentSummarySerializer(serializers.ModelSerializer):
+    """Payment summary for embedding in order responses (excludes raw provider response)."""
+
+    class Meta:
+        model = OrderPayment
+        fields = [
+            "id",
+            "provider",
+            "status",
+            "amount",
+            "currency",
+            "checkout_url",
+            "provider_payment_id",
+            "provider_invoice_id",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "provider",
+            "status",
+            "amount",
+            "currency",
+            "checkout_url",
+            "provider_payment_id",
+            "provider_invoice_id",
+            "created_at",
+            "updated_at",
+        ]
+
+
 class OrderSerializer(serializers.ModelSerializer):
     shipping_address = ShippingAddressSerializer(read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
     shipment = ShipmentSerializer(read_only=True)
+    payments = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -105,8 +137,14 @@ class OrderSerializer(serializers.ModelSerializer):
             "updated_at",
             "items",
             "shipment",
+            "payments",
         ]
         read_only_fields = ["id", "user", "subtotal", "total", "created_at", "updated_at"]
+
+    def get_payments(self, obj):
+        """Payments for this order (excludes soft-deleted)."""
+        qs = obj.payments.filter(is_deleted=False).order_by("-created_at")
+        return OrderPaymentSummarySerializer(qs, many=True, context=self.context).data
 
 
 class CreateOrderItemSerializer(serializers.Serializer):
