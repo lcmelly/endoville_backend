@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 
@@ -72,6 +73,12 @@ class Product(models.Model):
     meta_description = models.CharField(max_length=300, blank=True)
     slug = models.SlugField(unique=True, db_index=True)
 
+    # Denormalized from reviews for fast reads (updated on every review add/update/delete)
+    avg_rating = models.DecimalField(
+        max_digits=3, decimal_places=2, null=True, blank=True, db_index=True
+    )
+    review_count = models.PositiveIntegerField(default=0, db_index=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -142,3 +149,41 @@ class ProductVariant(models.Model):
 
     def __str__(self):
         return f"{self.product.name} ({self.barcode})"
+
+
+class ProductReview(models.Model):
+    """
+    Review for a product (rating 0-5 + optional text). Shared across all variants
+    of the product. One review per user per product.
+    """
+
+    product = models.ForeignKey(
+        Product, related_name="reviews", on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="product_reviews",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    rating = models.PositiveSmallIntegerField()  # 0-5
+    body = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "user"],
+                condition=models.Q(user__isnull=False),
+                name="products_productreview_unique_product_user",
+            )
+        ]
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["product", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Review {self.rating} for {self.product.name}"

@@ -10,6 +10,7 @@ from .models import (
     Category,
     Currency,
     Product,
+    ProductReview,
     ProductVariant,
     Subcategory,
     VariationAttribute,
@@ -88,11 +89,42 @@ class VariationOptionSerializer(serializers.ModelSerializer):
         fields = ["id", "attribute", "attribute_name", "value"]
 
 
+class ProductReviewSerializer(serializers.ModelSerializer):
+    user_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductReview
+        fields = [
+            "id",
+            "product",
+            "user",
+            "user_display",
+            "rating",
+            "body",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "user", "created_at", "updated_at"]
+
+    def get_user_display(self, obj):
+        if not obj.user:
+            return None
+        return getattr(obj.user, "email", None) or getattr(obj.user, "phone", None) or str(obj.user)
+
+    def validate_rating(self, value):
+        if value < 0 or value > 5:
+            raise serializers.ValidationError("Rating must be between 0 and 5.")
+        return value
+
+
 class ProductVariantSerializer(serializers.ModelSerializer):
     options = serializers.PrimaryKeyRelatedField(
         queryset=VariationOption.objects.all(), many=True, required=False
     )
     options_details = VariationOptionSerializer(source="options", many=True, read_only=True)
+    avg_rating = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
+    reviews = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductVariant
@@ -111,6 +143,9 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             "is_active",
             "created_at",
             "updated_at",
+            "avg_rating",
+            "review_count",
+            "reviews",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
@@ -133,12 +168,23 @@ class ProductVariantSerializer(serializers.ModelSerializer):
                 data["currency_symbol"] = display_currency.symbol or ""
         return data
 
+    def get_avg_rating(self, obj):
+        return str(obj.product.avg_rating) if obj.product.avg_rating is not None else None
+
+    def get_review_count(self, obj):
+        return obj.product.review_count
+
+    def get_reviews(self, obj):
+        qs = obj.product.reviews.select_related("user").order_by("-created_at")[:10]
+        return ProductReviewSerializer(qs, many=True, context=self.context).data
+
 
 class ProductSerializer(serializers.ModelSerializer):
     subcategories = serializers.PrimaryKeyRelatedField(
         queryset=Subcategory.objects.all(), many=True, required=False
     )
     variants = serializers.SerializerMethodField()
+    reviews = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -155,11 +201,14 @@ class ProductSerializer(serializers.ModelSerializer):
             "meta_title",
             "meta_description",
             "slug",
+            "avg_rating",
+            "review_count",
             "created_at",
             "updated_at",
             "variants",
+            "reviews",
         ]
-        read_only_fields = ["id", "slug", "created_at", "updated_at"]
+        read_only_fields = ["id", "slug", "avg_rating", "review_count", "created_at", "updated_at"]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -182,3 +231,7 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_variants(self, obj):
         qs = obj.variants.all()
         return ProductVariantSerializer(qs, many=True, context=self.context).data
+
+    def get_reviews(self, obj):
+        qs = obj.reviews.select_related("user").order_by("-created_at")[:10]
+        return ProductReviewSerializer(qs, many=True, context=self.context).data

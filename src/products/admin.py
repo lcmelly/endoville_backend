@@ -5,6 +5,7 @@ from .models import (
     Category,
     Currency,
     Product,
+    ProductReview,
     ProductVariant,
     Subcategory,
     VariationAttribute,
@@ -38,7 +39,7 @@ class SubcategoryAdmin(ImportExportModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(ImportExportModelAdmin):
-    list_display = ["name", "price", "stock", "image_refs_count", "slug", "created_at", "updated_at"]
+    list_display = ["name", "price", "stock", "avg_rating", "review_count", "image_refs_count", "slug", "created_at", "updated_at"]
     list_filter = ["created_at", "updated_at"]
     search_fields = [
         "name",
@@ -84,3 +85,13 @@ class ProductVariantAdmin(ImportExportModelAdmin):
     def image_refs_count(self, obj):
         refs = obj.image_refs or []
         return len(refs) if refs else "-"
+
+
+@admin.register(ProductReview)
+class ProductReviewAdmin(admin.ModelAdmin):
+    list_display = ["product", "user", "rating", "created_at"]
+    list_filter = ["rating", "created_at"]
+    search_fields = ["product__name", "body"]
+    ordering = ["-created_at"]
+    list_select_related = ["product", "user"]
+    raw_id_fields = ["product", "user"]

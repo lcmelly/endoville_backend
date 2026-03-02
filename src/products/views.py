@@ -8,6 +8,7 @@ from .models import (
     Category,
     Currency,
     Product,
+    ProductReview,
     ProductVariant,
     Subcategory,
     VariationAttribute,
@@ -17,6 +18,7 @@ from .permissions import StaffWriteReadOnly
 from .serializers import (
     CategorySerializer,
     CurrencySerializer,
+    ProductReviewSerializer,
     ProductSerializer,
     ProductVariantSerializer,
     SubcategorySerializer,
@@ -44,7 +46,14 @@ class SubcategoryViewSet(viewsets.ModelViewSet):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.prefetch_related("subcategories", "variants").order_by("-created_at")
+    queryset = (
+        Product.objects.prefetch_related(
+            "subcategories",
+            "variants",
+            "reviews",
+        )
+        .order_by("-created_at")
+    )
     serializer_class = ProductSerializer
     permission_classes = [StaffWriteReadOnly]
 
@@ -62,7 +71,29 @@ class VariationOptionViewSet(viewsets.ModelViewSet):
 
 
 class ProductVariantViewSet(viewsets.ModelViewSet):
-    queryset = ProductVariant.objects.select_related("product").prefetch_related("options").order_by("-created_at")
+    queryset = (
+        ProductVariant.objects.select_related("product")
+        .prefetch_related("options", "product__reviews")
+        .order_by("-created_at")
+    )
     serializer_class = ProductVariantSerializer
     permission_classes = [StaffWriteReadOnly]
+
+
+class ProductReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductReviewSerializer
+    permission_classes = [StaffWriteReadOnly]
+
+    def get_queryset(self):
+        qs = ProductReview.objects.select_related("product", "user").order_by("-created_at")
+        product_id = self.request.query_params.get("product")
+        if product_id:
+            qs = qs.filter(product_id=product_id)
+        return qs
+
+    def perform_create(self, serializer):
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(user=user)
+
+
 
