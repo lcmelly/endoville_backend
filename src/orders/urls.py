@@ -5,6 +5,7 @@ URL configuration for orders app.
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from . import views
 from .views import (
     OrderPaymentViewSet,
     OrderViewSet,
@@ -29,5 +30,6 @@ router.register(r"staff/shipments", StaffShipmentViewSet, basename="staff-shipme
 router.register(r"staff/shipment-events", StaffShipmentEventViewSet, basename="staff-shipment-event")
 
 urlpatterns = [
+    path("payments/stripe/webhook/", views.stripe_webhook_view, name="stripe-webhook"),
     path("", include(router.urls)),
 ]

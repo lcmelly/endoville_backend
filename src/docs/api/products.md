@@ -1,6 +1,6 @@
 # Products
 
-Manage product catalog: categories, subcategories, products, variants (with barcodes), and **product reviews**. Reviews are shared across all variants of a product. Each product has a stored **avg_rating** (0–5) and **review_count** updated automatically when reviews are added, updated, or deleted.
+Manage product catalog: categories, subcategories, products, variants (optional sku/barcode), and **product reviews**. Reviews are shared across all variants of a product. Each product has a stored **avg_rating** (0–5) and **review_count** updated automatically when reviews are added, updated, or deleted.
 
 === "Base URL"
 
@@ -287,7 +287,7 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
 | Subcategories | Anyone | Staff only | Staff only | Staff only |
 | Products | Anyone | Staff only | Staff only | Staff only |
 | Variants | Anyone | Staff only | Staff only | Staff only |
-| Product Reviews | Anyone | Staff only | Staff only | Staff only |
+| Product Reviews | Anyone | Authenticated (must have completed order with product) | Owner or staff | Owner or staff |
 | Variation Attributes | Anyone | Staff only | Staff only | Staff only |
 | Variation Options | Anyone | Staff only | Staff only | Staff only |
 
@@ -605,6 +605,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
 
 ## Products
 
+Product `sku` and `barcode` are **optional**. When provided, `barcode` must be unique across all products.
+
 === "List"
 
     ```
@@ -626,6 +628,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
         "display_currency": "USD",
         "currency_symbol": "$",
         "stock": 100,
+        "sku": "VIT-C-1000",
+        "barcode": "0123456789001",
         "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
         "image_refs": ["p/vit-c-1.png"],
         "subcategories": [1, 2],
@@ -665,10 +669,12 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
           {
             "id": 1,
             "product": 1,
+            "order": 42,
             "user": 5,
-            "user_display": "customer@example.com",
+            "user_display": "Jane",
             "rating": 5,
             "body": "Great product.",
+            "is_anonymous": false,
             "created_at": "2025-02-01T12:00:00Z",
             "updated_at": "2025-02-01T12:00:00Z"
           }
@@ -701,6 +707,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
       "display_currency": "KES",
       "currency_symbol": "KSh",
       "stock": 100,
+      "sku": "VIT-C-1000",
+      "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
       "avg_rating": "4.25",
@@ -723,10 +731,12 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
         {
           "id": 1,
           "product": 1,
+          "order": 42,
           "user": 5,
-          "user_display": "customer@example.com",
+          "user_display": "Jane",
           "rating": 5,
           "body": "Great product.",
+          "is_anonymous": false,
           "created_at": "2025-02-01T12:00:00Z",
           "updated_at": "2025-02-01T12:00:00Z"
         }
@@ -748,6 +758,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
     POST /api/products/products/
     ```
 
+    Request body: `name`, `description`, `price`, and `stock` are required; `sku` and `barcode` are optional (when provided, `barcode` must be unique).
+
     ```json
     {
       "name": "Vitamin C 1000mg",
@@ -755,6 +767,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
       "price": "19.99",
       "cost_price": "12.00",
       "stock": 100,
+      "sku": "VIT-C-1000",
+      "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
       "subcategories": [1, 2],
@@ -773,6 +787,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
       "price": "19.99",
       "cost_price": "12.00",
       "stock": 100,
+      "sku": "VIT-C-1000",
+      "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
       "subcategories": [1, 2],
@@ -824,6 +840,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
       "price": "21.99",
       "cost_price": "13.00",
       "stock": 80,
+      "sku": "VIT-C-1000",
+      "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
       "subcategories": [1],
@@ -832,7 +850,7 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
     }
     ```
 
-    - `slug`, `avg_rating`, `review_count`, `created_at`, and `updated_at` are read-only.
+    - `slug`, `avg_rating`, `review_count`, `created_at`, and `updated_at` are read-only. `sku` and `barcode` are optional.
     - Variants are managed via the variants endpoints (see below).
 
     **Example: 200 OK**
@@ -845,6 +863,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
       "price": "21.99",
       "cost_price": "13.00",
       "stock": 80,
+      "sku": "VIT-C-1000",
+      "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
       "subcategories": [1],
@@ -920,7 +940,10 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
 
 ## Product Reviews
 
-Reviews are attached to a **product** and shared across all its variants. Rating is **0–5**. One review per user per product (when `user` is set). The product’s `avg_rating` and `review_count` are updated automatically on every review create/update/delete.
+Reviews are attached to a **product** and shared across all its variants. They are **linked to a completed order**: only users who have purchased the product (via a fully paid, placed order containing that product) can submit a review. Rating is **0–5**. One review per user per product. The product’s `avg_rating` and `review_count` are updated automatically on every review create/update/delete.
+
+- **Create**: Requires authentication and an `order` that belongs to you, is placed, is fully paid, and contains the product. You can submit at most one review per product.
+- **user_display**: Shown as the reviewer’s **first name** (or "Customer" if missing). If the review is **anonymous** (`is_anonymous: true`), `user_display` is redacted as **"Anonymous"**.
 
 === "List"
 
@@ -938,20 +961,24 @@ Reviews are attached to a **product** and shared across all its variants. Rating
       {
         "id": 1,
         "product": 1,
+        "order": 42,
         "user": 5,
-        "user_display": "customer@example.com",
+        "user_display": "Jane",
         "rating": 5,
         "body": "Great product, fast delivery.",
+        "is_anonymous": false,
         "created_at": "2025-02-01T12:00:00Z",
         "updated_at": "2025-02-01T12:00:00Z"
       },
       {
         "id": 2,
         "product": 1,
-        "user": null,
-        "user_display": null,
+        "order": 38,
+        "user": 7,
+        "user_display": "Anonymous",
         "rating": 4,
         "body": "Good value.",
+        "is_anonymous": true,
         "created_at": "2025-02-02T09:00:00Z",
         "updated_at": "2025-02-02T09:00:00Z"
       }
@@ -972,10 +999,12 @@ Reviews are attached to a **product** and shared across all its variants. Rating
     {
       "id": 1,
       "product": 1,
+      "order": 42,
       "user": 5,
-      "user_display": "customer@example.com",
+      "user_display": "Jane",
       "rating": 5,
       "body": "Great product, fast delivery.",
+      "is_anonymous": false,
       "created_at": "2025-02-01T12:00:00Z",
       "updated_at": "2025-02-01T12:00:00Z"
     }
@@ -989,23 +1018,29 @@ Reviews are attached to a **product** and shared across all its variants. Rating
     }
     ```
 
-=== "Create (staff)"
+=== "Create (authenticated purchaser)"
 
     ```
     POST /api/products/product-reviews/
     ```
 
+    Requires authentication. You must have a **completed** order (status `PLACED`, fully paid) that contains the product. One review per user per product.
+
     ```json
     {
       "product": 1,
+      "order": 42,
       "rating": 5,
-      "body": "Great product."
+      "body": "Great product.",
+      "is_anonymous": false
     }
     ```
 
-    - `rating` must be between **0 and 5** (inclusive).
-    - `body` is optional.
-    - If the request user is authenticated, `user` is set automatically; otherwise send without `user` for anonymous.
+    - `product` (required): Product ID you are reviewing.
+    - `order` (required): Order ID that contains this product (must be your order, placed, and fully paid).
+    - `rating` (required): **0–5** (inclusive).
+    - `body` (optional): Review text.
+    - `is_anonymous` (optional): If `true`, `user_display` is shown as "Anonymous". Default `false`.
 
     **Example: 201 Created**
 
@@ -1013,10 +1048,12 @@ Reviews are attached to a **product** and shared across all its variants. Rating
     {
       "id": 1,
       "product": 1,
+      "order": 42,
       "user": 5,
-      "user_display": "staff@endovillehealth.com",
+      "user_display": "Jane",
       "rating": 5,
       "body": "Great product.",
+      "is_anonymous": false,
       "created_at": "2025-02-01T12:00:00Z",
       "updated_at": "2025-02-01T12:00:00Z"
     }
@@ -1026,31 +1063,38 @@ Reviews are attached to a **product** and shared across all its variants. Rating
 
     ```json
     {
-      "rating": ["Rating must be between 0 and 5."],
-      "product": ["This field is required."]
+      "order": "This order does not contain the selected product."
     }
     ```
-
-    **Example: 403 Forbidden (non-staff)**
 
     ```json
     {
-      "detail": "You do not have permission to perform this action."
+      "product": "You have already reviewed this product."
     }
     ```
 
-=== "Update (staff)"
+    **Example: 401 Unauthorized**
+
+    ```json
+    {
+      "detail": "Authentication required to submit a review."
+    }
+    ```
+
+=== "Update (owner or staff)"
 
     ```
     PUT /api/products/product-reviews/{id}/
     PATCH /api/products/product-reviews/{id}/
     ```
 
+    Only the review owner or staff can update (e.g. `rating`, `body`, `is_anonymous`).
+
     ```json
     {
-      "product": 1,
       "rating": 4,
-      "body": "Updated review text."
+      "body": "Updated review text.",
+      "is_anonymous": false
     }
     ```
 
@@ -1060,16 +1104,18 @@ Reviews are attached to a **product** and shared across all its variants. Rating
     {
       "id": 1,
       "product": 1,
+      "order": 42,
       "user": 5,
-      "user_display": "customer@example.com",
+      "user_display": "Jane",
       "rating": 4,
       "body": "Updated review text.",
+      "is_anonymous": false,
       "created_at": "2025-02-01T12:00:00Z",
       "updated_at": "2025-02-19T14:30:00Z"
     }
     ```
 
-    **Example: 403 Forbidden (non-staff)**
+    **Example: 403 Forbidden (not owner and not staff)**
 
     ```json
     {
@@ -1085,15 +1131,17 @@ Reviews are attached to a **product** and shared across all its variants. Rating
     }
     ```
 
-=== "Delete (staff)"
+=== "Delete (owner or staff)"
 
     ```
     DELETE /api/products/product-reviews/{id}/
     ```
 
+    Only the review owner or staff can delete.
+
     **Example: 204 No Content** — Empty response body.
 
-    **Example: 403 Forbidden (non-staff)**
+    **Example: 403 Forbidden (not owner and not staff)**
 
     ```json
     {
@@ -1111,14 +1159,17 @@ Reviews are attached to a **product** and shared across all its variants. Rating
 
 === "Fields"
 
-    | Field | Type | Required | Description |
+    | Field | Type | Required (create) | Description |
     | --- | --- | --- | --- |
     | `product` | integer | Yes | Product ID. |
+    | `order` | integer | Yes | Order ID; must be your order, status PLACED, fully paid, and contain the product. |
     | `rating` | integer | Yes | Rating 0–5 (inclusive). |
     | `body` | string | No | Optional review text. |
-    | `user` | integer | No | Read-only; set from request when authenticated. |
+    | `is_anonymous` | boolean | No | If true, `user_display` is shown as "Anonymous". Default false. |
+    | `user` | integer | No | Read-only; set from request. |
+    | `user_display` | string | — | First name of the reviewer, or "Customer", or "Anonymous" if `is_anonymous`. |
 
-=== "Example: Create review (staff)"
+=== "Example: Create review (authenticated purchaser)"
 
     ```bash
     curl -X POST https://api.endovillehealth.com/api/products/product-reviews/ \
@@ -1126,8 +1177,10 @@ Reviews are attached to a **product** and shared across all its variants. Rating
       -H "Content-Type: application/json" \
       -d '{
         "product": 1,
+        "order": 42,
         "rating": 5,
-        "body": "Excellent quality."
+        "body": "Excellent quality.",
+        "is_anonymous": false
       }'
     ```
 
@@ -1294,7 +1347,9 @@ Reviews are attached to a **product** and shared across all its variants. Rating
     }
     ```
 
-## Variants (barcode-based)
+## Variants
+
+Variant `sku` and `barcode` are **optional**. When provided, `barcode` must be unique across all variants.
 
 === "List"
 
@@ -1374,10 +1429,12 @@ Reviews are attached to a **product** and shared across all its variants. Rating
         {
           "id": 1,
           "product": 1,
+          "order": 42,
           "user": 5,
-          "user_display": "customer@example.com",
+          "user_display": "Jane",
           "rating": 5,
           "body": "Great product.",
+          "is_anonymous": false,
           "created_at": "2025-02-01T12:00:00Z",
           "updated_at": "2025-02-01T12:00:00Z"
         }
@@ -1400,6 +1457,8 @@ Reviews are attached to a **product** and shared across all its variants. Rating
     ```
     POST /api/products/variants/
     ```
+
+    Request body: `product` is required; `options`, `sku`, `barcode`, `price`, `cost_price`, `stock`, `image_urls`, `image_refs`, `is_active` are optional. `sku` and `barcode` may be omitted or null.
 
     ```json
     {
@@ -1484,7 +1543,7 @@ Reviews are attached to a **product** and shared across all its variants. Rating
     }
     ```
 
-    - `barcode` must be unique.
+    - `sku` and `barcode` are optional; when provided, `barcode` must be unique.
 
     **Example: 200 OK**
 

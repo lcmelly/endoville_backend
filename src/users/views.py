@@ -160,30 +160,20 @@ def send_otp_view(request):
 @permission_classes([AllowAny])
 def login_view(request):
     """
-    Login user with email, password, and OTP. Returns JWT tokens.
-    
+    Login with email and either password or code (OTP). Returns JWT tokens.
+
     POST /api/users/login/
-    
-    Request Body:
-    {
-        "email": "user@example.com",
-        "password": "securepassword123",
-        "otp": "123456"
-    }
-    
+
+    Option A — Password:
+        { "email": "user@example.com", "password": "securepassword123" }
+
+    Option B — Code (OTP):
+        { "email": "user@example.com", "otp": "123456" }
+
+    Do not send both password and otp.
+
     Response:
-    {
-        "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-        "user": {
-            "id": 1,
-            "email": "user@example.com",
-            "first_name": "John",
-            "last_name": "Doe",
-            "is_active": true,
-            ...
-        }
-    }
+        { "access": "...", "refresh": "...", "user": { ... } }
     """
     serializer = LoginSerializer(data=request.data)
     

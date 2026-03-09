@@ -14,7 +14,7 @@ from .models import (
     VariationAttribute,
     VariationOption,
 )
-from .permissions import StaffWriteReadOnly
+from .permissions import ProductReviewPermission, StaffWriteReadOnly
 from .serializers import (
     CategorySerializer,
     CurrencySerializer,
@@ -82,18 +82,17 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
 
 class ProductReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ProductReviewSerializer
-    permission_classes = [StaffWriteReadOnly]
+    permission_classes = [ProductReviewPermission]
 
     def get_queryset(self):
-        qs = ProductReview.objects.select_related("product", "user").order_by("-created_at")
+        qs = ProductReview.objects.select_related("product", "order", "user").order_by("-created_at")
         product_id = self.request.query_params.get("product")
         if product_id:
             qs = qs.filter(product_id=product_id)
         return qs
 
     def perform_create(self, serializer):
-        user = self.request.user if self.request.user.is_authenticated else None
-        serializer.save(user=user)
+        serializer.save(user=self.request.user)
 
 
 

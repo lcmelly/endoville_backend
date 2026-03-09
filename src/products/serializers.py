@@ -4,6 +4,7 @@ Serializers for products app.
 
 from decimal import Decimal
 
+from django.db.models import Q
 from rest_framework import serializers
 
 from .models import (
@@ -97,24 +98,73 @@ class ProductReviewSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "product",
+            "order",
             "user",
             "user_display",
             "rating",
             "body",
+            "is_anonymous",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["id", "user", "created_at", "updated_at"]
 
     def get_user_display(self, obj):
+        if obj.is_anonymous:
+            return "Anonymous"
         if not obj.user:
             return None
-        return getattr(obj.user, "email", None) or getattr(obj.user, "phone", None) or str(obj.user)
+        first = (getattr(obj.user, "first_name", None) or "").strip()
+        return first or "Customer"
 
     def validate_rating(self, value):
         if value < 0 or value > 5:
             raise serializers.ValidationError("Rating must be between 0 and 5.")
         return value
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            raise serializers.ValidationError(
+                {"detail": "Authentication required to submit a review."}
+            )
+        if self.instance is not None:
+            return attrs
+        product = attrs.get("product")
+        order = attrs.get("order")
+        if not product:
+            raise serializers.ValidationError({"product": "This field is required."})
+        if not order:
+            raise serializers.ValidationError(
+                {"order": "Order is required. You can only review a product you purchased."}
+            )
+        from orders.models import Order, OrderItem
+        from orders.models import OrderStatus
+
+        if order.user_id != request.user.pk:
+            raise serializers.ValidationError(
+                {"order": "This order does not belong to you."}
+            )
+        if order.status != OrderStatus.PLACED:
+            raise serializers.ValidationError(
+                {"order": "Only completed orders can be used for reviews."}
+            )
+        if not order.is_fully_paid:
+            raise serializers.ValidationError(
+                {"order": "Order must be fully paid before you can review."}
+            )
+        order_has_product = OrderItem.objects.filter(order=order).filter(
+            Q(product_id=product.pk) | Q(variant__product_id=product.pk)
+        ).exists()
+        if not order_has_product:
+            raise serializers.ValidationError(
+                {"order": "This order does not contain the selected product."}
+            )
+        if ProductReview.objects.filter(product=product, user=request.user).exists():
+            raise serializers.ValidationError(
+                {"product": "You have already reviewed this product."}
+            )
+        return attrs
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
@@ -195,6 +245,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "price",
             "cost_price",
             "stock",
+            "sku",
+            "barcode",
             "image_urls",
             "image_refs",
             "subcategories",

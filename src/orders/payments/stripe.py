@@ -74,3 +74,23 @@ class StripeAPI:
             payment.save(update_fields=["status", "raw_provider_response", "updated_at"])
             return {"success": False, "error": str(e)}
 
+
+def complete_payment_for_session(session_id: str) -> OrderPayment | None:
+    """
+    Mark the OrderPayment for this Stripe Checkout session as completed.
+    Called from the Stripe webhook on checkout.session.completed.
+    Idempotent: if already completed, returns the payment without error.
+    """
+    try:
+        payment = OrderPayment.objects.get(
+            provider=PaymentProvider.STRIPE,
+            provider_payment_id=session_id,
+        )
+    except OrderPayment.DoesNotExist:
+        return None
+    if payment.status == PaymentStatus.COMPLETED:
+        return payment
+    payment.status = PaymentStatus.COMPLETED
+    payment.save(update_fields=["status", "updated_at"])
+    return payment
+

@@ -283,54 +283,57 @@ class ResendOTPSerializer(serializers.Serializer):
 
 class LoginSerializer(serializers.Serializer):
     """
-    Serializer for user login with email, password, and OTP.
-    
-    WHAT THIS DOES:
-    - Accepts email, password, and OTP code
-    - Validates email and password credentials
-    - Validates OTP code
-    - Returns JWT tokens on successful validation
+    Serializer for user login with email and either password or code (OTP).
+
+    - Password login: send email + password.
+    - Code login: send email + otp (code from email/SMS).
     """
     email = serializers.EmailField(required=True)
-    password = serializers.CharField(required=True, write_only=True)
-    otp = serializers.CharField(max_length=6, required=True)
+    password = serializers.CharField(required=False, write_only=True, allow_blank=True)
+    otp = serializers.CharField(max_length=6, required=False, allow_blank=True)
 
     def validate(self, data):
-        """Validate credentials and OTP"""
-        email = data.get('email', '').strip().lower()
-        password = data.get('password')
-        otp_code = data.get('otp')
+        email = (data.get('email') or '').strip().lower()
+        password = (data.get('password') or '').strip()
+        otp_code = (data.get('otp') or '').strip()
 
         if not email:
-            raise serializers.ValidationError({'email': 'Email is required'})
+            raise serializers.ValidationError({'email': 'Email is required.'})
 
-        # Find user
+        use_password = bool(password)
+        use_code = bool(otp_code)
+
+        if not use_password and not use_code:
+            raise serializers.ValidationError(
+                {'non_field_errors': ['Provide either password or code to login.']}
+            )
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             raise serializers.ValidationError({'email': 'Invalid email or password.'})
 
-        # Check if account is active
         if not user.is_active:
-            raise serializers.ValidationError({'email': 'Account is not activated. Please activate your account first.'})
+            raise serializers.ValidationError(
+                {'email': 'Account is not activated. Please activate your account first.'}
+            )
 
-        # Validate password
-        if not user.check_password(password):
-            raise serializers.ValidationError({'password': 'Invalid email or password.'})
+        if use_password:
+            if not user.check_password(password):
+                raise serializers.ValidationError({'password': 'Invalid email or password.'})
+            data['_user'] = user
+            return data
 
-        # Find and verify OTP
+        # Code (OTP) login
         try:
             otp = OTP.objects.get(email=email, is_used=False)
         except OTP.DoesNotExist:
-            raise serializers.ValidationError({'otp': 'No valid OTP found. Please request a new one.'})
-
-        # Verify OTP code
+            raise serializers.ValidationError(
+                {'otp': 'No valid OTP found. Please request a new one.'}
+            )
         success, message = otp.verify(otp_code)
-
         if not success:
             raise serializers.ValidationError({'otp': message})
-
-        # Store instances for view to use
         data['_user'] = user
         data['_otp_instance'] = otp
         return data

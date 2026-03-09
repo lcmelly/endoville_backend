@@ -95,6 +95,10 @@ OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', cast=int, default=5)
 # Email templates
 ZEPTOMAIL_OTP_TEMPLATE_KEY = config('ZEPTOMAIL_OTP_TEMPLATE_KEY')
 
+# Stripe (optional; used when Stripe is configured in PaymentCredentials)
+STRIPE_SUCCESS_URL = config('STRIPE_SUCCESS_URL', default='https://yourdomain.com/payment/success/')
+STRIPE_CANCEL_URL = config('STRIPE_CANCEL_URL', default='https://yourdomain.com/payment/cancel/')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

@@ -1,6 +1,6 @@
 # Authentication
 
-Login with email, password, and OTP to receive JWT tokens.
+Login with **email** and **either** a **password** or a **code** (OTP)—not both. Returns JWT tokens.
 
 === "Endpoint"
 
@@ -12,12 +12,20 @@ Login with email, password, and OTP to receive JWT tokens.
 
     No authentication required (to get tokens).
 
-=== "Request Body"
+=== "Option A: Password login"
 
     ```json
     {
       "email": "user@example.com",
-      "password": "securepassword123",
+      "password": "securepassword123"
+    }
+    ```
+
+=== "Option B: Code (OTP) login"
+
+    ```json
+    {
+      "email": "user@example.com",
       "otp": "123456"
     }
     ```
@@ -27,8 +35,10 @@ Login with email, password, and OTP to receive JWT tokens.
     | Field | Type | Required | Description |
     |-------|------|----------|-------------|
     | `email` | string | Yes | User's email address |
-    | `password` | string | Yes | User's password |
-    | `otp` | string | Yes | 6-digit OTP code for additional security |
+    | `password` | string | One of these | User's password (use with Option A only) |
+    | `otp` | string | One of these | 6-digit code from email/SMS (use with Option B only) |
+
+    You must provide **exactly one** of `password` or `otp`. Do not send both; do not omit both.
 
 ## Response
 
@@ -52,25 +62,57 @@ Login with email, password, and OTP to receive JWT tokens.
 
 === "Error (400 Bad Request)"
 
-    ```json
-    {
-      "non_field_errors": ["Invalid email or password."]
-    }
-    ```
+    Both password and code provided:
 
     ```json
     {
-      "otp": ["Invalid OTP or OTP has expired."]
+      "non_field_errors": ["Use either password or code to login, not both."]
+    }
+    ```
+
+    Neither password nor code provided:
+
+    ```json
+    {
+      "non_field_errors": ["Provide either password or code to login."]
+    }
+    ```
+
+    Invalid credentials (password login):
+
+    ```json
+    {
+      "email": ["Invalid email or password."]
+    }
+    ```
+    or
+    ```json
+    {
+      "password": ["Invalid email or password."]
+    }
+    ```
+
+    Invalid or missing OTP (code login):
+
+    ```json
+    {
+      "otp": ["No valid OTP found. Please request a new one."]
+    }
+    ```
+    or
+    ```json
+    {
+      "otp": ["OTP verification failed. OTP has expired."]
     }
     ```
 
 ## Error Cases
 
-- **Invalid Credentials**: Email or password is incorrect
-- **Inactive Account**: Account is not activated
-- **Invalid OTP**: OTP code is incorrect or expired
-- **Expired OTP**: OTP has expired (valid for 5 minutes)
-- **Used OTP**: OTP has already been used
+- **Both / neither**: Sending both `password` and `otp`, or neither.
+- **Invalid credentials**: Wrong email or password (password login).
+- **Inactive account**: Account is not activated.
+- **Invalid OTP**: Code incorrect, expired, or already used (code login).
+- **No OTP**: No valid OTP found for the email (request a new one).
 
 ## JWT Tokens
 
@@ -97,21 +139,26 @@ curl -X GET https://api.endovillehealth.com/api/users/profile/ \
 
 ## Notes
 
-- Both email/password and OTP must be valid
-- The account must be activated (`is_active=True`)
-- OTP is single-use and expires after 5 minutes
-- Maximum of 3 OTP verification attempts
-- The access token should be stored securely (e.g., in localStorage or secure cookies)
-- Use the refresh token to obtain a new access token before it expires
+- Use **either** password **or** code to login, not both.
+- The account must be activated (`is_active=True`).
+- For code login: OTP is single-use, expires after 5 minutes, and has a maximum of 3 verification attempts.
+- Store the access token securely (e.g., in localStorage or secure cookies).
+- Use the refresh token to obtain a new access token before it expires.
 
-## Example Request
+## Example Requests
+
+Password login:
 
 ```bash
 curl -X POST https://api.endovillehealth.com/api/users/login/ \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "securepassword123",
-    "otp": "123456"
-  }'
+  -d '{"email": "user@example.com", "password": "securepassword123"}'
+```
+
+Code (OTP) login:
+
+```bash
+curl -X POST https://api.endovillehealth.com/api/users/login/ \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "otp": "123456"}'
 ```

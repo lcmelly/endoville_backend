@@ -163,7 +163,9 @@ class CreateOrderItemSerializer(serializers.Serializer):
 
 
 class CreateOrderSerializer(serializers.Serializer):
-    shipping_address = ShippingAddressSerializer()
+    """Place an order. Shipping address is required."""
+
+    shipping_address = ShippingAddressSerializer()  # required
     items = CreateOrderItemSerializer(many=True)
     shipping_fee = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("0"))
     notes = serializers.CharField(required=False, allow_blank=True, default="")
@@ -298,6 +300,10 @@ class CreateOrderPaymentSerializer(serializers.Serializer):
     # For STK push
     phone_number = serializers.CharField(required=False, allow_blank=True)
     email = serializers.EmailField(required=False, allow_blank=True)
+
+    # For Stripe Checkout (optional redirect URLs; fallback to settings)
+    success_url = serializers.URLField(required=False, allow_blank=True)
+    cancel_url = serializers.URLField(required=False, allow_blank=True)
 
     def validate(self, attrs):
         provider = attrs.get("provider")

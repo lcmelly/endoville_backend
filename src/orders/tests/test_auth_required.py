@@ -61,6 +61,20 @@ def test_create_order_requires_auth(api_client, product):
     assert resp.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+def test_create_order_requires_shipping_address(api_client, user, product):
+    """Placing an order without a shipping address returns 400."""
+    api_client.force_authenticate(user=user)
+    resp = api_client.post(
+        "/api/orders/orders/",
+        {
+            "items": [{"product": product.id, "quantity": 1}],
+        },
+        format="json",
+    )
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+    assert "shipping_address" in resp.json()
+
+
 def test_create_payment_requires_auth(api_client):
     resp = api_client.post(
         "/api/orders/payments/",

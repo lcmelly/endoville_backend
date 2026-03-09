@@ -3,6 +3,9 @@ API views for orders app.
 """
 
 from django.conf import settings
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from rest_framework import mixins, status, viewsets
 from rest_framework.response import Response
 
@@ -140,8 +143,14 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
                 from .payments.stripe import StripeAPI
 
                 client = StripeAPI()
-                success_url = getattr(settings, "STRIPE_SUCCESS_URL", "https://yourdomain.com/payment/success/")
-                cancel_url = getattr(settings, "STRIPE_CANCEL_URL", "https://yourdomain.com/payment/cancel/")
+                success_url = (
+                    (serializer.validated_data.get("success_url") or "").strip()
+                    or getattr(settings, "STRIPE_SUCCESS_URL", "https://yourdomain.com/payment/success/")
+                )
+                cancel_url = (
+                    (serializer.validated_data.get("cancel_url") or "").strip()
+                    or getattr(settings, "STRIPE_CANCEL_URL", "https://yourdomain.com/payment/cancel/")
+                )
                 client.create_checkout_session(payment, success_url=success_url, cancel_url=cancel_url)
             else:
                 return Response(
@@ -216,4 +225,31 @@ class StaffShipmentEventViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOnly]
     queryset = ShipmentEvent.objects.select_related("shipment", "shipment__order").order_by("-occurred_at")
     serializer_class = StaffShipmentEventCreateSerializer
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def stripe_webhook_view(request):
+    """
+    Stripe webhook: verify signature and on checkout.session.completed mark the payment as completed.
+    Configure STRIPE_WEBHOOK_SECRET in settings (e.g. from env) and point Stripe to this URL.
+    """
+    payload = request.body
+    sig = request.headers.get("Stripe-Signature", "")
+    webhook_secret = getattr(settings, "STRIPE_WEBHOOK_SECRET", None) or ""
+    if not webhook_secret:
+        return HttpResponse("Webhook secret not configured.", status=400)
+    try:
+        import stripe as stripe_lib
+        event = stripe_lib.Webhook.construct_event(payload, sig, webhook_secret)
+    except ValueError as e:
+        return HttpResponse(f"Invalid payload: {e}", status=400)
+    except Exception as e:
+        return HttpResponse(f"Invalid signature: {e}", status=400)
+    if event["type"] == "checkout.session.completed":
+        session_id = event.get("data", {}).get("object", {}).get("id")
+        if session_id:
+            from .payments.stripe import complete_payment_for_session
+            complete_payment_for_session(session_id)
+    return HttpResponse(status=200)
 

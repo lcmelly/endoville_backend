@@ -39,11 +39,13 @@ class SubcategoryAdmin(ImportExportModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(ImportExportModelAdmin):
-    list_display = ["name", "price", "stock", "avg_rating", "review_count", "image_refs_count", "slug", "created_at", "updated_at"]
+    list_display = ["name", "sku", "barcode", "price", "stock", "avg_rating", "review_count", "image_refs_count", "slug", "created_at", "updated_at"]
     list_filter = ["created_at", "updated_at"]
     search_fields = [
         "name",
         "slug",
+        "sku",
+        "barcode",
         "description",
         "meta_title",
         "meta_description",
@@ -89,9 +91,9 @@ class ProductVariantAdmin(ImportExportModelAdmin):
 
 @admin.register(ProductReview)
 class ProductReviewAdmin(admin.ModelAdmin):
-    list_display = ["product", "user", "rating", "created_at"]
-    list_filter = ["rating", "created_at"]
+    list_display = ["product", "order", "user", "rating", "is_anonymous", "created_at"]
+    list_filter = ["rating", "is_anonymous", "created_at"]
     search_fields = ["product__name", "body"]
     ordering = ["-created_at"]
-    list_select_related = ["product", "user"]
-    raw_id_fields = ["product", "user"]
+    list_select_related = ["product", "order", "user"]
+    raw_id_fields = ["product", "order", "user"]

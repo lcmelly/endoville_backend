@@ -50,17 +50,11 @@ def valid_otp(db, active_user):
 
 # Login View Tests
 @pytest.mark.django_db
-def test_login_view_success(api_client, active_user, valid_otp):
-    """Login view returns JWT tokens on successful login"""
+def test_login_view_success_password(api_client, active_user):
+    """Login view returns JWT tokens on password login"""
     url = '/api/users/login/'
-    data = {
-        'email': 'test@example.com',
-        'password': 'testpass123',
-        'otp': valid_otp.otp
-    }
-    
+    data = {'email': 'test@example.com', 'password': 'testpass123'}
     response = api_client.post(url, data, format='json')
-    
     assert response.status_code == status.HTTP_200_OK
     assert 'access' in response.data
     assert 'refresh' in response.data
@@ -70,19 +64,34 @@ def test_login_view_success(api_client, active_user, valid_otp):
 
 
 @pytest.mark.django_db
-def test_login_view_updates_last_login(api_client, active_user, valid_otp):
-    """Login view updates user's last_login timestamp"""
+def test_login_view_success_code(api_client, active_user, valid_otp):
+    """Login view returns JWT tokens on code (OTP) login"""
     url = '/api/users/login/'
-    data = {
-        'email': 'test@example.com',
-        'password': 'testpass123',
-        'otp': valid_otp.otp
-    }
-    
-    initial_last_login = active_user.last_login
-    
+    data = {'email': 'test@example.com', 'otp': valid_otp.otp}
     response = api_client.post(url, data, format='json')
-    
+    assert response.status_code == status.HTTP_200_OK
+    assert 'access' in response.data
+    assert 'refresh' in response.data
+    assert response.data['user']['email'] == 'test@example.com'
+
+
+@pytest.mark.django_db
+def test_login_view_both_password_and_code_rejected(api_client, active_user, valid_otp):
+    """Login view rejects when both password and code are sent"""
+    url = '/api/users/login/'
+    data = {'email': 'test@example.com', 'password': 'testpass123', 'otp': valid_otp.otp}
+    response = api_client.post(url, data, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'non_field_errors' in response.data
+
+
+@pytest.mark.django_db
+def test_login_view_updates_last_login(api_client, active_user):
+    """Login view updates user's last_login timestamp (password login)"""
+    url = '/api/users/login/'
+    data = {'email': 'test@example.com', 'password': 'testpass123'}
+    initial_last_login = active_user.last_login
+    response = api_client.post(url, data, format='json')
     assert response.status_code == status.HTTP_200_OK
     active_user.refresh_from_db()
     if hasattr(active_user, 'last_login'):
@@ -92,122 +101,79 @@ def test_login_view_updates_last_login(api_client, active_user, valid_otp):
 
 
 @pytest.mark.django_db
-def test_login_view_invalid_credentials(api_client, active_user, valid_otp):
-    """Login view rejects invalid password"""
+def test_login_view_invalid_credentials(api_client, active_user):
+    """Login view rejects invalid password (password login)"""
     url = '/api/users/login/'
-    data = {
-        'email': 'test@example.com',
-        'password': 'wrongpassword',
-        'otp': valid_otp.otp
-    }
-    
+    data = {'email': 'test@example.com', 'password': 'wrongpassword'}
     response = api_client.post(url, data, format='json')
-    
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'password' in response.data
 
 
 @pytest.mark.django_db
 def test_login_view_invalid_otp(api_client, active_user):
-    """Login view rejects invalid OTP"""
+    """Login view rejects invalid OTP (code login only)"""
     OTP.create_otp(email=active_user.email)
     url = '/api/users/login/'
-    data = {
-        'email': 'test@example.com',
-        'password': 'testpass123',
-        'otp': '000000'
-    }
-    
+    data = {'email': 'test@example.com', 'otp': '000000'}
     response = api_client.post(url, data, format='json')
-    
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'otp' in response.data
 
 
 @pytest.mark.django_db
 def test_login_view_inactive_user(api_client, inactive_user):
-    """Login view rejects inactive user"""
-    otp = OTP.create_otp(email=inactive_user.email)
+    """Login view rejects inactive user (password login)"""
     url = '/api/users/login/'
-    data = {
-        'email': 'inactive@example.com',
-        'password': 'testpass123',
-        'otp': otp.otp
-    }
-    
+    data = {'email': 'inactive@example.com', 'password': 'testpass123'}
     response = api_client.post(url, data, format='json')
-    
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'email' in response.data
     assert 'not activated' in str(response.data['email']).lower()
 
 
 @pytest.mark.django_db
-def test_login_view_user_not_found(api_client, valid_otp):
-    """Login view rejects non-existent user"""
+def test_login_view_user_not_found(api_client):
+    """Login view rejects non-existent user (password login)"""
     url = '/api/users/login/'
-    data = {
-        'email': 'nonexistent@example.com',
-        'password': 'testpass123',
-        'otp': valid_otp.otp
-    }
-    
+    data = {'email': 'nonexistent@example.com', 'password': 'testpass123'}
     response = api_client.post(url, data, format='json')
-    
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'email' in response.data
 
 
 @pytest.mark.django_db
 def test_login_view_missing_fields(api_client):
-    """Login view requires all fields"""
+    """Login view requires email and either password or code"""
     url = '/api/users/login/'
-    
     # Missing email
-    response = api_client.post(url, {'password': 'test', 'otp': '123456'}, format='json')
+    response = api_client.post(url, {'password': 'test'}, format='json')
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-    # Missing password
-    response = api_client.post(url, {'email': 'test@example.com', 'otp': '123456'}, format='json')
+    # Neither password nor code
+    response = api_client.post(url, {'email': 'test@example.com'}, format='json')
     assert response.status_code == status.HTTP_400_BAD_REQUEST
-    
-    # Missing OTP
-    response = api_client.post(url, {'email': 'test@example.com', 'password': 'test'}, format='json')
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'non_field_errors' in response.data
 
 
 @pytest.mark.django_db
-def test_login_view_email_case_insensitive(api_client, active_user, valid_otp):
-    """Login view handles email case insensitivity"""
+def test_login_view_email_case_insensitive(api_client, active_user):
+    """Login view handles email case insensitivity (password login)"""
     url = '/api/users/login/'
-    data = {
-        'email': 'TEST@EXAMPLE.COM',
-        'password': 'testpass123',
-        'otp': valid_otp.otp
-    }
-    
+    data = {'email': 'TEST@EXAMPLE.COM', 'password': 'testpass123'}
     response = api_client.post(url, data, format='json')
-    
     assert response.status_code == status.HTTP_200_OK
     assert response.data['user']['email'] == 'test@example.com'
 
 
 @pytest.mark.django_db
 def test_login_view_expired_otp(api_client, active_user):
-    """Login view rejects expired OTP"""
+    """Login view rejects expired OTP (code login only)"""
     otp = OTP.create_otp(email=active_user.email)
     otp.expires_at = timezone.now() - timedelta(minutes=1)
     otp.save()
-    
     url = '/api/users/login/'
-    data = {
-        'email': 'test@example.com',
-        'password': 'testpass123',
-        'otp': otp.otp
-    }
-    
+    data = {'email': 'test@example.com', 'otp': otp.otp}
     response = api_client.post(url, data, format='json')
-    
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert 'otp' in response.data
 

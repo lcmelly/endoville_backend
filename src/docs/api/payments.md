@@ -17,10 +17,11 @@ Create and track payments for orders.
 
 ## Providers
 
-- `intasend` (link or STK push)
-- `stripe` (checkout)
-- `cash` (manual)
-- `other` (manual)
+- **IntaSend** (`intasend`): payment link or STK push.
+- **Stripe** (`stripe`): Checkout session; redirect URLs and webhook for completion.
+- **Cash / Other** (`cash`, `other`): manual (staff confirms).
+
+Both IntaSend and Stripe can be used alongside each other; create a payment with the desired `provider` and `method`.
 
 ## Base URLs
 
@@ -59,6 +60,7 @@ Payment provider credentials are **global for the whole app** (not per user) and
     - `private_key` is **write-only** (never returned).
     - Response includes `has_private_key: true/false`.
     - Only one credentials row can be active per `(provider, environment)`.
+    - For **Stripe**, use `provider: "stripe"` and store the Stripe **secret key** as `private_key`. Set `STRIPE_WEBHOOK_SECRET` in the environment for the webhook.
 
 === "List credentials (staff)"
 
@@ -162,6 +164,18 @@ Payment provider credentials are **global for the whole app** (not per user) and
     }
     ```
 
+    Optional for Stripe: `success_url`, `cancel_url` (override defaults from settings).
+
+    ```json
+    {
+      "order": 123,
+      "provider": "stripe",
+      "method": "checkout",
+      "success_url": "https://yoursite.com/order/success/",
+      "cancel_url": "https://yoursite.com/order/cancel/"
+    }
+    ```
+
     Request body (Cash / Other manual):
 
     ```json
@@ -251,6 +265,19 @@ Payment provider credentials are **global for the whole app** (not per user) and
       "amount": "40.00"
     }
     ```
+
+## Stripe webhook
+
+To mark Stripe Checkout payments as **completed** when the customer pays, configure a webhook in the Stripe Dashboard and set `STRIPE_WEBHOOK_SECRET` in your environment.
+
+- **URL**: `POST /api/orders/payments/stripe/webhook/`
+- **Event**: `checkout.session.completed`
+- **Settings** (e.g. in `.env`):
+  - `STRIPE_WEBHOOK_SECRET` — signing secret from Stripe (Dashboard → Developers → Webhooks).
+  - `STRIPE_SUCCESS_URL` — default redirect after successful payment (optional).
+  - `STRIPE_CANCEL_URL` — default redirect when user cancels (optional).
+
+Stripe credentials (secret key) are stored per environment via the staff **Payment credentials** API (`provider=stripe`). The webhook secret is app-wide and not stored in the database.
 
 === "Delete payment (staff, soft delete)"
 
