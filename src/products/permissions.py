@@ -7,12 +7,12 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 class StaffWriteReadOnly(BasePermission):
     """
-    Allow anyone to read; only staff can create/update/delete.
+    No auth required for reads (GET, HEAD, OPTIONS). Only staff can create/update/delete.
     """
 
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
-            return True
+            return True  # allow unauthenticated for list/retrieve
         return bool(request.user and request.user.is_staff)
 
     def has_object_permission(self, request, view, obj):

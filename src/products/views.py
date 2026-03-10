@@ -3,6 +3,7 @@ API views for products app.
 """
 
 from rest_framework import viewsets
+from rest_framework.permissions import AllowAny
 
 from .models import (
     Category,
@@ -30,19 +31,37 @@ from .serializers import (
 class CurrencyViewSet(viewsets.ModelViewSet):
     queryset = Currency.objects.all().order_by("code")
     serializer_class = CurrencySerializer
-    permission_classes = [StaffWriteReadOnly]
+    permission_classes = [AllowAny]  # public read; write restricted in get_permissions if needed
+    read_only_actions = {"list", "retrieve"}
+
+    def get_permissions(self):
+        if self.action in self.read_only_actions:
+            return [AllowAny()]
+        return [StaffWriteReadOnly()]
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all().order_by("name")
     serializer_class = CategorySerializer
-    permission_classes = [StaffWriteReadOnly]
+    permission_classes = [AllowAny]
+    read_only_actions = {"list", "retrieve"}
+
+    def get_permissions(self):
+        if self.action in self.read_only_actions:
+            return [AllowAny()]
+        return [StaffWriteReadOnly()]
 
 
 class SubcategoryViewSet(viewsets.ModelViewSet):
     queryset = Subcategory.objects.select_related("category").order_by("category__name", "name")
     serializer_class = SubcategorySerializer
-    permission_classes = [StaffWriteReadOnly]
+    permission_classes = [AllowAny]
+    read_only_actions = {"list", "retrieve"}
+
+    def get_permissions(self):
+        if self.action in self.read_only_actions:
+            return [AllowAny()]
+        return [StaffWriteReadOnly()]
 
 
 class ProductViewSet(viewsets.ModelViewSet):
@@ -55,19 +74,37 @@ class ProductViewSet(viewsets.ModelViewSet):
         .order_by("-created_at")
     )
     serializer_class = ProductSerializer
-    permission_classes = [StaffWriteReadOnly]
+    permission_classes = [AllowAny]
+    read_only_actions = {"list", "retrieve"}
+
+    def get_permissions(self):
+        if self.action in self.read_only_actions:
+            return [AllowAny()]
+        return [StaffWriteReadOnly()]
 
 
 class VariationAttributeViewSet(viewsets.ModelViewSet):
     queryset = VariationAttribute.objects.all().order_by("name")
     serializer_class = VariationAttributeSerializer
-    permission_classes = [StaffWriteReadOnly]
+    permission_classes = [AllowAny]
+    read_only_actions = {"list", "retrieve"}
+
+    def get_permissions(self):
+        if self.action in self.read_only_actions:
+            return [AllowAny()]
+        return [StaffWriteReadOnly()]
 
 
 class VariationOptionViewSet(viewsets.ModelViewSet):
     queryset = VariationOption.objects.select_related("attribute").order_by("attribute__name", "value")
     serializer_class = VariationOptionSerializer
-    permission_classes = [StaffWriteReadOnly]
+    permission_classes = [AllowAny]
+    read_only_actions = {"list", "retrieve"}
+
+    def get_permissions(self):
+        if self.action in self.read_only_actions:
+            return [AllowAny()]
+        return [StaffWriteReadOnly()]
 
 
 class ProductVariantViewSet(viewsets.ModelViewSet):
@@ -77,7 +114,13 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
         .order_by("-created_at")
     )
     serializer_class = ProductVariantSerializer
-    permission_classes = [StaffWriteReadOnly]
+    permission_classes = [AllowAny]
+    read_only_actions = {"list", "retrieve"}
+
+    def get_permissions(self):
+        if self.action in self.read_only_actions:
+            return [AllowAny()]
+        return [StaffWriteReadOnly()]
 
 
 class ProductReviewViewSet(viewsets.ModelViewSet):

@@ -23,21 +23,23 @@ def _get_display_currency(request):
     """
     Return display Currency for non-staff product/variant responses.
     Uses ?currency=CODE if present and valid; otherwise defaults to primary currency (e.g. USD).
-    Invalid or missing code falls back to primary.
+    Invalid or missing code falls back to primary. Returns None if no Currency exists in DB.
     """
-    if not request or not getattr(request, "query_params", None):
-        code = None
-    else:
-        code = request.query_params.get("currency", "").strip().upper() or None
-    if code:
-        currency = Currency.objects.filter(code=code, is_active=True).first()
-        if currency:
-            return currency
-    # Default to primary currency (typically USD), else fallback to USD by code
-    return (
-        Currency.objects.filter(is_primary=True, is_active=True).first()
-        or Currency.objects.filter(code="USD", is_active=True).first()
-    )
+    try:
+        if not request or not getattr(request, "query_params", None):
+            code = None
+        else:
+            code = request.query_params.get("currency", "").strip().upper() or None
+        if code:
+            currency = Currency.objects.filter(code=code, is_active=True).first()
+            if currency:
+                return currency
+        return (
+            Currency.objects.filter(is_primary=True, is_active=True).first()
+            or Currency.objects.filter(code="USD", is_active=True).first()
+        )
+    except Exception:
+        return None
 
 
 class CurrencySerializer(serializers.ModelSerializer):
@@ -205,17 +207,19 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         is_staff = request and getattr(request, "user", None) and request.user.is_staff
         if is_staff:
             display_currency = _get_display_currency(request)
-            if display_currency:
-                data["display_currency"] = display_currency.code
-                data["currency_symbol"] = display_currency.symbol or ""
+            data["display_currency"] = getattr(display_currency, "code", None) or "USD"
+            data["currency_symbol"] = getattr(display_currency, "symbol", None) or ""
         else:
             data.pop("cost_price", None)
             display_currency = _get_display_currency(request)
-            effective_price = instance.price if instance.price is not None else instance.product.price
+            effective_price = instance.price if instance.price is not None else getattr(instance.product, "price", None)
             if display_currency and effective_price is not None:
                 data["price"] = str(_convert_price(effective_price, display_currency))
                 data["display_currency"] = display_currency.code
                 data["currency_symbol"] = display_currency.symbol or ""
+            else:
+                data["display_currency"] = getattr(display_currency, "code", None) or "USD"
+                data["currency_symbol"] = getattr(display_currency, "symbol", None) or ""
         return data
 
     def get_avg_rating(self, obj):
@@ -268,9 +272,8 @@ class ProductSerializer(serializers.ModelSerializer):
         is_staff = request and getattr(request, "user", None) and request.user.is_staff
         if is_staff:
             display_currency = _get_display_currency(request)
-            if display_currency:
-                data["display_currency"] = display_currency.code
-                data["currency_symbol"] = display_currency.symbol or ""
+            data["display_currency"] = getattr(display_currency, "code", None) or "USD"
+            data["currency_symbol"] = getattr(display_currency, "symbol", None) or ""
         else:
             data.pop("cost_price", None)
             display_currency = _get_display_currency(request)
@@ -278,6 +281,9 @@ class ProductSerializer(serializers.ModelSerializer):
                 data["price"] = str(_convert_price(instance.price, display_currency))
                 data["display_currency"] = display_currency.code
                 data["currency_symbol"] = display_currency.symbol or ""
+            else:
+                data["display_currency"] = getattr(display_currency, "code", None) or "USD"
+                data["currency_symbol"] = getattr(display_currency, "symbol", None) or ""
         return data
 
     def get_variants(self, obj):
