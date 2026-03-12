@@ -7,9 +7,11 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
-from .models import Order, OrderPayment, PaymentCredentials, PaymentProvider, Shipment, ShipmentEvent
+from .currency_utils import order_total_in_currency
+from .models import Order, OrderPayment, PaymentCredentials, PaymentProvider, PaymentStatus, Shipment, ShipmentEvent
 from .permissions import IsStaffOnly, IsStaffOrOwner
 from .serializers import (
     CreateOrderPaymentSerializer,
@@ -85,18 +87,58 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
             return qs
         return qs.filter(order__user=self.request.user)
 
+    @action(detail=True, methods=["post"], url_path="check-status")
+    def check_status(self, request, pk=None):
+        """
+        Refresh payment status from the provider when still pending/processing.
+        If payment is already completed, failed, or cancelled, returns stored status without calling the provider.
+        """
+        payment = self.get_object()
+        payment.refresh_from_db()
+        result = {
+            "is_complete": payment.status == PaymentStatus.COMPLETED,
+            "status": payment.status,
+            "provider_state": payment.provider_state or "",
+        }
+        # Only call third-party API when status is still pending or processing
+        if payment.status not in (
+            PaymentStatus.COMPLETED,
+            PaymentStatus.FAILED,
+            PaymentStatus.CANCELLED,
+        ):
+            if payment.provider == PaymentProvider.INTASEND and (
+                payment.provider_invoice_id or payment.provider_payment_id
+            ):
+                try:
+                    from .payments.intasend import IntaSendAPI
+
+                    client = IntaSendAPI()
+                    check_result = client.check_payment_status(payment)
+                    payment.refresh_from_db()
+                    result["is_complete"] = payment.status == PaymentStatus.COMPLETED
+                    result["status"] = payment.status
+                    result["provider_state"] = payment.provider_state or ""
+                    result["success"] = check_result.get("success", False)
+                    if not check_result.get("success"):
+                        result["error"] = check_result.get("error")
+                except Exception as e:
+                    result["success"] = False
+                    result["error"] = str(e)
+            else:
+                result["success"] = True
+        else:
+            result["success"] = True
+        return Response(
+            {"payment": OrderPaymentSerializer(payment).data, "status_check": result},
+            status=status.HTTP_200_OK,
+        )
+
     def create(self, request, *args, **kwargs):
-        serializer = CreateOrderPaymentSerializer(data=request.data)
+        serializer = CreateOrderPaymentSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
 
-        order_id = request.data.get("order")
-        if not order_id:
-            return Response({"order": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            order = Order.objects.select_related("user", "shipping_address").get(id=order_id)
-        except Order.DoesNotExist:
-            return Response({"order": ["Order not found."]}, status=status.HTTP_404_NOT_FOUND)
+        order = serializer.validated_data["order"]
+        order = Order.objects.select_related("user", "shipping_address").get(pk=order.pk)
 
         # Enforce ownership (auth required by permission)
         if not request.user.is_staff and order.user_id != request.user.id:
@@ -109,10 +151,60 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Payment is linked to the order from the request; amount = order total (converted to payment currency)
         provider = serializer.validated_data["provider"]
         method = serializer.validated_data["method"]
-        amount = serializer.validated_data.get("amount") or order.total
-        currency = serializer.validated_data.get("currency") or "KES"
+        currency = serializer.validated_data.get("currency") or "USD"
+        amount = serializer.validated_data.get("amount")
+        if amount is None:
+            amount = order_total_in_currency(order.total, currency)
+
+        # IntaSend: sync all related payments from stored provider_state and API; block if order fully paid
+        if provider == PaymentProvider.INTASEND:
+            intasend_payments = OrderPayment.objects.filter(
+                order=order,
+                provider=PaymentProvider.INTASEND,
+                is_deleted=False,
+            )
+            intasend_client = None
+            for payment in intasend_payments:
+                state = (payment.provider_state or "").upper()
+                if state in ("COMPLETE", "COMPLETED", "PAID", "SETTLED") and payment.status not in (
+                    PaymentStatus.COMPLETED,
+                    PaymentStatus.FAILED,
+                    PaymentStatus.CANCELLED,
+                ):
+                    payment.status = PaymentStatus.COMPLETED
+                    payment.save(update_fields=["status", "updated_at"])
+                elif payment.provider_invoice_id or payment.provider_payment_id:
+                    try:
+                        if intasend_client is None:
+                            from .payments.intasend import IntaSendAPI
+                            intasend_client = IntaSendAPI()
+                        intasend_client.check_payment_status(payment)
+                    except Exception:
+                        pass
+            if order.recalculate_is_fully_paid():
+                return Response(
+                    {"detail": "Order is already fully paid."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # IntaSend link only: if order already has a pending IntaSend payment with a link, return it
+        if provider == PaymentProvider.INTASEND and method == "link":
+            existing = (
+                OrderPayment.objects.filter(
+                    order=order,
+                    provider=PaymentProvider.INTASEND,
+                    is_deleted=False,
+                    status__in=[PaymentStatus.PENDING, PaymentStatus.PROCESSING],
+                )
+                .exclude(checkout_url="")
+                .order_by("-created_at")
+                .first()
+            )
+            if existing:
+                return Response(OrderPaymentSerializer(existing).data, status=status.HTTP_201_CREATED)
 
         payment = OrderPayment.objects.create(
             order=order,
@@ -132,16 +224,37 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
 
                 client = IntaSendAPI()
                 if method == "stk":
-                    client.initiate_stk_push(
+                    phone = (
+                        serializer.validated_data.get("phone_number")
+                        or getattr(order.shipping_address, "phone", None)
+                        or ""
+                    )
+                    result = client.initiate_stk_push(
+                        payment,
+                        phone_number=phone,
+                        email=serializer.validated_data.get("email") or None,
+                        narrative=serializer.validated_data.get("narrative") or None,
+                    )
+                    if not result.get("success"):
+                        return Response(
+                            {"detail": result.get("error", "STK push failed."), "payment": OrderPaymentSerializer(payment).data},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                else:
+                    result = client.create_payment_link(
                         payment,
                         phone_number=serializer.validated_data.get("phone_number") or None,
                         email=serializer.validated_data.get("email") or None,
                     )
-                else:
-                    client.create_payment_link(payment)
+                    if not result.get("success"):
+                        return Response(
+                            {"detail": result.get("error", "Failed to create payment link."), "payment": OrderPaymentSerializer(payment).data},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
             elif provider == PaymentProvider.STRIPE:
                 from .payments.stripe import StripeAPI
 
+                # Stripe creds loaded from PaymentCredentials (DB) only
                 client = StripeAPI()
                 success_url = (
                     (serializer.validated_data.get("success_url") or "").strip()
@@ -252,4 +365,31 @@ def stripe_webhook_view(request):
             from .payments.stripe import complete_payment_for_session
             complete_payment_for_session(session_id)
     return HttpResponse(status=200)
+
+
+@api_view(["GET"])
+@permission_classes([IsStaffOnly])
+def intasend_test_connection(request):
+    """
+    Test IntaSend API connection using stored credentials.
+    Staff only. Returns 200 with status if service initializes, 400 with error otherwise.
+    """
+    try:
+        from .payments.intasend import IntaSendAPI
+
+        IntaSendAPI(user=request.user)
+        return Response(
+            {"status": "ok", "message": "IntaSend service initialized successfully"},
+            status=status.HTTP_200_OK,
+        )
+    except ValueError as e:
+        return Response(
+            {"status": "error", "message": str(e)},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except ImportError as e:
+        return Response(
+            {"status": "error", "message": str(e)},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 

@@ -82,15 +82,10 @@ def test_payment_create_calls_provider_client(monkeypatch, api_client, order, us
     """
 
     class DummyIntaSend:
-        def create_payment_link(self, payment):
+        def create_payment_link(self, payment, phone_number=None, email=None):
             payment.checkout_url = "https://example.com/pay"
             payment.save(update_fields=["checkout_url", "updated_at"])
             return {"success": True, "payment_url": payment.checkout_url}
-
-        def initiate_stk_push(self, payment, phone_number=None, email=None, narrative=None):
-            payment.provider_payment_id = "P123"
-            payment.save(update_fields=["provider_payment_id", "updated_at"])
-            return {"success": True, "payment_id": "P123"}
 
     import orders.payments.intasend as intasend_mod
 

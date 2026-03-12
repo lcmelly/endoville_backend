@@ -31,5 +31,6 @@ router.register(r"staff/shipment-events", StaffShipmentEventViewSet, basename="s
 
 urlpatterns = [
     path("payments/stripe/webhook/", views.stripe_webhook_view, name="stripe-webhook"),
+    path("payments/intasend/test/", views.intasend_test_connection, name="intasend-test"),
     path("", include(router.urls)),
 ]

@@ -9,6 +9,7 @@ from rest_framework import serializers
 
 from products.models import Product, ProductVariant, VariationOption
 
+from .currency_utils import order_total_in_currency
 from .models import (
     Order,
     OrderItem,
@@ -283,6 +284,12 @@ class OrderPaymentSerializer(serializers.ModelSerializer):
 
 
 class CreateOrderPaymentSerializer(serializers.Serializer):
+    """
+    Create a payment linked to an order. Request must include order id; payment is created for that order.
+    Amount defaults to order total. For IntaSend link, optional phone_number/email are passed to checkout.
+    """
+
+    order = serializers.PrimaryKeyRelatedField(queryset=Order.objects.all())
     provider = serializers.ChoiceField(choices=PaymentProvider.choices)
     method = serializers.ChoiceField(
         choices=[
@@ -300,6 +307,7 @@ class CreateOrderPaymentSerializer(serializers.Serializer):
     # For STK push
     phone_number = serializers.CharField(required=False, allow_blank=True)
     email = serializers.EmailField(required=False, allow_blank=True)
+    narrative = serializers.CharField(required=False, allow_blank=True)
 
     # For Stripe Checkout (optional redirect URLs; fallback to settings)
     success_url = serializers.URLField(required=False, allow_blank=True)
@@ -308,6 +316,15 @@ class CreateOrderPaymentSerializer(serializers.Serializer):
     def validate(self, attrs):
         provider = attrs.get("provider")
         method = attrs.get("method")
+        order = attrs.get("order")
+        request = self.context.get("request")
+
+        # Non-staff can only use IntaSend or Stripe
+        if request and not getattr(request.user, "is_staff", False):
+            if provider not in (PaymentProvider.INTASEND, PaymentProvider.STRIPE):
+                raise serializers.ValidationError(
+                    {"provider": "Only IntaSend and Stripe are available. Use staff API for cash/other."}
+                )
 
         manual_providers = {PaymentProvider.CASH, PaymentProvider.OTHER}
         if provider in manual_providers:
@@ -316,8 +333,16 @@ class CreateOrderPaymentSerializer(serializers.Serializer):
             return attrs
 
         # gateway providers
-        if provider == PaymentProvider.INTASEND and method not in ["link", "stk"]:
+        if provider == PaymentProvider.INTASEND and method not in ("link", "stk"):
             raise serializers.ValidationError("IntaSend supports method='link' or method='stk'.")
+        if provider == PaymentProvider.INTASEND and method == "stk":
+            phone = (attrs.get("phone_number") or "").strip()
+            order = attrs.get("order")
+            if not phone and order:
+                ship = getattr(order, "shipping_address", None)
+                phone = (getattr(ship, "phone", None) or "").strip()
+            if not phone:
+                raise serializers.ValidationError("phone_number is required for IntaSend STK push.")
         if provider == PaymentProvider.STRIPE and method != "checkout":
             raise serializers.ValidationError("Stripe supports method='checkout'.")
 

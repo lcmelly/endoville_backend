@@ -13,7 +13,6 @@ from hashlib import sha256
 
 from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models import Sum
 from django.utils.encoding import force_bytes
 
 
@@ -25,7 +24,11 @@ class ShippingStatus(models.TextChoices):
 
 
 class OrderStatus(models.TextChoices):
-    PLACED = "PLACED", "Placed"
+    PAYMENT_PENDING = "PAYMENT_PENDING", "Payment Pending"
+    PLACED = "PLACED", "Placed"  # legacy
+    PROCESSING = "PROCESSING", "Processing"
+    SHIPPING = "SHIPPING", "Shipping"
+    COMPLETE = "COMPLETE", "Complete"
     CANCELLED = "CANCELLED", "Cancelled"
     REFUNDED = "REFUNDED", "Refunded"
 
@@ -60,7 +63,7 @@ class Order(models.Model):
         settings.AUTH_USER_MODEL, related_name="orders", on_delete=models.CASCADE
     )
     status = models.CharField(
-        max_length=20, choices=OrderStatus.choices, default=OrderStatus.PLACED, db_index=True
+        max_length=20, choices=OrderStatus.choices, default=OrderStatus.PAYMENT_PENDING, db_index=True
     )
 
     shipping_address = models.ForeignKey(
@@ -82,23 +85,20 @@ class Order(models.Model):
 
     def recalculate_is_fully_paid(self) -> bool:
         """
-        Mark the order as fully paid if completed (non-deleted) payments sum >= order total.
+        Order is fully paid if the sum of completed payment amounts (converted to primary
+        currency) >= order total. Order total is in primary currency (e.g. USD).
         """
-        completed_sum = (
-            self.payments.filter(status=PaymentStatus.COMPLETED, is_deleted=False)
-            .aggregate(s=Sum("amount"))
-            .get("s")
-            or Decimal("0")
-        )
-        # Defensive: `self.total` can be a string on unsaved/just-created instances.
+        from .currency_utils import amount_to_primary
+
+        completed_sum = Decimal("0")
+        for payment in self.payments.filter(status=PaymentStatus.COMPLETED, is_deleted=False):
+            completed_sum += amount_to_primary(payment.amount, payment.currency)
+
         total = self.total
         if total is None:
             total = Decimal("0")
         elif not isinstance(total, Decimal):
             total = Decimal(str(total))
-
-        if not isinstance(completed_sum, Decimal):
-            completed_sum = Decimal(str(completed_sum))
 
         return completed_sum >= total
 
@@ -151,6 +151,29 @@ class Shipment(models.Model):
         self.status = ShippingStatus.DELIVERED
         self.delivered_at = timezone.now()
         self.save(update_fields=["status", "delivered_at", "updated_at"])
+
+    def save(self, *args, **kwargs):
+        old_status = None
+        if self.pk:
+            try:
+                old_status = Shipment.objects.get(pk=self.pk).status
+            except Shipment.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
+        # Auto-update order status from shipment status
+        new_status = self.status
+        if new_status != old_status:
+            order = self.order
+            if new_status == ShippingStatus.DELIVERED:
+                if order.status != OrderStatus.COMPLETE:
+                    Order.objects.filter(pk=order.pk).update(
+                        status=OrderStatus.COMPLETE, updated_at=timezone.now()
+                    )
+            elif new_status in (ShippingStatus.DISPATCHED, ShippingStatus.OUT_FOR_DELIVERY):
+                if order.status not in (OrderStatus.SHIPPING, OrderStatus.COMPLETE):
+                    Order.objects.filter(pk=order.pk).update(
+                        status=OrderStatus.SHIPPING, updated_at=timezone.now()
+                    )
 
     def __str__(self):
         return f"Shipment for Order #{self.order_id}"
@@ -293,8 +316,15 @@ class OrderPayment(models.Model):
     def _sync_order_paid_flag(self):
         order = self.order
         should_be_paid = order.recalculate_is_fully_paid()
+        updates = {}
         if order.is_fully_paid != should_be_paid:
-            Order.objects.filter(pk=order.pk).update(is_fully_paid=should_be_paid)
+            updates["is_fully_paid"] = should_be_paid
+        # Auto: when fully paid, move to PROCESSING (if still payment-pending/placed)
+        if should_be_paid and order.status in (OrderStatus.PAYMENT_PENDING, OrderStatus.PLACED):
+            updates["status"] = OrderStatus.PROCESSING
+        if updates:
+            updates["updated_at"] = timezone.now()
+            Order.objects.filter(pk=order.pk).update(**updates)
 
     def soft_delete(self, user=None):
         """
@@ -326,6 +356,12 @@ class OrderPayment(models.Model):
         order = self.order
         res = super().delete(*args, **kwargs)
         should_be_paid = order.recalculate_is_fully_paid()
+        updates = {}
         if order.is_fully_paid != should_be_paid:
-            Order.objects.filter(pk=order.pk).update(is_fully_paid=should_be_paid)
+            updates["is_fully_paid"] = should_be_paid
+        if not should_be_paid and order.status == OrderStatus.PROCESSING:
+            updates["status"] = OrderStatus.PAYMENT_PENDING
+        if updates:
+            updates["updated_at"] = timezone.now()
+            Order.objects.filter(pk=order.pk).update(**updates)
         return res

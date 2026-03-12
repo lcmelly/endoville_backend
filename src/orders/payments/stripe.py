@@ -1,8 +1,9 @@
 """
-Stripe payment integration (minimal skeleton).
+Stripe payment integration.
 
-This module does not enable Stripe automatically unless the `stripe` package is installed
-and the active global PaymentCredentials for provider=stripe is configured.
+Credentials are loaded only from the PaymentCredentials model (DB). Store your
+Stripe secret key via the staff API: POST /api/orders/payment-credentials/ with
+provider=stripe, environment=sandbox|live, and private_key=sk_...
 """
 
 from orders.models import OrderPayment, PaymentCredentials, PaymentProvider, PaymentStatus
@@ -29,6 +30,7 @@ class StripeAPI:
         self.stripe.api_key = self.secret_key
 
     def _get_latest_credentials(self):
+        """Load active Stripe credentials from DB (PaymentCredentials)."""
         try:
             return (
                 PaymentCredentials.objects.filter(
