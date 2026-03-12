@@ -216,7 +216,10 @@ class PaymentStatus(models.TextChoices):
 class PaymentCredentials(models.Model):
     """
     Stores payment provider credentials for the whole app.
-    Private/secret keys are stored encrypted at rest.
+    The private/secret key is encrypted on save (via set_private_key) and stored
+    in encrypted_private_key. It is only decrypted when calling get_private_key()
+    to initialize provider API clients (IntaSend, Stripe); the decrypted value
+    is never persisted or returned in API responses.
     """
 
     provider = models.CharField(max_length=20, choices=PaymentProvider.choices, db_index=True)
@@ -224,9 +227,9 @@ class PaymentCredentials(models.Model):
         max_length=20, choices=[("sandbox", "Sandbox"), ("live", "Live")], default="sandbox"
     )
 
-    # e.g. IntaSend publishable key
+    # e.g. IntaSend publishable key (stored in plain text; not sensitive)
     api_key = models.CharField(max_length=255, blank=True)
-    # encrypted provider secret/private key (e.g. IntaSend secret key)
+    # Provider secret/private key stored encrypted at rest. Set only via set_private_key().
     encrypted_private_key = models.TextField(blank=True)
 
     is_active = models.BooleanField(default=True, db_index=True)
@@ -250,6 +253,7 @@ class PaymentCredentials(models.Model):
         return Fernet(base64.urlsafe_b64encode(digest))
 
     def set_private_key(self, raw_private_key: str):
+        """Encrypt and store the private key. Call this on create/update; never persist raw key."""
         if not raw_private_key:
             self.encrypted_private_key = ""
             return
@@ -257,6 +261,7 @@ class PaymentCredentials(models.Model):
         self.encrypted_private_key = f.encrypt(force_bytes(raw_private_key)).decode("utf-8")
 
     def get_private_key(self) -> str:
+        """Decrypt and return the private key. Only call when needed for provider API (IntaSend/Stripe)."""
         if not self.encrypted_private_key:
             return ""
         f = self._fernet()
@@ -268,7 +273,11 @@ class PaymentCredentials(models.Model):
     def save(self, *args, **kwargs):
         """
         Ensure only one active credentials row exists per (provider, environment).
+        If encrypted_private_key looks like plain text (e.g. was pasted in admin), encrypt it.
         """
+        # Fernet ciphertext in base64 always starts with "gAAAAA"; otherwise treat as plain text
+        if self.encrypted_private_key and not self.encrypted_private_key.strip().startswith("gAAAAA"):
+            self.set_private_key(self.encrypted_private_key)
         super().save(*args, **kwargs)
         if self.is_active:
             PaymentCredentials.objects.filter(

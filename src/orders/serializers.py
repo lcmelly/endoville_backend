@@ -351,8 +351,9 @@ class CreateOrderPaymentSerializer(serializers.Serializer):
 
 class PaymentCredentialsSerializer(serializers.ModelSerializer):
     """
-    Staff-facing serializer. The decrypted private key is never returned.
-    Provide `private_key` to set/rotate the secret (stored encrypted).
+    Staff-facing serializer. The raw private key is never returned and is never
+    written to the DB in plain text: it is encrypted via set_private_key() before save.
+    Provide `private_key` in the request to set/rotate the secret (encrypted at rest).
     """
 
     private_key = serializers.CharField(write_only=True, required=False, allow_blank=True)
@@ -380,7 +381,7 @@ class PaymentCredentialsSerializer(serializers.ModelSerializer):
         raw = validated_data.pop("private_key", None)
         obj = super().create(validated_data)
         if raw is not None:
-            obj.set_private_key(raw)
+            obj.set_private_key(raw)  # encrypt only; never persist raw key
             obj.save(update_fields=["encrypted_private_key", "updated_at"])
         return obj
 
@@ -388,7 +389,7 @@ class PaymentCredentialsSerializer(serializers.ModelSerializer):
         raw = validated_data.pop("private_key", None)
         obj = super().update(instance, validated_data)
         if raw is not None:
-            obj.set_private_key(raw)
+            obj.set_private_key(raw)  # encrypt only; never persist raw key
             obj.save(update_fields=["encrypted_private_key", "updated_at"])
         return obj
 

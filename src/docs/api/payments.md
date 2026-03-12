@@ -184,7 +184,7 @@ Create and track payments for orders.
 
 ## Payment credentials (staff)
 
-Credentials are **global** (not per user), stored in `PaymentCredentials`. `private_key` is write-only and stored encrypted.
+Credentials are **global** (not per user), stored in `PaymentCredentials`. The **private key** is encrypted on save and only decrypted when the backend calls the provider (IntaSend/Stripe); it is never returned in API responses or stored in plain text. In requests, send `private_key` to set or rotate the secret (write-only).
 
 === "Create credentials"
 

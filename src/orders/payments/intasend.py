@@ -32,6 +32,7 @@ class IntaSendAPI:
             raise ValueError("IntaSend publishable key (api_key) is missing")
         if not credentials.encrypted_private_key:
             raise ValueError("IntaSend token (private key) is missing")
+        # Decrypt only when building the provider client; never persisted or logged
         token = credentials.get_private_key()
         if not token:
             raise ValueError("Failed to decrypt IntaSend private key")

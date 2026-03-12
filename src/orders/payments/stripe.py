@@ -15,6 +15,7 @@ class StripeAPI:
         if not self.credentials:
             raise ValueError("No active Stripe credentials found")
 
+        # Decrypt only when building the provider client; never persisted or returned
         self.secret_key = self.credentials.get_private_key()
         if not self.secret_key:
             raise ValueError("Stripe secret key is missing (store it as the private key).")
