@@ -1,6 +1,6 @@
 # Products
 
-Manage product catalog: categories, subcategories, products, variants (optional sku/barcode), and **product reviews**. Reviews are shared across all variants of a product. Each product has a stored **avg_rating** (0–5) and **review_count** updated automatically when reviews are added, updated, or deleted.
+Manage product catalog: brands, categories, subcategories, products, variants (optional sku/barcode), and **product reviews**. Reviews are shared across all variants of a product. Each product has a stored **avg_rating** (0–5) and **review_count** updated automatically when reviews are added, updated, or deleted.
 
 === "Base URL"
 
@@ -283,6 +283,7 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
 | Resource | Read | Create | Update | Delete |
 | --- | --- | --- | --- | --- |
 | Currencies | Anyone | Staff only | Staff only | Staff only |
+| Brands | Anyone | Staff only | Staff only | Staff only |
 | Categories | Anyone | Staff only | Staff only | Staff only |
 | Subcategories | Anyone | Staff only | Staff only | Staff only |
 | Products | Anyone | Staff only | Staff only | Staff only |
@@ -290,6 +291,228 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
 | Product Reviews | Anyone | Authenticated (must have completed order with product) | Owner or staff | Owner or staff |
 | Variation Attributes | Anyone | Staff only | Staff only | Staff only |
 | Variation Options | Anyone | Staff only | Staff only | Staff only |
+
+## Brands
+
+Brands can have multiple images using aligned arrays:
+
+- `image_urls`: public image URLs
+- `image_refs`: storage keys/paths in the same order as `image_urls`
+- `image_labels`: labels in the same order as `image_urls`, for example `logo` or `banner one`
+
+=== "List"
+
+    ```
+    GET /api/products/brands/
+    ```
+
+    **Example: 200 OK**
+
+    ```json
+    [
+      {
+        "id": 1,
+        "name": "Nature Made",
+        "image_urls": [
+          "https://cdn.example.com/brands/nature-made-logo.png",
+          "https://cdn.example.com/brands/nature-made-banner.png"
+        ],
+        "image_refs": [
+          "brands/nature-made-logo.png",
+          "brands/nature-made-banner.png"
+        ],
+        "image_labels": ["logo", "banner"],
+        "description": "Trusted wellness and supplement brand."
+      }
+    ]
+    ```
+
+    **Example: Error** — List is public; no 403.
+
+=== "Retrieve"
+
+    ```
+    GET /api/products/brands/{id}/
+    ```
+
+    **Example: 200 OK**
+
+    ```json
+    {
+      "id": 1,
+      "name": "Nature Made",
+      "image_urls": [
+        "https://cdn.example.com/brands/nature-made-logo.png",
+        "https://cdn.example.com/brands/nature-made-banner.png"
+      ],
+      "image_refs": [
+        "brands/nature-made-logo.png",
+        "brands/nature-made-banner.png"
+      ],
+      "image_labels": ["logo", "banner"],
+      "description": "Trusted wellness and supplement brand."
+    }
+    ```
+
+    **Example: 404 Not Found**
+
+    ```json
+    {
+      "detail": "Not found."
+    }
+    ```
+
+=== "Create (staff)"
+
+    ```
+    POST /api/products/brands/
+    ```
+
+    ```json
+    {
+      "name": "Nature Made",
+      "image_urls": [
+        "https://cdn.example.com/brands/nature-made-logo.png",
+        "https://cdn.example.com/brands/nature-made-banner.png"
+      ],
+      "image_refs": [
+        "brands/nature-made-logo.png",
+        "brands/nature-made-banner.png"
+      ],
+      "image_labels": ["logo", "banner"],
+      "description": "Trusted wellness and supplement brand."
+    }
+    ```
+
+    **Example: 201 Created**
+
+    ```json
+    {
+      "id": 1,
+      "name": "Nature Made",
+      "image_urls": [
+        "https://cdn.example.com/brands/nature-made-logo.png",
+        "https://cdn.example.com/brands/nature-made-banner.png"
+      ],
+      "image_refs": [
+        "brands/nature-made-logo.png",
+        "brands/nature-made-banner.png"
+      ],
+      "image_labels": ["logo", "banner"],
+      "description": "Trusted wellness and supplement brand."
+    }
+    ```
+
+    **Example: 400 Bad Request (validation)**
+
+    ```json
+    {
+      "name": ["This field may not be blank."]
+    }
+    ```
+
+    **Example: 403 Forbidden (non-staff)**
+
+    ```json
+    {
+      "detail": "You do not have permission to perform this action."
+    }
+    ```
+
+=== "Update (staff)"
+
+    ```
+    PUT /api/products/brands/{id}/
+    PATCH /api/products/brands/{id}/
+    ```
+
+    ```json
+    {
+      "name": "Nature Made",
+      "image_urls": [
+        "https://cdn.example.com/brands/nature-made-logo.png",
+        "https://cdn.example.com/brands/nature-made-banner-v2.png"
+      ],
+      "image_refs": [
+        "brands/nature-made-logo.png",
+        "brands/nature-made-banner-v2.png"
+      ],
+      "image_labels": ["logo", "banner"],
+      "description": "Updated brand description."
+    }
+    ```
+
+    - `PUT` expects the full object.
+    - `PATCH` can send only the fields you want to change.
+
+    **Example: 200 OK**
+
+    ```json
+    {
+      "id": 1,
+      "name": "Nature Made",
+      "image_urls": [
+        "https://cdn.example.com/brands/nature-made-logo.png",
+        "https://cdn.example.com/brands/nature-made-banner-v2.png"
+      ],
+      "image_refs": [
+        "brands/nature-made-logo.png",
+        "brands/nature-made-banner-v2.png"
+      ],
+      "image_labels": ["logo", "banner"],
+      "description": "Updated brand description."
+    }
+    ```
+
+    **Example: 403 Forbidden (non-staff)**
+
+    ```json
+    {
+      "detail": "You do not have permission to perform this action."
+    }
+    ```
+
+    **Example: 404 Not Found**
+
+    ```json
+    {
+      "detail": "Not found."
+    }
+    ```
+
+=== "Delete (staff)"
+
+    ```
+    DELETE /api/products/brands/{id}/
+    ```
+
+    **Example: 204 No Content** — Empty response body.
+
+    **Example: 403 Forbidden (non-staff)**
+
+    ```json
+    {
+      "detail": "You do not have permission to perform this action."
+    }
+    ```
+
+    **Example: 404 Not Found**
+
+    ```json
+    {
+      "detail": "Not found."
+    }
+    ```
+
+=== "Fields"
+
+    | Field | Type | Required | Description |
+    | --- | --- | --- | --- |
+    | `name` | string | Yes | Brand name. |
+    | `image_urls` | array[string] | No | Public image URLs for the brand. |
+    | `image_refs` | array[string] | No | Storage keys/paths for brand images, in the same order as `image_urls`. |
+    | `image_labels` | array[string] | No | Labels for each brand image, in the same order as `image_urls`. |
+    | `description` | string | No | Brand description. |
 
 ## Categories
 
@@ -624,6 +847,21 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
         "id": 1,
         "name": "Vitamin C 1000mg",
         "description": "High-strength Vitamin C",
+        "brand": 1,
+        "brand_details": {
+          "id": 1,
+          "name": "Nature Made",
+          "image_urls": [
+            "https://cdn.example.com/brands/nature-made-logo.png",
+            "https://cdn.example.com/brands/nature-made-banner.png"
+          ],
+          "image_refs": [
+            "brands/nature-made-logo.png",
+            "brands/nature-made-banner.png"
+          ],
+          "image_labels": ["logo", "banner"],
+          "description": "Trusted wellness and supplement brand."
+        },
         "price": "19.99",
         "display_currency": "USD",
         "currency_symbol": "$",
@@ -703,6 +941,21 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
       "id": 1,
       "name": "Vitamin C 1000mg",
       "description": "High-strength Vitamin C",
+      "brand": 1,
+      "brand_details": {
+        "id": 1,
+        "name": "Nature Made",
+        "image_urls": [
+          "https://cdn.example.com/brands/nature-made-logo.png",
+          "https://cdn.example.com/brands/nature-made-banner.png"
+        ],
+        "image_refs": [
+          "brands/nature-made-logo.png",
+          "brands/nature-made-banner.png"
+        ],
+        "image_labels": ["logo", "banner"],
+        "description": "Trusted wellness and supplement brand."
+      },
       "price": "3208.40",
       "display_currency": "KES",
       "currency_symbol": "KSh",
@@ -758,12 +1011,13 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
     POST /api/products/products/
     ```
 
-    Request body: `name`, `description`, `price`, and `stock` are required; `sku` and `barcode` are optional (when provided, `barcode` must be unique).
+    Request body: `name`, `description`, `price`, and `stock` are required; `brand`, `sku`, and `barcode` are optional (when provided, `barcode` must be unique).
 
     ```json
     {
       "name": "Vitamin C 1000mg",
       "description": "High-strength Vitamin C",
+      "brand": 1,
       "price": "19.99",
       "cost_price": "12.00",
       "stock": 100,
@@ -784,6 +1038,21 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
       "id": 1,
       "name": "Vitamin C 1000mg",
       "description": "High-strength Vitamin C",
+      "brand": 1,
+      "brand_details": {
+        "id": 1,
+        "name": "Nature Made",
+        "image_urls": [
+          "https://cdn.example.com/brands/nature-made-logo.png",
+          "https://cdn.example.com/brands/nature-made-banner.png"
+        ],
+        "image_refs": [
+          "brands/nature-made-logo.png",
+          "brands/nature-made-banner.png"
+        ],
+        "image_labels": ["logo", "banner"],
+        "description": "Trusted wellness and supplement brand."
+      },
       "price": "19.99",
       "cost_price": "12.00",
       "stock": 100,
@@ -837,6 +1106,7 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
     {
       "name": "Vitamin C 1000mg",
       "description": "Updated description",
+      "brand": 1,
       "price": "21.99",
       "cost_price": "13.00",
       "stock": 80,
@@ -860,6 +1130,21 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
       "id": 1,
       "name": "Vitamin C 1000mg",
       "description": "Updated description",
+      "brand": 1,
+      "brand_details": {
+        "id": 1,
+        "name": "Nature Made",
+        "image_urls": [
+          "https://cdn.example.com/brands/nature-made-logo.png",
+          "https://cdn.example.com/brands/nature-made-banner.png"
+        ],
+        "image_refs": [
+          "brands/nature-made-logo.png",
+          "brands/nature-made-banner.png"
+        ],
+        "image_labels": ["logo", "banner"],
+        "description": "Trusted wellness and supplement brand."
+      },
       "price": "21.99",
       "cost_price": "13.00",
       "stock": 80,
@@ -934,6 +1219,8 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
 
     | Field | Type | Description |
     | --- | --- | --- |
+    | `brand` | integer or null | Brand ID assigned to the product. |
+    | `brand_details` | object or null | Nested brand object returned in product responses. |
     | `avg_rating` | string (decimal) or null | Average of all review ratings (0–5). Updated when reviews change. |
     | `review_count` | integer | Number of reviews. Updated when reviews change. |
     | `reviews` | array | Up to 10 most recent reviews (see Product Reviews below). |
@@ -1602,6 +1889,12 @@ Variant `sku` and `barcode` are **optional**. When provided, `barcode` must be u
 
 - **`image_urls`**: Array of image URLs (display).
 - **`image_refs`**: Array of storage keys/paths for the same images, in the same order as `image_urls`.
+
+## Brand image fields
+
+- **`image_urls`**: Array of brand image URLs.
+- **`image_refs`**: Array of storage keys/paths for the same brand images, in the same order as `image_urls`.
+- **`image_labels`**: Array of labels for the same brand images, in the same order as `image_urls` and `image_refs`.
 
 ## Product and variant rating fields
 

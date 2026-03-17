@@ -2,6 +2,7 @@ from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
 
 from .models import (
+    Brand,
     Category,
     Currency,
     Product,
@@ -28,6 +29,18 @@ class CategoryAdmin(ImportExportModelAdmin):
     ordering = ["name"]
 
 
+@admin.register(Brand)
+class BrandAdmin(ImportExportModelAdmin):
+    list_display = ["name", "brand_images_count"]
+    search_fields = ["name", "description"]
+    ordering = ["name"]
+
+    @admin.display(description="Brand images")
+    def brand_images_count(self, obj):
+        urls = obj.image_urls or []
+        return len(urls) if urls else "-"
+
+
 @admin.register(Subcategory)
 class SubcategoryAdmin(ImportExportModelAdmin):
     list_display = ["name", "category"]
@@ -39,10 +52,11 @@ class SubcategoryAdmin(ImportExportModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(ImportExportModelAdmin):
-    list_display = ["name", "sku", "barcode", "price", "stock", "avg_rating", "review_count", "image_refs_count", "slug", "created_at", "updated_at"]
-    list_filter = ["created_at", "updated_at"]
+    list_display = ["name", "brand", "sku", "barcode", "price", "stock", "avg_rating", "review_count", "image_refs_count", "slug", "created_at", "updated_at"]
+    list_filter = ["brand", "created_at", "updated_at"]
     search_fields = [
         "name",
+        "brand__name",
         "slug",
         "sku",
         "barcode",
@@ -52,6 +66,8 @@ class ProductAdmin(ImportExportModelAdmin):
     ]
     ordering = ["-created_at"]
     prepopulated_fields = {"slug": ("name",)}
+    list_select_related = ["brand"]
+    raw_id_fields = ["brand"]
 
     @admin.display(description="Image refs")
     def image_refs_count(self, obj):

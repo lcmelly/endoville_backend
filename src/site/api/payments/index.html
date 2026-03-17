@@ -1205,7 +1205,7 @@
 </div>
 </div>
 <h2 id="payment-credentials-staff">Payment credentials (staff)<a class="headerlink" href="#payment-credentials-staff" title="Permanent link">&para;</a></h2>
-<p>Credentials are <strong>global</strong> (not per user), stored in <code>PaymentCredentials</code>. <code>private_key</code> is write-only and stored encrypted.</p>
+<p>Credentials are <strong>global</strong> (not per user), stored in <code>PaymentCredentials</code>. The <strong>private key</strong> is encrypted on save and only decrypted when the backend calls the provider (IntaSend/Stripe); it is never returned in API responses or stored in plain text. In requests, send <code>private_key</code> to set or rotate the secret (write-only).</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Create credentials</label><label for="__tabbed_3_2">List credentials</label><label for="__tabbed_3_3">Update credentials</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">

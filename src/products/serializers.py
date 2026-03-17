@@ -8,6 +8,7 @@ from django.db.models import Q
 from rest_framework import serializers
 
 from .models import (
+    Brand,
     Category,
     Currency,
     Product,
@@ -70,6 +71,12 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ["id", "name", "description"]
+
+
+class BrandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Brand
+        fields = ["id", "name", "image_urls", "image_refs", "image_labels", "description"]
 
 
 class SubcategorySerializer(serializers.ModelSerializer):
@@ -234,6 +241,10 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    brand = serializers.PrimaryKeyRelatedField(
+        queryset=Brand.objects.all(), required=False, allow_null=True
+    )
+    brand_details = BrandSerializer(source="brand", read_only=True)
     subcategories = serializers.PrimaryKeyRelatedField(
         queryset=Subcategory.objects.all(), many=True, required=False
     )
@@ -246,6 +257,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "brand",
+            "brand_details",
             "price",
             "cost_price",
             "stock",

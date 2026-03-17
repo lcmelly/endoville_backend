@@ -6,6 +6,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 
 from .models import (
+    Brand,
     Category,
     Currency,
     Product,
@@ -17,6 +18,7 @@ from .models import (
 )
 from .permissions import ProductReviewPermission, StaffWriteReadOnly
 from .serializers import (
+    BrandSerializer,
     CategorySerializer,
     CurrencySerializer,
     ProductReviewSerializer,
@@ -52,6 +54,18 @@ class CategoryViewSet(viewsets.ModelViewSet):
         return [StaffWriteReadOnly()]
 
 
+class BrandViewSet(viewsets.ModelViewSet):
+    queryset = Brand.objects.all().order_by("name")
+    serializer_class = BrandSerializer
+    permission_classes = [AllowAny]
+    read_only_actions = {"list", "retrieve"}
+
+    def get_permissions(self):
+        if self.action in self.read_only_actions:
+            return [AllowAny()]
+        return [StaffWriteReadOnly()]
+
+
 class SubcategoryViewSet(viewsets.ModelViewSet):
     queryset = Subcategory.objects.select_related("category").order_by("category__name", "name")
     serializer_class = SubcategorySerializer
@@ -66,7 +80,7 @@ class SubcategoryViewSet(viewsets.ModelViewSet):
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = (
-        Product.objects.prefetch_related(
+        Product.objects.select_related("brand").prefetch_related(
             "subcategories",
             "variants",
             "reviews",
