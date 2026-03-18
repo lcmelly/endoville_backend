@@ -89,11 +89,15 @@ SIMPLE_JWT = {
 # Email settings
 EMAIL_BACKEND = 'zoho_zeptomail.backend.zeptomail_backend.ZohoZeptoMailEmailBackend'
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
+DEFAULT_FROM_NAME = config('DEFAULT_FROM_NAME', default='Endoville Health')
 ZOHO_ZEPTOMAIL_API_KEY_TOKEN = config('ZOHO_ZEPTOMAIL_API_KEY_TOKEN')
 ZOHO_ZEPTOMAIL_HOSTED_REGION = config('ZOHO_ZEPTOMAIL_HOSTED_REGION', default='zeptomail.zoho.com')
 OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', cast=int, default=5)
 # Email templates
 ZEPTOMAIL_OTP_TEMPLATE_KEY = config('ZEPTOMAIL_OTP_TEMPLATE_KEY')
+ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY = config('ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY', default='')
+SUPPORT_EMAIL = config('SUPPORT_EMAIL', default=DEFAULT_FROM_EMAIL)
+SUPPORT_PHONE = config('SUPPORT_PHONE', default='')
 
 # Stripe (optional; used when Stripe is configured in PaymentCredentials)
 STRIPE_SUCCESS_URL = config('STRIPE_SUCCESS_URL', default='https://yourdomain.com/payment/success/')
