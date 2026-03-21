@@ -830,6 +830,8 @@ Brands can have multiple images using aligned arrays:
 
 Product `sku` and `barcode` are **optional**. When provided, `barcode` must be unique across all products.
 
+Optional content fields (all strings unless noted): `featured` (boolean, default `false`), `benefits`, `ingredients`, `how_to_use`. Staff can set them on create/update; they are returned on list/retrieve.
+
 === "List"
 
     ```
@@ -870,6 +872,10 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
         "barcode": "0123456789001",
         "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
         "image_refs": ["p/vit-c-1.png"],
+        "featured": true,
+        "benefits": "Supports immune health and antioxidant protection.",
+        "ingredients": "Ascorbic acid, microcrystalline cellulose, magnesium stearate.",
+        "how_to_use": "Take one tablet daily with food, or as directed by your healthcare provider.",
         "subcategories": [1, 2],
         "meta_title": "Vitamin C 1000mg",
         "meta_description": "High-strength Vitamin C for immune support",
@@ -964,6 +970,10 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
+      "featured": true,
+      "benefits": "Supports immune health and antioxidant protection.",
+      "ingredients": "Ascorbic acid, microcrystalline cellulose, magnesium stearate.",
+      "how_to_use": "Take one tablet daily with food, or as directed by your healthcare provider.",
       "avg_rating": "4.25",
       "review_count": 12,
       "variants": [
@@ -1011,7 +1021,7 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
     POST /api/products/products/
     ```
 
-    Request body: `name`, `description`, `price`, and `stock` are required; `brand`, `sku`, and `barcode` are optional (when provided, `barcode` must be unique).
+    Request body: `name`, `description`, `price`, and `stock` are required; `brand`, `sku`, `barcode`, `featured`, `benefits`, `ingredients`, `how_to_use`, and other fields are optional (when provided, `barcode` must be unique).
 
     ```json
     {
@@ -1025,6 +1035,10 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
+      "featured": true,
+      "benefits": "Supports immune health and antioxidant protection.",
+      "ingredients": "Ascorbic acid, microcrystalline cellulose, magnesium stearate.",
+      "how_to_use": "Take one tablet daily with food, or as directed by your healthcare provider.",
       "subcategories": [1, 2],
       "meta_title": "Vitamin C 1000mg",
       "meta_description": "High-strength Vitamin C for immune support"
@@ -1060,6 +1074,10 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
+      "featured": true,
+      "benefits": "Supports immune health and antioxidant protection.",
+      "ingredients": "Ascorbic acid, microcrystalline cellulose, magnesium stearate.",
+      "how_to_use": "Take one tablet daily with food, or as directed by your healthcare provider.",
       "subcategories": [1, 2],
       "meta_title": "Vitamin C 1000mg",
       "meta_description": "High-strength Vitamin C for immune support",
@@ -1114,6 +1132,10 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
+      "featured": false,
+      "benefits": "Updated benefits copy.",
+      "ingredients": "Updated ingredients list.",
+      "how_to_use": "Updated usage instructions.",
       "subcategories": [1],
       "meta_title": "Vitamin C 1000mg",
       "meta_description": "Updated meta description"
@@ -1152,6 +1174,10 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
+      "featured": false,
+      "benefits": "Updated benefits copy.",
+      "ingredients": "Updated ingredients list.",
+      "how_to_use": "Updated usage instructions.",
       "subcategories": [1],
       "meta_title": "Vitamin C 1000mg",
       "meta_description": "Updated meta description",
@@ -1911,4 +1937,5 @@ Variant `sku` and `barcode` are **optional**. When provided, `barcode` must be u
 - All product endpoints are public for reads.
 - All writes (create/update/delete) require a **staff** user.
 - Non-staff: `display_currency` and `currency_symbol` included by default (USD); use `?currency=CODE` to convert.
+- Product responses include `featured`, `benefits`, `ingredients`, and `how_to_use`; staff can set them when creating or updating a product.
 - Reviews use a 0–5 rating; one review per user per product when the user is set.
