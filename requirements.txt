@@ -8,13 +8,14 @@ click==8.3.1
 colorama==0.4.6
 coverage==7.13.0
 cryptography==46.0.3
+deepmerge==2.0
 defusedxml==0.7.1
 diff-match-patch==20241021
 dj-database-url==3.0.1
 Django==6.0
 django-allauth==0.57.0
 django-cors-headers==4.9.0
-django-import-export==4.4.0
+django-import-export==4.3.14
 django-zoho-zeptomail==0.0.3
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
@@ -24,6 +25,7 @@ griffe==1.15.0
 gunicorn==23.0.0
 idna==3.11
 iniconfig==2.3.0
+intasend-python==1.1.2
 Jinja2==3.1.6
 Markdown==3.10
 MarkupSafe==3.0.3
@@ -60,8 +62,10 @@ requests==2.32.5
 requests-oauthlib==2.0.0
 six==1.17.0
 sqlparse==0.5.4
+stripe==14.4.1
 tablib==3.9.0
 termcolor==3.2.0
+typing_extensions==4.15.0
 urllib3==2.6.2
 watchdog==6.0.0
 zensical==0.0.15

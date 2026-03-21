@@ -52,8 +52,8 @@ class SubcategoryAdmin(ImportExportModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(ImportExportModelAdmin):
-    list_display = ["name", "brand", "sku", "barcode", "price", "stock", "avg_rating", "review_count", "image_refs_count", "slug", "created_at", "updated_at"]
-    list_filter = ["brand", "created_at", "updated_at"]
+    list_display = ["name", "brand", "featured", "sku", "barcode", "price", "stock", "avg_rating", "review_count", "image_refs_count", "slug", "created_at", "updated_at"]
+    list_filter = ["brand", "featured", "created_at", "updated_at"]
     search_fields = [
         "name",
         "brand__name",
@@ -61,6 +61,9 @@ class ProductAdmin(ImportExportModelAdmin):
         "sku",
         "barcode",
         "description",
+        "benefits",
+        "ingredients",
+        "how_to_use",
         "meta_title",
         "meta_description",
     ]

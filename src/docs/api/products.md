@@ -1221,6 +1221,10 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
     | --- | --- | --- |
     | `brand` | integer or null | Brand ID assigned to the product. |
     | `brand_details` | object or null | Nested brand object returned in product responses. |
+    | `featured` | boolean | When `true`, product can be highlighted (e.g. featured section). Default `false`. |
+    | `benefits` | string | Product benefits / marketing copy. |
+    | `ingredients` | string | Ingredients or composition. |
+    | `how_to_use` | string | Usage instructions. |
     | `avg_rating` | string (decimal) or null | Average of all review ratings (0–5). Updated when reviews change. |
     | `review_count` | integer | Number of reviews. Updated when reviews change. |
     | `reviews` | array | Up to 10 most recent reviews (see Product Reviews below). |

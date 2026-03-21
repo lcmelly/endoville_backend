@@ -95,6 +95,12 @@ class Product(models.Model):
         Subcategory, related_name='products', blank=True
     )
 
+    featured = models.BooleanField(default=False, db_index=True)
+
+    benefits = models.TextField(blank=True, help_text="Product benefits (marketing copy)")
+    ingredients = models.TextField(blank=True, help_text="Ingredients or composition")
+    how_to_use = models.TextField(blank=True, help_text="Usage instructions")
+
     # SEO fields
     meta_title = models.CharField(max_length=255, blank=True)
     meta_description = models.CharField(max_length=300, blank=True)

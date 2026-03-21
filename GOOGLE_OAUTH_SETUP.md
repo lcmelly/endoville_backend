@@ -54,16 +54,39 @@ https://yourdomain.com/accounts/google/login/callback/
 - No trailing slashes unless required by your app
 - For OAuth Playground, the URI must be exactly: `https://developers.google.com/oauthplayground`
 
-## Step 4: Save Credentials
+## Step 4: Store credentials securely
 
-1. Click "Create"
-2. Copy the **Client ID** and **Client Secret**
-3. Add them to your `.env` file:
+**Never commit real credentials to git.** Use environment variables and keep `.env` out of version control.
 
-```env
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-client-secret
-```
+### Where to put the keys
+
+1. **Local / development**
+   - Add them to a **`.env`** file in the project root (same folder as `manage.py`’s project).
+   - `.env` is already in `.gitignore` — do not remove it.
+   - Copy from `.env.example` and replace the placeholders:
+
+   ```env
+   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   ```
+
+2. **Production**
+   - Do **not** use a `.env` file checked into the repo.
+   - Set **environment variables** on the host:
+     - **Heroku:** Settings → Config Vars  
+     - **Railway / Render / Fly.io:** Project → Variables  
+     - **Docker:** pass `-e` or use an env file mounted at runtime  
+     - **AWS:** Parameter Store, Secrets Manager, or ECS task env
+   - Use the same names: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
+
+3. **CI/CD**
+   - Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` as **secret** (masked) variables in your CI (e.g. GitHub Actions secrets, GitLab CI variables) only if the pipeline needs to run OAuth or token exchange. For many backends, only the deployed app needs these; CI may not.
+
+### Rules of thumb
+
+- **Client ID** can be public (e.g. in frontend). Still prefer keeping it in env for one source of truth.
+- **Client secret** must stay secret: only in server env or secrets manager, never in frontend, logs, or git.
+- Use a **separate OAuth client** (or at least separate client secret) for production vs development so a leaked dev secret doesn’t affect production.
 
 ## Step 5: Verify Configuration
 
@@ -127,4 +150,5 @@ For production:
 2. Complete OAuth consent screen verification (required for production)
 3. Update `ALLOWED_HOSTS` in Django settings
 4. Use HTTPS in production (required by Google OAuth)
+5. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` via your platform’s environment or secrets manager (see Step 4 above); do not rely on a committed `.env` file
 

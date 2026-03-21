@@ -26,6 +26,20 @@ def _payment_status_color(status):
     return "#f59e0b"
 
 
+def _first_image_url(first_item):
+    if not first_item:
+        return ""
+    variant = getattr(first_item, "variant", None)
+    product = getattr(first_item, "product", None)
+    variant_urls = getattr(variant, "image_urls", None) or []
+    if variant_urls:
+        return variant_urls[0]
+    product_urls = getattr(product, "image_urls", None) or []
+    if product_urls:
+        return product_urls[0]
+    return ""
+
+
 def send_order_confirmation_email(order_id):
     template_key = getattr(settings, "ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY", "")
     if not template_key:
@@ -34,7 +48,7 @@ def send_order_confirmation_email(order_id):
     try:
         order = (
             Order.objects.select_related("user", "shipping_address", "shipment")
-            .prefetch_related("items", "payments")
+            .prefetch_related("items__product", "items__variant", "payments")
             .get(pk=order_id)
         )
     except Order.DoesNotExist:
@@ -65,6 +79,7 @@ def send_order_confirmation_email(order_id):
         product_name = first_item.product_name
         if item_count > 1:
             product_name = f"{product_name} +{item_count - 1} more"
+    first_image_url = _first_image_url(first_item)
 
     latest_payment = order.payments.filter(is_deleted=False).order_by("-created_at").first()
     try:
@@ -80,6 +95,7 @@ def send_order_confirmation_email(order_id):
             "product_name": first_item.product_name if first_item else "",
             "barcode": first_item.barcode if first_item else "",
             "line_total": _format_money(first_item.line_total if first_item else None),
+            "image_url": first_image_url,
         },
         "checkout_url": latest_payment.checkout_url if latest_payment else "",
         "support_phone": getattr(settings, "SUPPORT_PHONE", ""),
@@ -87,6 +103,7 @@ def send_order_confirmation_email(order_id):
         "payment_invoice_id": latest_payment.provider_invoice_id if latest_payment else "",
         "team": getattr(settings, "DEFAULT_FROM_NAME", "Endoville Health"),
         "product_name": product_name,
+        "image_url": first_image_url,
         "shipping_fee": _format_money(order.shipping_fee),
         "order_date": timezone.localtime(order.created_at).strftime("%Y-%m-%d %H:%M"),
         "order_status": order.get_status_display(),

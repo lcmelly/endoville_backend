@@ -2,6 +2,7 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from unittest.mock import Mock
 
 from orders.models import Order, OrderPayment, PaymentProvider, ShippingAddress
 from users.models import CustomUser
@@ -90,6 +91,9 @@ def test_payment_create_calls_provider_client(monkeypatch, api_client, order, us
     import orders.payments.intasend as intasend_mod
 
     monkeypatch.setattr(intasend_mod, "IntaSendAPI", lambda: DummyIntaSend())
+    monkeypatch.setattr("orders.views.transaction.on_commit", lambda callback: callback())
+    send_mock = Mock(return_value=True)
+    monkeypatch.setattr("orders.views.send_order_confirmation_email", send_mock)
 
     api_client.force_authenticate(user=user)
     resp = api_client.post(
@@ -102,9 +106,15 @@ def test_payment_create_calls_provider_client(monkeypatch, api_client, order, us
     assert data["provider"] == PaymentProvider.INTASEND
     assert data["checkout_url"] == "https://example.com/pay"
     assert OrderPayment.objects.filter(id=data["id"], order=order).exists()
+    send_mock.assert_called_once_with(order.id)
 
 
-def test_payment_create_cash_manual(api_client, order, user):
+def test_payment_create_cash_manual(monkeypatch, api_client, order, user):
+    send_mock = Mock(return_value=True)
+    monkeypatch.setattr("orders.views.transaction.on_commit", lambda callback: callback())
+    monkeypatch.setattr("orders.views.send_order_confirmation_email", send_mock)
+    user.is_staff = True
+    user.save(update_fields=["is_staff"])
     api_client.force_authenticate(user=user)
     resp = api_client.post(
         "/api/orders/payments/",
@@ -114,6 +124,7 @@ def test_payment_create_cash_manual(api_client, order, user):
     assert resp.status_code == status.HTTP_201_CREATED
     data = resp.json()
     assert data["provider"] == "cash"
+    send_mock.assert_called_once_with(order.id)
 
 
 def test_payment_create_rejected_if_order_fully_paid(api_client, order, user):

@@ -30,6 +30,7 @@ def product():
         description="High-strength Vitamin C",
         price="19.99",
         stock=20,
+        image_urls=["https://cdn.example.com/products/vitamin-c.png"],
     )
 
 
@@ -91,6 +92,8 @@ def test_send_order_confirmation_email_uses_zeptomail_template(user, product, se
     assert call_kwargs["merge_data"]["payment_invoice_id"] == "INV-123"
     assert call_kwargs["merge_data"]["shipping_address"]["full_name"] == "John Doe"
     assert call_kwargs["merge_data"]["item"]["product_name"] == "Vitamin C 1000mg"
+    assert call_kwargs["merge_data"]["item"]["image_url"] == "https://cdn.example.com/products/vitamin-c.png"
+    assert call_kwargs["merge_data"]["image_url"] == "https://cdn.example.com/products/vitamin-c.png"
 
 
 def test_create_order_serializer_queues_confirmation_email(user, product, monkeypatch):
