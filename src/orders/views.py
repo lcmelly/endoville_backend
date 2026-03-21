@@ -12,7 +12,6 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from .currency_utils import order_total_in_currency
-from .emails import send_order_confirmation_email
 from .models import Order, OrderPayment, PaymentCredentials, PaymentProvider, PaymentStatus, Shipment, ShipmentEvent
 from .permissions import IsStaffOnly, IsStaffOrOwner
 from .serializers import (
@@ -82,10 +81,6 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
 
     permission_classes = [IsStaffOrOwner]
     serializer_class = OrderPaymentSerializer
-
-    @staticmethod
-    def _queue_confirmation_email(order_id):
-        transaction.on_commit(lambda: send_order_confirmation_email(order_id))
 
     def get_queryset(self):
         qs = OrderPayment.objects.select_related("order", "order__user").filter(is_deleted=False).order_by("-created_at")
@@ -210,7 +205,7 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
                 .first()
             )
             if existing:
-                self._queue_confirmation_email(order.id)
+                # Email will be sent when payment is completed (see OrderPayment.save())
                 return Response(OrderPaymentSerializer(existing).data, status=status.HTTP_201_CREATED)
 
         payment = OrderPayment.objects.create(
@@ -224,7 +219,7 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
         try:
             if provider in [PaymentProvider.CASH, PaymentProvider.OTHER]:
                 # Manual payments are recorded and later confirmed by staff via staff/payments endpoints.
-                self._queue_confirmation_email(order.id)
+                # Email will be sent when payment is completed (see OrderPayment.save())
                 return Response(OrderPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
 
             if provider == PaymentProvider.INTASEND:
@@ -285,7 +280,7 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        self._queue_confirmation_email(order.id)
+        # Email will be sent when payment is completed (see OrderPayment.save())
         return Response(OrderPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
 
 

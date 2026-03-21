@@ -55,6 +55,16 @@ def send_order_confirmation_email(order_id):
         logger.warning("Order confirmation email skipped; order %s not found.", order_id)
         return False
 
+    # Only send email if order has at least one completed payment
+    from .models import PaymentStatus
+    has_completed_payment = order.payments.filter(
+        status=PaymentStatus.COMPLETED,
+        is_deleted=False
+    ).exists()
+    if not has_completed_payment:
+        logger.info("Order confirmation email skipped; no completed payment for order %s.", order.id)
+        return False
+
     recipient_email = (
         getattr(order.shipping_address, "email", None)
         or getattr(order.user, "email", None)

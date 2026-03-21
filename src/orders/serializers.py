@@ -10,7 +10,6 @@ from rest_framework import serializers
 from products.models import Product, ProductVariant, VariationOption
 
 from .currency_utils import order_total_in_currency
-from .emails import send_order_confirmation_email
 from .models import (
     Order,
     OrderItem,
@@ -249,7 +248,7 @@ class CreateOrderSerializer(serializers.Serializer):
         # Create a shipment + first event (order placed) so users see tracking immediately.
         shipment = Shipment.objects.create(order=order)
         ShipmentEvent.objects.create(shipment=shipment, status=shipment.status, message="Order placed")
-        transaction.on_commit(lambda: send_order_confirmation_email(order.id))
+        # Email will be sent when payment is completed (see OrderPayment.save())
 
         return order
 

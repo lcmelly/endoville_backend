@@ -348,8 +348,24 @@ class OrderPayment(models.Model):
         self.save(update_fields=["is_deleted", "deleted_at", "deleted_by", "updated_at"])
 
     def save(self, *args, **kwargs):
+        # Track if status is changing to COMPLETED
+        is_newly_completed = False
+        if self.pk:
+            try:
+                old_payment = OrderPayment.objects.get(pk=self.pk)
+                if old_payment.status != PaymentStatus.COMPLETED and self.status == PaymentStatus.COMPLETED:
+                    is_newly_completed = True
+            except OrderPayment.DoesNotExist:
+                pass
+
         super().save(*args, **kwargs)
         self._sync_order_paid_flag()
+
+        # Send confirmation email when payment is completed
+        if is_newly_completed:
+            from django.db import transaction
+            from .emails import send_order_confirmation_email
+            transaction.on_commit(lambda: send_order_confirmation_email(self.order_id))
 
     def delete(self, *args, **kwargs):
         """
