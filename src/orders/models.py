@@ -102,17 +102,37 @@ class Order(models.Model):
 
         super().save(*args, **kwargs)
 
-        if (
-            self.status == OrderStatus.CANCELLED
-            and previous_status != OrderStatus.CANCELLED
-        ):
-            self.payments.filter(
-                status=PaymentStatus.PENDING,
-                is_deleted=False,
-            ).update(
-                status=PaymentStatus.CANCELLED,
-                updated_at=timezone.now(),
-            )
+        if previous_status != self.status:
+            if self.status == OrderStatus.CANCELLED:
+                self.payments.filter(
+                    status=PaymentStatus.PENDING,
+                    is_deleted=False,
+                ).update(
+                    status=PaymentStatus.CANCELLED,
+                    updated_at=timezone.now(),
+                )
+
+            # Keep shipment status aligned when order status is updated directly.
+            try:
+                shipment = self.shipment
+            except Shipment.DoesNotExist:
+                shipment = None
+
+            if shipment and self.status == OrderStatus.SHIPPING:
+                if shipment.status not in (
+                    ShippingStatus.DISPATCHED,
+                    ShippingStatus.OUT_FOR_DELIVERY,
+                    ShippingStatus.DELIVERED,
+                ):
+                    shipment.status = ShippingStatus.DISPATCHED
+                    shipment.save(update_fields=["status", "updated_at"])
+            elif shipment and self.status == OrderStatus.COMPLETE:
+                shipment.status = ShippingStatus.DELIVERED
+                if shipment.delivered_at is None:
+                    shipment.delivered_at = timezone.now()
+                    shipment.save(update_fields=["status", "delivered_at", "updated_at"])
+                else:
+                    shipment.save(update_fields=["status", "updated_at"])
 
     def recalculate_is_fully_paid(self) -> bool:
         """

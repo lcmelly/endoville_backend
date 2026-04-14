@@ -60,6 +60,54 @@ def test_shipment_mark_delivered_sets_status_and_timestamp(order):
     assert shipment.delivered_at is not None
 
 
+def test_shipment_dispatched_or_out_for_delivery_sets_order_shipping(order):
+    shipment = Shipment.objects.create(order=order)
+    assert order.status == OrderStatus.PAYMENT_PENDING
+
+    shipment.status = ShippingStatus.DISPATCHED
+    shipment.save(update_fields=["status", "updated_at"])
+    order.refresh_from_db()
+    assert order.status == OrderStatus.SHIPPING
+
+    shipment.status = ShippingStatus.OUT_FOR_DELIVERY
+    shipment.save(update_fields=["status", "updated_at"])
+    order.refresh_from_db()
+    assert order.status == OrderStatus.SHIPPING
+
+
+def test_shipment_delivered_sets_order_complete(order):
+    shipment = Shipment.objects.create(order=order)
+    shipment.status = ShippingStatus.DELIVERED
+    shipment.save(update_fields=["status", "updated_at"])
+
+    order.refresh_from_db()
+    assert order.status == OrderStatus.COMPLETE
+
+
+def test_order_shipping_sets_shipment_dispatched(order):
+    shipment = Shipment.objects.create(order=order)
+    assert shipment.status == ShippingStatus.ORDER_PLACED
+
+    order.status = OrderStatus.SHIPPING
+    order.save(update_fields=["status", "updated_at"])
+
+    shipment.refresh_from_db()
+    assert shipment.status == ShippingStatus.DISPATCHED
+
+
+def test_order_complete_sets_shipment_delivered(order):
+    shipment = Shipment.objects.create(order=order)
+    assert shipment.status == ShippingStatus.ORDER_PLACED
+    assert shipment.delivered_at is None
+
+    order.status = OrderStatus.COMPLETE
+    order.save(update_fields=["status", "updated_at"])
+
+    shipment.refresh_from_db()
+    assert shipment.status == ShippingStatus.DELIVERED
+    assert shipment.delivered_at is not None
+
+
 def test_shipment_event_ordering(order):
     shipment = Shipment.objects.create(order=order)
     t1 = timezone.now()
