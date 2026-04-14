@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -177,10 +177,12 @@ def test_create_order_serializer_does_not_send_confirmation_email(user, product)
     mock_send.assert_not_called()
 
 
-def test_payment_completion_triggers_confirmation_email(user, product, monkeypatch):
+def test_payment_completion_triggers_confirmation_email(user, product, settings):
     """
     Test that marking a payment as COMPLETED triggers the order confirmation email.
     """
+    settings.ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY = "order-template-key"
+
     shipping_address = ShippingAddress.objects.create(
         user=user,
         full_name="Jane Doe",
@@ -212,19 +214,13 @@ def test_payment_completion_triggers_confirmation_email(user, product, monkeypat
         currency="USD",
     )
 
-    callback_holder = {}
+    # Mock send_order_confirmation_email to verify it's called
+    with patch("orders.models.send_order_confirmation_email") as mock_send:
+        # Mock transaction.on_commit to execute immediately
+        with patch("orders.models.transaction.on_commit", side_effect=lambda func: func()):
+            # Mark payment as completed - this should trigger email
+            payment.status = PaymentStatus.COMPLETED
+            payment.save()
 
-    def run_immediately(callback):
-        callback_holder["callback"] = callback
-        callback()
-
-    mocked_send = Mock(return_value=True)
-    monkeypatch.setattr("orders.models.transaction.on_commit", run_immediately)
-    monkeypatch.setattr("orders.models.send_order_confirmation_email", mocked_send)
-
-    # Mark payment as completed
-    payment.status = PaymentStatus.COMPLETED
-    payment.save()
-
-    # Email should be sent
-    mocked_send.assert_called_once_with(order.id)
+        # Email function should be called with order ID
+        mock_send.assert_called_once_with(order.id)

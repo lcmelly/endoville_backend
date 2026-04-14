@@ -111,6 +111,7 @@ Place and view orders.
 
 - `is_fully_paid` becomes `true` when the sum of payments with `status="completed"` is **>=** the order `total`.
 - If a completed payment is updated or deleted, `is_fully_paid` is recalculated automatically.
+- When an order is moved to `CANCELLED`, pending payments for that order are automatically marked as `cancelled`.
 - Payments are managed in the Payments doc: `api/payments.md`
 
 === "Retrieve"
@@ -124,6 +125,75 @@ Place and view orders.
     - `shipping_address`
     - `shipment` (with `events[]`)
     - `payments[]` — payment attempts for this order (same shape as in list; soft-deleted payments excluded)
+
+=== "Cancel Order"
+
+    ```
+    PATCH /api/orders/orders/{id}/
+    ```
+
+    Request body:
+
+    ```json
+    {
+      "status": "CANCELLED"
+    }
+    ```
+
+    Cancellation rules:
+    - User: can cancel **only their own unpaid order**
+    - Staff: can cancel **any order**
+    - Non-staff cannot update other order fields through this endpoint
+
+    Success (200):
+
+    ```json
+    {
+      "id": 123,
+      "user": 1,
+      "status": "CANCELLED",
+      "shipping_address": {
+        "id": 10,
+        "full_name": "John Doe",
+        "phone": "0712345678",
+        "email": "john@example.com",
+        "address_line_1": "Street 1",
+        "address_line_2": "",
+        "city": "Nairobi",
+        "state": "",
+        "postal_code": "",
+        "country": "Kenya",
+        "created_at": "2026-01-19T10:00:00Z"
+      },
+      "subtotal": "40.00",
+      "shipping_fee": "0.00",
+      "total": "40.00",
+      "is_fully_paid": false,
+      "notes": "",
+      "created_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-01-19T10:15:00Z",
+      "items": [],
+      "shipment": null,
+      "payments": [
+        {
+          "id": 1,
+          "provider": "intasend",
+          "status": "cancelled",
+          "amount": "40.00",
+          "currency": "KES",
+          "checkout_url": "https://pay.intasend.com/...",
+          "provider_payment_id": "",
+          "provider_invoice_id": "",
+          "created_at": "2026-01-19T10:00:00Z",
+          "updated_at": "2026-01-19T10:15:00Z"
+        }
+      ]
+    }
+    ```
+
+    Common errors:
+    - `400 Bad Request`: user tries to cancel an order that is already fully paid
+    - `403 Forbidden`: non-staff tries to update fields other than `status`, or attempts forbidden order updates
 
 === "Create (authenticated)"
 

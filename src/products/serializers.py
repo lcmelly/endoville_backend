@@ -267,6 +267,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "image_urls",
             "image_refs",
             "featured",
+            "is_cancelled",
             "benefits",
             "ingredients",
             "how_to_use",

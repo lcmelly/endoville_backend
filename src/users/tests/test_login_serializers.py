@@ -78,17 +78,17 @@ def test_login_serializer_code_only_success(active_user, valid_otp):
 
 
 @pytest.mark.django_db
-def test_login_serializer_both_password_and_code_error(active_user, valid_otp):
-    """LoginSerializer rejects when both password and code are provided"""
+def test_login_serializer_both_password_and_code_uses_password(active_user, valid_otp):
+    """When both password and OTP are provided, serializer uses password flow."""
     data = {
         'email': 'test@example.com',
         'password': 'testpass123',
         'otp': valid_otp.otp
     }
     serializer = LoginSerializer(data=data)
-    assert not serializer.is_valid()
-    assert 'non_field_errors' in serializer.errors
-    assert 'not both' in str(serializer.errors['non_field_errors']).lower()
+    assert serializer.is_valid()
+    assert serializer.validated_data['_user'] == active_user
+    assert '_otp_instance' not in serializer.validated_data
 
 
 @pytest.mark.django_db

@@ -35,6 +35,16 @@ def other_user():
 
 
 @pytest.fixture
+def staff_user():
+    return CustomUser.objects.create_user(
+        email="staff@example.com",
+        password="strongpass",
+        is_active=True,
+        is_staff=True,
+    )
+
+
+@pytest.fixture
 def order(user):
     addr = ShippingAddress.objects.create(
         user=user,
@@ -145,4 +155,50 @@ def test_payment_create_rejected_if_order_fully_paid(api_client, order, user):
         format="json",
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_user_can_cancel_own_unpaid_order(api_client, order, user):
+    api_client.force_authenticate(user=user)
+    resp = api_client.patch(
+        f"/api/orders/orders/{order.id}/",
+        {"status": "CANCELLED"},
+        format="json",
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    order.refresh_from_db()
+    assert order.status == "CANCELLED"
+
+
+def test_user_cannot_cancel_paid_order(api_client, order, user):
+    from orders.models import PaymentStatus
+
+    OrderPayment.objects.create(
+        order=order,
+        provider=PaymentProvider.CASH,
+        status=PaymentStatus.COMPLETED,
+        amount=order.total,
+        currency="KES",
+    )
+    order.refresh_from_db()
+    assert order.is_fully_paid is True
+
+    api_client.force_authenticate(user=user)
+    resp = api_client.patch(
+        f"/api/orders/orders/{order.id}/",
+        {"status": "CANCELLED"},
+        format="json",
+    )
+    assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_staff_can_cancel_any_order(api_client, order, staff_user):
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.patch(
+        f"/api/orders/orders/{order.id}/",
+        {"status": "CANCELLED"},
+        format="json",
+    )
+    assert resp.status_code == status.HTTP_200_OK
+    order.refresh_from_db()
+    assert order.status == "CANCELLED"
 

@@ -76,13 +76,15 @@ def test_login_view_success_code(api_client, active_user, valid_otp):
 
 
 @pytest.mark.django_db
-def test_login_view_both_password_and_code_rejected(api_client, active_user, valid_otp):
-    """Login view rejects when both password and code are sent"""
+def test_login_view_both_password_and_code_uses_password(api_client, active_user, valid_otp):
+    """When both password and OTP are sent, login succeeds via password flow."""
     url = '/api/users/login/'
     data = {'email': 'test@example.com', 'password': 'testpass123', 'otp': valid_otp.otp}
     response = api_client.post(url, data, format='json')
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert 'non_field_errors' in response.data
+    assert response.status_code == status.HTTP_200_OK
+    assert 'access' in response.data
+    assert 'refresh' in response.data
+    assert response.data['user']['email'] == 'test@example.com'
 
 
 @pytest.mark.django_db

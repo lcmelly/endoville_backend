@@ -96,6 +96,7 @@ class Product(models.Model):
     )
 
     featured = models.BooleanField(default=False, db_index=True)
+    is_cancelled = models.BooleanField(default=False, db_index=True)
 
     benefits = models.TextField(blank=True, help_text="Product benefits (marketing copy)")
     ingredients = models.TextField(blank=True, help_text="Ingredients or composition")

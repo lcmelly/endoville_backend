@@ -7,6 +7,7 @@ from orders.models import (
     PaymentCredentials,
     PaymentProvider,
     PaymentStatus,
+    OrderStatus,
     Shipment,
     ShipmentEvent,
     ShippingAddress,
@@ -96,3 +97,28 @@ def test_order_payment_str(order):
         currency="KES",
     )
     assert "Order" in str(p)
+
+
+def test_cancelling_order_cancels_pending_payments_only(order):
+    pending = OrderPayment.objects.create(
+        order=order,
+        provider=PaymentProvider.INTASEND,
+        status=PaymentStatus.PENDING,
+        amount="10.00",
+        currency="KES",
+    )
+    completed = OrderPayment.objects.create(
+        order=order,
+        provider=PaymentProvider.CASH,
+        status=PaymentStatus.COMPLETED,
+        amount="10.00",
+        currency="KES",
+    )
+
+    order.status = OrderStatus.CANCELLED
+    order.save()
+
+    pending.refresh_from_db()
+    completed.refresh_from_db()
+    assert pending.status == PaymentStatus.CANCELLED
+    assert completed.status == PaymentStatus.COMPLETED

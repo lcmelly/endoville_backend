@@ -12,7 +12,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from .currency_utils import order_total_in_currency
-from .models import Order, OrderPayment, PaymentCredentials, PaymentProvider, PaymentStatus, Shipment, ShipmentEvent
+from .models import Order, OrderPayment, OrderStatus, PaymentCredentials, PaymentProvider, PaymentStatus, Shipment, ShipmentEvent
 from .permissions import IsStaffOnly, IsStaffOrOwner
 from .serializers import (
     CreateOrderPaymentSerializer,
@@ -55,6 +55,33 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         order = serializer.save()
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        return self._update_order(request, partial=False, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        return self._update_order(request, partial=True, **kwargs)
+
+    def _update_order(self, request, partial=False, **kwargs):
+        order = self.get_object()
+
+        if not request.user.is_staff:
+            status_value = request.data.get("status")
+            if set(request.data.keys()) != {"status"} or status_value != OrderStatus.CANCELLED:
+                return Response(
+                    {"detail": "You can only cancel your own unpaid orders."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            if order.recalculate_is_fully_paid():
+                return Response(
+                    {"detail": "Only unpaid orders can be cancelled."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        serializer = self.get_serializer(order, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ShipmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):

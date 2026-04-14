@@ -5,7 +5,7 @@ Models for ordering and shipping.
 from decimal import Decimal
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 import base64
@@ -14,6 +14,16 @@ from hashlib import sha256
 from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.encoding import force_bytes
+
+
+def send_order_confirmation_email(order_id):
+    """
+    Proxy function so callers/tests can patch `orders.models.send_order_confirmation_email`
+    without importing email code at module import time.
+    """
+    from .emails import send_order_confirmation_email as _send_order_confirmation_email
+
+    return _send_order_confirmation_email(order_id)
 
 
 class ShippingStatus(models.TextChoices):
@@ -82,6 +92,27 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} - {self.user}"
+
+    def save(self, *args, **kwargs):
+        previous_status = None
+        if self.pk:
+            previous_status = (
+                Order.objects.filter(pk=self.pk).values_list("status", flat=True).first()
+            )
+
+        super().save(*args, **kwargs)
+
+        if (
+            self.status == OrderStatus.CANCELLED
+            and previous_status != OrderStatus.CANCELLED
+        ):
+            self.payments.filter(
+                status=PaymentStatus.PENDING,
+                is_deleted=False,
+            ).update(
+                status=PaymentStatus.CANCELLED,
+                updated_at=timezone.now(),
+            )
 
     def recalculate_is_fully_paid(self) -> bool:
         """
@@ -363,8 +394,6 @@ class OrderPayment(models.Model):
 
         # Send confirmation email when payment is completed
         if is_newly_completed:
-            from django.db import transaction
-            from .emails import send_order_confirmation_email
             transaction.on_commit(lambda: send_order_confirmation_email(self.order_id))
 
     def delete(self, *args, **kwargs):
