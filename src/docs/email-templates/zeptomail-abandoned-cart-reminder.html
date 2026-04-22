@@ -1,0 +1,104 @@
+<!--
+  ZeptoMail transactional template — Abandoned cart reminder
+  Merge keys sent by send_abandoned_cart_reminder_email():
+  name, team, support_email, support_phone, current_year,
+  reminder_hours (12 | 24 | 48), item_count, subtotal, currency,
+  cart_items (JSON array), cart_items_html (prebuilt <tr> rows — use in tbody),
+  cart_url (set FRONTEND_CART_URL in Django env; falls back to #)
+
+  In ZeptoMail: if {{cart_items_html}} renders escaped, enable HTML merge / raw HTML
+  for that field per ZeptoMail docs, or paste row markup manually.
+-->
+<html>
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+ </head>
+ <body style="margin:0;padding:0;">
+  <table cellspacing="0" cellpadding="0" style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-table-lspace:0pt;mso-table-rspace:0pt;background-color:#F4F6F7;border:1px solid #eee;width:100%;" width="100%" bgcolor="#F4F6F7">
+   <tbody>
+    <tr>
+     <td style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-table-lspace:0pt;mso-table-rspace:0pt;padding:20px 0;">
+      <div class="email-container" style="background-color:#fff;border:1px solid #DEE6E9;border-radius:10px;box-sizing:border-box;font-family:Lato,Helvetica,'Helvetica Neue',Arial,sans-serif;margin:auto;max-width:600px;overflow:hidden;">
+       <div style="background-color:#361340;padding:32px 40px;text-align:center;">
+        <p style="margin:0;color:#fff;font-size:22px;font-weight:600;letter-spacing:0.5px;">{{team}}</p>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">You have items waiting in your cart</p>
+       </div>
+       <div style="background-color:#FFF8E1;padding:24px;text-align:center;border-bottom:1px solid #FFE082;">
+        <div style="font-size:40px;color:#F57C00;margin-bottom:8px;">🛒</div>
+        <h1 style="color:#E65100;font-size:22px;font-weight:600;margin:0 0 6px 0;">Still interested?</h1>
+        <p style="margin:0;font-size:14px;color:#795548;">
+         Hi {{name}}, this is a friendly reminder — it’s been <strong>{{reminder_hours}}</strong> hours since your cart was last updated.
+        </p>
+       </div>
+       <div class="responsive-padding" style="padding:36px 40px;">
+        <table cellspacing="0" cellpadding="0" style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-table-lspace:0pt;mso-table-rspace:0pt;width:100%;margin-bottom:24px;" width="100%">
+         <tbody>
+          <tr>
+           <td style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+            <p style="font-weight:600;margin:0 0 4px;font-size:16px;color:#333;">Your cart</p>
+            <p style="margin:0;font-size:13px;color:#666;">{{item_count}} item(s)</p>
+           </td>
+           <td style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-table-lspace:0pt;mso-table-rspace:0pt;text-align:right;" align="right">
+            <span style="display:inline-block;background-color:#361340;color:#fff;font-size:11px;font-weight:600;padding:6px 12px;border-radius:4px;text-transform:uppercase;">Reminder</span>
+           </td>
+          </tr>
+         </tbody>
+        </table>
+        <div style="margin-bottom:28px;">
+         <h2 style="color:#333;font-size:16px;font-weight:600;margin:0 0 14px 0;padding-bottom:10px;border-bottom:2px solid #361340;">Cart items</h2>
+         <table cellspacing="0" cellpadding="0" style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-table-lspace:0pt;mso-table-rspace:0pt;width:100%;" width="100%">
+          <tbody>
+           <tr style="background-color:#F8F9FA;">
+            <td style="padding:12px;font-size:12px;font-weight:600;color:#666;text-transform:uppercase;border-bottom:1px solid #DEE6E9;">Product</td>
+            <td style="padding:12px;font-size:12px;font-weight:600;color:#666;text-transform:uppercase;text-align:center;border-bottom:1px solid #DEE6E9;width:56px;" width="56" align="center">Qty</td>
+            <td style="padding:12px;font-size:12px;font-weight:600;color:#666;text-transform:uppercase;text-align:right;border-bottom:1px solid #DEE6E9;width:120px;" width="120" align="right">Price</td>
+           </tr>
+           {{cart_items_html}}
+          </tbody>
+         </table>
+         <table cellspacing="0" cellpadding="0" style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-table-lspace:0pt;mso-table-rspace:0pt;width:100%;margin-top:16px;" width="100%">
+          <tbody>
+           <tr>
+            <td style="padding:10px 12px;font-size:14px;color:#666;">Estimated total</td>
+            <td style="padding:10px 12px;font-size:16px;font-weight:600;color:#361340;text-align:right;" align="right">{{currency}} {{subtotal}}</td>
+           </tr>
+          </tbody>
+         </table>
+        </div>
+        <div style="text-align:center;margin:28px 0 8px;">
+         <a href="{{cart_url}}" style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;display:inline-block;background-color:#361340;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:6px;text-decoration:none;">Return to cart</a>
+        </div>
+        <p style="text-align:center;margin:0;font-size:12px;color:#999;">Prices and availability may change until you complete checkout.</p>
+       </div>
+      </div>
+     </td>
+    </tr>
+   </tbody>
+  </table>
+  <table cellspacing="0" cellpadding="0" style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;mso-table-lspace:0pt;mso-table-rspace:0pt;width:100%;max-width:600px;margin:0 auto 24px;" width="100%" align="center">
+   <tbody>
+    <tr>
+     <td style="padding:0 20px;">
+      <div style="background-color:#F8F9FA;border-radius:6px;padding:20px;">
+       <p style="font-weight:600;margin:0 0 10px;font-size:14px;color:#333;">Need help?</p>
+       <p style="line-height:1.6;margin:0;font-size:13px;color:#666;">
+        Questions about your cart? Contact us:<br>
+        ✉ <a href="mailto:{{support_email}}" style="color:#361340;text-decoration:none;">{{support_email}}</a><br>
+        ☎ <a href="tel:{{support_phone}}" style="color:#361340;text-decoration:none;">{{support_phone}}</a>
+       </p>
+      </div>
+      <p style="line-height:1.6;margin:20px 0 8px;font-size:13px;color:#666;">
+       This is a reminder about items saved in your cart at {{team}}.
+      </p>
+      <p style="margin:0;font-size:13px;color:#333;">
+       Best regards,<br><b>{{team}}</b>
+      </p>
+      <div style="background-color:#361340;padding:22px 24px;text-align:center;margin-top:24px;border-radius:0 0 10px 10px;">
+       <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.65);">© {{current_year}} {{team}}. All rights reserved.</p>
+      </div>
+     </td>
+    </tr>
+   </tbody>
+  </table>
+ </body>
+</html>

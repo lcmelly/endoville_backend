@@ -151,9 +151,11 @@ The backend can email users who leave items in the cart without purchasing. Remi
 
 - **User activity**: any successful `sync` or `clear` updates the cart and resets the reminder schedule for the next abandonment window.
 
-### Suggested ZeptoMail `merge_info` keys
+### ZeptoMail `merge_info` keys
 
-The reminder email builder sends a `merge_info` object including (among others): `name`, `team`, `support_email`, `support_phone`, `current_year`, `reminder_hours` (`"12"`, `"24"`, or `"48"`), `item_count`, `subtotal`, `currency`, and `cart_items` (array of `{ name, quantity, unit_price, line_total }`). Align your ZeptoMail template placeholders with these keys.
+The reminder email builder sends (among others): `name`, `team`, `support_email`, `support_phone`, `current_year`, `reminder_hours` (`"12"`, `"24"`, or `"48"`), `item_count`, `subtotal`, `currency`, `cart_items` (JSON array of `{ name, quantity, unit_price, line_total }`), **`cart_items_html`** (pre-rendered table rows for the template), and **`cart_url`** (from env `FRONTEND_CART_URL`, or `#` if unset).
+
+A ready-to-paste HTML layout lives at `src/docs/email-templates/zeptomail-abandoned-cart-reminder.html`. If ZeptoMail escapes `{{cart_items_html}}`, configure that merge field as HTML/raw per ZeptoMail’s docs.
 
 ## Related docs
 

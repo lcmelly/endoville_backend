@@ -2,6 +2,7 @@ from decimal import Decimal
 import logging
 
 from django.conf import settings
+from django.utils.html import escape
 from django.utils import timezone
 
 from .currency_utils import get_primary_currency
@@ -149,6 +150,39 @@ def send_order_confirmation_email(order_id):
     )
 
 
+def _cart_reminder_item_rows_html(summaries, currency_code: str) -> str:
+    """Pre-rendered <tr>…</tr> rows for ZeptoMail (no array loops in HTML)."""
+    cur = escape(currency_code or "")
+    rows = []
+    for row in summaries:
+        name = escape(row.get("name") or "")
+        qty = escape(row.get("quantity") or "")
+        up = escape(row.get("unit_price") or "")
+        lt = escape(row.get("line_total") or "")
+        rows.append(
+            "<tr>"
+            '<td style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;'
+            'mso-table-lspace:0pt;mso-table-rspace:0pt;padding:15px 12px;'
+            'border-bottom:1px solid #F0F0F0;vertical-align:top;" valign="top">'
+            f'<p style="font-weight:500;margin:0 0 4px;font-size:14px;color:#333;">{name}</p>'
+            "</td>"
+            '<td style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;'
+            'mso-table-lspace:0pt;mso-table-rspace:0pt;padding:15px 12px;'
+            'text-align:center;font-size:14px;color:#333;border-bottom:1px solid #F0F0F0;'
+            'vertical-align:top;" align="center" valign="top">'
+            f"{qty}</td>"
+            '<td style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;'
+            'mso-table-lspace:0pt;mso-table-rspace:0pt;padding:15px 12px;'
+            'text-align:right;border-bottom:1px solid #F0F0F0;vertical-align:top;" '
+            'align="right" valign="top">'
+            f'<p style="font-weight:500;margin:0 0 2px;font-size:14px;color:#333;">{cur} {lt}</p>'
+            f'<p style="margin:0;font-size:11px;color:#888;">{cur} {up} each</p>'
+            "</td>"
+            "</tr>"
+        )
+    return "".join(rows)
+
+
 def send_abandoned_cart_reminder_email(cart_id, reminder_hours):
     template_key = getattr(settings, "ZEPTOMAIL_CART_REMINDER_TEMPLATE_KEY", "")
     if not template_key:
@@ -199,6 +233,7 @@ def send_abandoned_cart_reminder_email(cart_id, reminder_hours):
             }
         )
 
+    cart_url = (getattr(settings, "FRONTEND_CART_URL", "") or "").strip()
     merge_data = {
         "name": recipient_name,
         "team": getattr(settings, "DEFAULT_FROM_NAME", "Endoville Health"),
@@ -210,6 +245,8 @@ def send_abandoned_cart_reminder_email(cart_id, reminder_hours):
         "subtotal": _format_money(subtotal),
         "currency": currency_code,
         "cart_items": item_summaries,
+        "cart_items_html": _cart_reminder_item_rows_html(item_summaries, currency_code),
+        "cart_url": cart_url or "#",
     }
 
     return send_template_email(
