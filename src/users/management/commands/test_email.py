@@ -24,10 +24,18 @@ class Command(BaseCommand):
             default='Test User',
             help='Name for personalized email'
         )
+        parser.add_argument(
+            '--purpose',
+            type=str,
+            choices=['activation', 'login'],
+            default='activation',
+            help='Which ZeptoMail OTP template to use (activation vs login)',
+        )
 
     def handle(self, *args, **options):
         email = options['email']
         name = options['name']
+        purpose = options['purpose']
 
         self.stdout.write("=" * 60)
         self.stdout.write(self.style.SUCCESS("Testing ZeptoMail Email"))
@@ -48,7 +56,10 @@ class Command(BaseCommand):
         # Send email
         self.stdout.write(f"Sending OTP to {email}...")
         try:
-            success = send_otp_email(email, otp.otp, name)
+            action = (
+                'Sign in to your account' if purpose == 'login' else 'Activate your account'
+            )
+            success = send_otp_email(email, otp.otp, name, action=action, purpose=purpose)
 
             if success:
                 self.stdout.write(self.style.SUCCESS(f"✓ Email sent successfully!"))

@@ -1,6 +1,6 @@
 # User Registration
 
-Register a new user account.
+Register a new user account. The activation OTP email uses **`ZEPTOMAIL_OTP_TEMPLATE_KEY`** (registration / activation template), not the login OTP template.
 
 === "Endpoint"
 

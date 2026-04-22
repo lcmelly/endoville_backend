@@ -95,7 +95,10 @@ ZOHO_ZEPTOMAIL_API_KEY_TOKEN = config('ZOHO_ZEPTOMAIL_API_KEY_TOKEN')
 ZOHO_ZEPTOMAIL_HOSTED_REGION = config('ZOHO_ZEPTOMAIL_HOSTED_REGION', default='zeptomail.zoho.com')
 OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', cast=int, default=5)
 # Email templates
+# ZeptoMail: OTP for registration + activation resend (`purpose="activation"` in send_otp_email)
 ZEPTOMAIL_OTP_TEMPLATE_KEY = config('ZEPTOMAIL_OTP_TEMPLATE_KEY')
+# ZeptoMail: OTP for login code flow (`purpose="login"`); falls back to ZEPTOMAIL_OTP_TEMPLATE_KEY if empty
+ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY = config('ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY', default='')
 ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY = config('ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY', default='')
 ZEPTOMAIL_CART_REMINDER_TEMPLATE_KEY = config('ZEPTOMAIL_CART_REMINDER_TEMPLATE_KEY', default='')
 # Cart reminder CTA (ZeptoMail merge tag {{cart_url}})

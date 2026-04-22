@@ -15,10 +15,6 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
-    """Register custom markers"""
-    config.addinivalue_line(
-        "markers", "real_email: marks tests that send real emails (deselect with '-m \"not real_email\"')"
-    )
-
+# Marker `real_email` is registered in src/pytest.ini so it exists before this module
+# finishes importing (module-level pytestmark below would otherwise warn).
 pytestmark = pytest.mark.real_email

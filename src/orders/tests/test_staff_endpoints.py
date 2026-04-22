@@ -152,6 +152,26 @@ def test_order_is_fully_paid_ticks_and_unticks_on_payment_delete(api_client, sta
     assert p2.deleted_by_id == staff_user.id
 
 
+def test_staff_can_list_background_tasks(api_client, staff_user):
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.get("/api/orders/staff/background-tasks/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert isinstance(resp.json(), list)
+
+
+def test_staff_can_list_completed_background_tasks(api_client, staff_user):
+    api_client.force_authenticate(user=staff_user)
+    resp = api_client.get("/api/orders/staff/background-tasks/completed/")
+    assert resp.status_code == status.HTTP_200_OK
+    assert isinstance(resp.json(), list)
+
+
+def test_non_staff_cannot_list_background_tasks(api_client, user):
+    api_client.force_authenticate(user=user)
+    resp = api_client.get("/api/orders/staff/background-tasks/")
+    assert resp.status_code == status.HTTP_403_FORBIDDEN
+
+
 def test_non_staff_cannot_update_staff_payment_endpoint(api_client, user, order):
     from orders.models import OrderPayment, PaymentProvider
 

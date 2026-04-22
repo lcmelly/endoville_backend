@@ -114,6 +114,41 @@ Login with **email** and **either** a **password** or a **code** (OTP)—not bot
 - **Invalid OTP**: Code incorrect, expired, or already used (code login).
 - **No OTP**: No valid OTP found for the email (request a new one).
 
+## Request login OTP
+
+For **code (OTP) login**, the client should request a login OTP first (active accounts only). ZeptoMail uses **`ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY`** when set; otherwise **`ZEPTOMAIL_OTP_TEMPLATE_KEY`**. Merge payload includes `purpose` (`login` or `activation`) for template branching if needed.
+
+=== "Endpoint"
+
+    ```
+    POST /api/users/request-login-otp/
+    ```
+
+=== "Authentication"
+
+    No authentication required.
+
+=== "Request body"
+
+    ```json
+    {
+      "email": "user@example.com"
+    }
+    ```
+
+=== "Success (200 OK)"
+
+    ```json
+    {
+      "message": "OTP has been sent to your email address.",
+      "email": "user@example.com"
+    }
+    ```
+
+=== "Error (400 Bad Request)"
+
+    Unknown email, inactive account, or validation errors (same shape as other user endpoints).
+
 ## JWT Tokens
 
 ### Access Token
@@ -141,7 +176,7 @@ curl -X GET https://api.endovillehealth.com/api/users/profile/ \
 
 - Use **either** password **or** code to login, not both.
 - The account must be activated (`is_active=True`).
-- For code login: OTP is single-use, expires after 5 minutes, and has a maximum of 3 verification attempts.
+- For code login: call **`POST /api/users/request-login-otp/`** first, then **`POST /api/users/login/`** with the same `email` and the `otp` from the email. OTP is single-use, expires after 5 minutes, and has a maximum of 3 verification attempts.
 - Store the access token securely (e.g., in localStorage or secure cookies).
 - Use the refresh token to obtain a new access token before it expires.
 

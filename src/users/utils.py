@@ -73,20 +73,24 @@ def send_template_email(to_email, template_key, merge_data, to_name=None, action
         return False
 
 
-def send_otp_email(email, otp_code, name=None, template_key=None, action=None):
+def send_otp_email(email, otp_code, name=None, template_key=None, action=None, purpose="activation"):
     """
     Send OTP email using template or HTML fallback.
 
     WHAT THIS DOES:
-    - If template_key provided: uses that template via API
-    - If template_key not provided but ZEPTOMAIL_OTP_TEMPLATE_KEY set: uses default
-    - Otherwise: uses HTML email via Django backend
+    - If template_key provided (str): uses that template via API
+    - If template_key is None: picks ZeptoMail key from settings by ``purpose``:
+      - ``activation``: ZEPTOMAIL_OTP_TEMPLATE_KEY (registration + activation resend)
+      - ``login``: ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY, or ZEPTOMAIL_OTP_TEMPLATE_KEY if login key unset
+    - If template_key is False: uses HTML email via Django backend (no ZeptoMail template)
 
     Args:
         email (str): Recipient email address
         otp_code (str): 6-digit OTP code
         name (str): Recipient name (optional)
-        template_key (str): ZeptoMail template key (optional)
+        template_key (str | bool | None): Explicit ZeptoMail key, or False for HTML-only
+        action (str | None): Optional merge field for the template CTA line
+        purpose (str): ``activation`` or ``login`` — selects default template when template_key is None
 
     Returns:
         bool: True if sent successfully, False otherwise
@@ -96,24 +100,33 @@ def send_otp_email(email, otp_code, name=None, template_key=None, action=None):
         send_otp_email('user@example.com', '123456', 'John',
                        template_key='2d6f.123.k1.abc')
 
-        # Use default template from settings
-        send_otp_email('user@example.com', '123456', 'John')
+        # Activation template from settings
+        send_otp_email('user@example.com', '123456', 'John', purpose='activation')
+
+        # Login template from settings
+        send_otp_email('user@example.com', '123456', 'John', purpose='login', action='Sign in')
 
         # Force HTML email (no template)
         send_otp_email('user@example.com', '123456', 'John', template_key=False)
     """
     recipient_name = name if name else "User"
+    purpose_norm = (purpose or "activation").strip().lower()
+    if purpose_norm not in ("activation", "login"):
+        purpose_norm = "activation"
 
-    # Determine which template to use
     use_template_key = None
 
-    if template_key:
-        # Use provided template key
+    if template_key is False:
+        use_template_key = None
+    elif template_key:
         use_template_key = template_key
-    elif template_key is None and hasattr(settings,
-                                          'ZEPTOMAIL_OTP_TEMPLATE_KEY') and settings.ZEPTOMAIL_OTP_TEMPLATE_KEY:
-        # Use default template from settings
-        use_template_key = settings.ZEPTOMAIL_OTP_TEMPLATE_KEY
+    else:
+        activation_key = (getattr(settings, "ZEPTOMAIL_OTP_TEMPLATE_KEY", None) or "").strip()
+        login_key = (getattr(settings, "ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY", None) or "").strip()
+        if purpose_norm == "login":
+            use_template_key = login_key or activation_key
+        else:
+            use_template_key = activation_key
 
     # Send using template or HTML
     if use_template_key:
@@ -126,7 +139,8 @@ def send_otp_email(email, otp_code, name=None, template_key=None, action=None):
                 'OTP': otp_code,
                 'product_name': 'Endoville Health',
                 'action': action,
-                'team': 'Endoville Health Team'
+                'team': 'Endoville Health Team',
+                'purpose': purpose_norm,
             },
             to_name=recipient_name
         )

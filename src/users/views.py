@@ -11,6 +11,7 @@ from .serializers import (
     RegisterSerializer,
     ActivateAccountSerializer,
     ResendOTPSerializer,
+    RequestLoginOTPSerializer,
     LoginSerializer,
     UserSerializer,
     UserProfileSerializer,
@@ -142,7 +143,9 @@ def send_otp_view(request):
         send_otp_email(
             email=user.email,
             otp_code=otp_instance.otp,
-            name=user_name
+            name=user_name,
+            action="Activate your account",
+            purpose="activation",
         )
         
         return Response(
@@ -153,6 +156,40 @@ def send_otp_view(request):
             status=status.HTTP_200_OK
         )
     
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def request_login_otp_view(request):
+    """
+    Send a login OTP email for an active account (use before POST /api/users/login/ with otp).
+
+    POST /api/users/request-login-otp/
+    Body: { "email": "user@example.com" }
+    """
+    serializer = RequestLoginOTPSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.validated_data['_user']
+        from .models import OTP
+        from .utils import send_otp_email
+
+        otp_instance = OTP.create_otp(email=user.email)
+        user_name = user.get_full_name() or user.email
+        send_otp_email(
+            email=user.email,
+            otp_code=otp_instance.otp,
+            name=user_name,
+            action="Sign in to your account",
+            purpose="login",
+        )
+        return Response(
+            {
+                'message': 'OTP has been sent to your email address.',
+                'email': user.email,
+            },
+            status=status.HTTP_200_OK,
+        )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

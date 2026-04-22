@@ -196,7 +196,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=user.email,
             otp_code=otp_instance.otp,
             name=user_name,
-            action="Activate your account?"
+            action="Activate your account?",
+            purpose="activation",
         )
         
         return user
@@ -276,7 +277,39 @@ class ResendOTPSerializer(serializers.Serializer):
             raise serializers.ValidationError({'email': 'User with this email does not exist.'})
 
 
+        if user.is_active:
+            raise serializers.ValidationError(
+                {'email': 'Account is already active.'}
+            )
+
         # Store user instance for view to use
+        data['_user'] = user
+        return data
+
+
+class RequestLoginOTPSerializer(serializers.Serializer):
+    """
+    Request a login OTP email for an already-activated account (code login flow).
+    Uses ZeptoMail ``ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY`` when set.
+    """
+
+    email = serializers.EmailField(required=True)
+
+    def validate(self, data):
+        email = data.get('email', '').strip().lower()
+        if not email:
+            raise serializers.ValidationError({'email': 'Email is required.'})
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'email': 'User with this email does not exist.'})
+
+        if not user.is_active:
+            raise serializers.ValidationError(
+                {'email': 'Account is not activated. Please activate your account first.'}
+            )
+
         data['_user'] = user
         return data
 

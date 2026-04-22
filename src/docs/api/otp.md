@@ -1,6 +1,11 @@
 # OTP Management
 
-Resend OTP for account activation.
+Resend OTP for **account activation** (inactive accounts) via `POST /api/users/send-otp/`. For **login code** emails (active users), see [Request login OTP](login.md) (`POST /api/users/request-login-otp/`).
+
+ZeptoMail template keys (see `.env.example`):
+
+- **Register** (`POST /api/users/register/`) uses the same key as activation resend: **`ZEPTOMAIL_OTP_TEMPLATE_KEY`** (`purpose=activation` in the API).
+- **Login OTP** uses **`ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY`** when set; otherwise it falls back to **`ZEPTOMAIL_OTP_TEMPLATE_KEY`** so a single template still works until you add a second key in `.env`.
 
 === "Endpoint"
 

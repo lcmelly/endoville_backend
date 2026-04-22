@@ -180,6 +180,49 @@ def test_login_view_expired_otp(api_client, active_user):
     assert 'otp' in response.data
 
 
+@pytest.mark.django_db
+@patch('users.utils.send_otp_email')
+def test_request_login_otp_sends_login_purpose(mock_send, api_client, active_user):
+    mock_send.return_value = True
+    url = '/api/users/request-login-otp/'
+    response = api_client.post(url, {'email': 'test@example.com'}, format='json')
+    assert response.status_code == status.HTTP_200_OK
+    mock_send.assert_called_once()
+    _, kwargs = mock_send.call_args
+    assert kwargs['purpose'] == 'login'
+    assert kwargs['action'] == 'Sign in to your account'
+
+
+@pytest.mark.django_db
+def test_request_login_otp_then_code_login(api_client, active_user):
+    """After requesting login OTP, the same code works on POST /login/."""
+    with patch('users.utils.send_otp_email', return_value=True):
+        r = api_client.post('/api/users/request-login-otp/', {'email': 'test@example.com'}, format='json')
+    assert r.status_code == status.HTTP_200_OK
+    otp = OTP.objects.get(email=active_user.email, is_used=False)
+    r2 = api_client.post(
+        '/api/users/login/',
+        {'email': 'test@example.com', 'otp': otp.otp},
+        format='json',
+    )
+    assert r2.status_code == status.HTTP_200_OK
+    assert 'access' in r2.data
+
+
+@pytest.mark.django_db
+def test_request_login_otp_rejects_inactive(api_client, inactive_user):
+    url = '/api/users/request-login-otp/'
+    response = api_client.post(url, {'email': 'inactive@example.com'}, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_request_login_otp_rejects_unknown_email(api_client):
+    url = '/api/users/request-login-otp/'
+    response = api_client.post(url, {'email': 'nobody@example.com'}, format='json')
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
 # Google Login View Tests
 @pytest.mark.django_db
 @patch('requests.get')

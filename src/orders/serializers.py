@@ -4,6 +4,7 @@ Serializers for orders app.
 
 from decimal import Decimal
 
+from background_task.models import CompletedTask, Task
 from django.db import transaction
 from rest_framework import serializers
 
@@ -554,4 +555,126 @@ class StaffShipmentEventCreateSerializer(serializers.ModelSerializer):
         model = ShipmentEvent
         fields = ["id", "shipment", "status", "message", "location", "occurred_at"]
         read_only_fields = ["id"]
+
+
+class BackgroundTaskSerializer(serializers.ModelSerializer):
+    """
+    django-background-tasks `Task` rows (queued / due / running / failed in-queue).
+    """
+
+    status = serializers.SerializerMethodField()
+    seconds_until_run = serializers.SerializerMethodField()
+    repeat_interval_label = serializers.SerializerMethodField()
+    last_error_preview = serializers.SerializerMethodField()
+    locked_by_pid_running = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Task
+        fields = [
+            "id",
+            "task_name",
+            "verbose_name",
+            "run_at",
+            "repeat",
+            "repeat_interval_label",
+            "repeat_until",
+            "queue",
+            "attempts",
+            "failed_at",
+            "last_error_preview",
+            "locked_at",
+            "locked_by",
+            "locked_by_pid_running",
+            "status",
+            "seconds_until_run",
+        ]
+        read_only_fields = fields
+
+    def get_locked_by_pid_running(self, obj):
+        return obj.locked_by_pid_running()
+
+    def get_repeat_interval_label(self, obj):
+        if obj.repeat == Task.NEVER:
+            return "never"
+        for val, label in Task.REPEAT_CHOICES:
+            if val == obj.repeat:
+                return label
+        return f"every {obj.repeat} seconds"
+
+    def get_status(self, obj):
+        from django.utils import timezone
+
+        if obj.failed_at:
+            return "failed"
+        if obj.locked_at and obj.locked_by and not obj.failed_at:
+            return "running"
+        if obj.run_at and obj.run_at > timezone.now():
+            return "scheduled"
+        return "due"
+
+    def get_seconds_until_run(self, obj):
+        from django.utils import timezone
+
+        if self.get_status(obj) != "scheduled":
+            return None
+        delta = (obj.run_at - timezone.now()).total_seconds()
+        return int(max(0, round(delta)))
+
+    def get_last_error_preview(self, obj):
+        err = (obj.last_error or "").strip()
+        if len(err) > 2000:
+            return err[:2000] + "…"
+        return err
+
+
+class CompletedBackgroundTaskSerializer(serializers.ModelSerializer):
+    """
+    django-background-tasks `CompletedTask` archive (recent finished runs).
+    """
+
+    status = serializers.SerializerMethodField()
+    last_error_preview = serializers.SerializerMethodField()
+    locked_by_pid_running = serializers.SerializerMethodField()
+    repeat_interval_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CompletedTask
+        fields = [
+            "id",
+            "task_name",
+            "verbose_name",
+            "run_at",
+            "repeat",
+            "repeat_interval_label",
+            "repeat_until",
+            "queue",
+            "attempts",
+            "failed_at",
+            "last_error_preview",
+            "locked_at",
+            "locked_by",
+            "locked_by_pid_running",
+            "status",
+        ]
+        read_only_fields = fields
+
+    def get_locked_by_pid_running(self, obj):
+        return obj.locked_by_pid_running()
+
+    def get_repeat_interval_label(self, obj):
+        if obj.repeat == Task.NEVER:
+            return "never"
+        for val, label in Task.REPEAT_CHOICES:
+            if val == obj.repeat:
+                return label
+        return f"every {obj.repeat} seconds"
+
+    def get_status(self, obj):
+        return "failed" if obj.failed_at else "succeeded"
+
+    def get_last_error_preview(self, obj):
+        err = (obj.last_error or "").strip()
+        if len(err) > 2000:
+            return err[:2000] + "…"
+        return err
 

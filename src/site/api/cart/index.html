@@ -761,10 +761,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#suggested-zeptomail-merge_info-keys" class="md-nav__link">
+  <a href="#zeptomail-merge_info-keys" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Suggested ZeptoMail merge_info keys
+        ZeptoMail merge_info keys
       
     </span>
   </a>
@@ -960,10 +960,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#suggested-zeptomail-merge_info-keys" class="md-nav__link">
+  <a href="#zeptomail-merge_info-keys" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Suggested ZeptoMail merge_info keys
+        ZeptoMail merge_info keys
       
     </span>
   </a>
@@ -1081,6 +1081,105 @@
 <li><code>unit_price</code> follows the same rule as orders: variant override price, else product price.</li>
 <li><code>subtotal</code> is the sum of line totals for all items.</li>
 </ul>
+<p><strong>Response fields</strong> (same object shape for <code>GET /cart/me/</code>, and for <code>PUT|POST /cart/sync/</code> and <code>DELETE /cart/clear/</code> success bodies):</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>integer</td>
+<td>Cart id</td>
+</tr>
+<tr>
+<td><code>user</code></td>
+<td>integer</td>
+<td>Owner user id</td>
+</tr>
+<tr>
+<td><code>items</code></td>
+<td>array</td>
+<td>Line items (see below)</td>
+</tr>
+<tr>
+<td><code>subtotal</code></td>
+<td>decimal / number</td>
+<td>Sum of line totals</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td>string (ISO 8601)</td>
+<td>When the cart row was created</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>string (ISO 8601)</td>
+<td>Last update (used for abandoned-cart timing)</td>
+</tr>
+</tbody>
+</table>
+<p>Each element of <strong><code>items</code></strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>integer</td>
+<td>Cart line id</td>
+</tr>
+<tr>
+<td><code>product</code></td>
+<td>integer or <code>null</code></td>
+<td>Product pk when line is product-level</td>
+</tr>
+<tr>
+<td><code>variant</code></td>
+<td>integer or <code>null</code></td>
+<td>Variant pk when line is variant-level</td>
+</tr>
+<tr>
+<td><code>quantity</code></td>
+<td>integer</td>
+<td>Quantity</td>
+</tr>
+<tr>
+<td><code>product_name</code></td>
+<td>string</td>
+<td>Resolved product name</td>
+</tr>
+<tr>
+<td><code>variant_description</code></td>
+<td>string</td>
+<td>Option text for variants; empty for product-only lines</td>
+</tr>
+<tr>
+<td><code>barcode</code></td>
+<td>string</td>
+<td>Variant or product barcode snapshot</td>
+</tr>
+<tr>
+<td><code>unit_price</code></td>
+<td>decimal / number</td>
+<td>Price per unit</td>
+</tr>
+<tr>
+<td><code>line_total</code></td>
+<td>decimal / number</td>
+<td><code>unit_price</code> × <code>quantity</code></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="tabbed-block">
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>PUT /api/orders/cart/sync/
@@ -1142,11 +1241,203 @@
 </span></code></pre></div>
 </li>
 <li>
+<p><strong>Inspect queue (staff API):</strong> django-background-tasks stores work in the DB. JWT required; user must be <strong>staff</strong>. This reflects the <strong>task worker</strong> schedule (when jobs run), not ZeptoMail’s outbound mail queue.</p>
+<p><strong>List queued / due tasks</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>GET /api/orders/staff/background-tasks/
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>GET /api/orders/staff/background-tasks/{id}/
+</span></code></pre></div>
+<p>Query params (list only): <code>task_name</code> (substring match on <code>task_name</code>), <code>queue</code> (exact), <code>limit</code> (default <strong>200</strong>, max <strong>500</strong>). Response: <strong>JSON array</strong> of task objects (list) or one object (retrieve).</p>
+<p><strong>Fields on each queued task object</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>integer</td>
+<td>Task row id</td>
+</tr>
+<tr>
+<td><code>task_name</code></td>
+<td>string</td>
+<td>Registered function path (e.g. <code>orders.background_tasks.run_abandoned_cart_reminders_task</code>)</td>
+</tr>
+<tr>
+<td><code>verbose_name</code></td>
+<td>string or <code>null</code></td>
+<td>Optional display name</td>
+</tr>
+<tr>
+<td><code>run_at</code></td>
+<td>string (ISO 8601) or <code>null</code></td>
+<td>Next scheduled execution time</td>
+</tr>
+<tr>
+<td><code>repeat</code></td>
+<td>integer</td>
+<td>Repeat interval in seconds (<code>0</code> = no repeat)</td>
+</tr>
+<tr>
+<td><code>repeat_interval_label</code></td>
+<td>string</td>
+<td>Human label, e.g. <code>never</code>, <code>hourly</code>, or <code>every 900 seconds</code> for custom intervals</td>
+</tr>
+<tr>
+<td><code>repeat_until</code></td>
+<td>string (ISO 8601) or <code>null</code></td>
+<td>End of repeat window, if set</td>
+</tr>
+<tr>
+<td><code>queue</code></td>
+<td>string or <code>null</code></td>
+<td>Queue name</td>
+</tr>
+<tr>
+<td><code>attempts</code></td>
+<td>integer</td>
+<td>How many times execution was attempted</td>
+</tr>
+<tr>
+<td><code>failed_at</code></td>
+<td>string (ISO 8601) or <code>null</code></td>
+<td>Set when the task is marked failed in-queue</td>
+</tr>
+<tr>
+<td><code>last_error_preview</code></td>
+<td>string</td>
+<td>Truncated error text (up to ~2000 chars + <code>…</code>)</td>
+</tr>
+<tr>
+<td><code>locked_at</code></td>
+<td>string (ISO 8601) or <code>null</code></td>
+<td>When a worker claimed the task</td>
+</tr>
+<tr>
+<td><code>locked_by</code></td>
+<td>string or <code>null</code></td>
+<td>Worker id (e.g. process id as string)</td>
+</tr>
+<tr>
+<td><code>locked_by_pid_running</code></td>
+<td>boolean or <code>null</code></td>
+<td>Whether the locking process still appears alive</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>string</td>
+<td>One of: <code>scheduled</code> (<code>run_at</code> in the future), <code>due</code> (waiting for worker), <code>running</code>, <code>failed</code></td>
+</tr>
+<tr>
+<td><code>seconds_until_run</code></td>
+<td>integer or <code>null</code></td>
+<td>Seconds until <code>run_at</code> when <code>status</code> is <code>scheduled</code>; otherwise <code>null</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>List completed task runs</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>GET /api/orders/staff/background-tasks/completed/
+</span></code></pre></div>
+<p>Same query params as list: <code>task_name</code>, <code>queue</code>, <code>limit</code> (default <strong>100</strong>, max <strong>500</strong>). Response: <strong>JSON array</strong> of completed task objects.</p>
+<p><strong>Fields on each completed task object</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>integer</td>
+<td>Completed task row id</td>
+</tr>
+<tr>
+<td><code>task_name</code></td>
+<td>string</td>
+<td>Same meaning as queued tasks</td>
+</tr>
+<tr>
+<td><code>verbose_name</code></td>
+<td>string or <code>null</code></td>
+<td>Optional display name</td>
+</tr>
+<tr>
+<td><code>run_at</code></td>
+<td>string (ISO 8601)</td>
+<td>Recorded completion / run time</td>
+</tr>
+<tr>
+<td><code>repeat</code></td>
+<td>integer</td>
+<td>Repeat interval in seconds at completion</td>
+</tr>
+<tr>
+<td><code>repeat_interval_label</code></td>
+<td>string</td>
+<td>Same as queued tasks</td>
+</tr>
+<tr>
+<td><code>repeat_until</code></td>
+<td>string (ISO 8601) or <code>null</code></td>
+<td>Repeat window end, if any</td>
+</tr>
+<tr>
+<td><code>queue</code></td>
+<td>string or <code>null</code></td>
+<td>Queue name</td>
+</tr>
+<tr>
+<td><code>attempts</code></td>
+<td>integer</td>
+<td>Attempt count for that run</td>
+</tr>
+<tr>
+<td><code>failed_at</code></td>
+<td>string (ISO 8601) or <code>null</code></td>
+<td>If set, run ended in failure</td>
+</tr>
+<tr>
+<td><code>last_error_preview</code></td>
+<td>string</td>
+<td>Truncated error text when failed</td>
+</tr>
+<tr>
+<td><code>locked_at</code></td>
+<td>string (ISO 8601) or <code>null</code></td>
+<td>Last lock snapshot</td>
+</tr>
+<tr>
+<td><code>locked_by</code></td>
+<td>string or <code>null</code></td>
+<td>Last worker id</td>
+</tr>
+<tr>
+<td><code>locked_by_pid_running</code></td>
+<td>boolean or <code>null</code></td>
+<td>PID check on archived row</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>string</td>
+<td><code>succeeded</code> if <code>failed_at</code> is null, else <code>failed</code></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
 <p><strong>User activity</strong>: any successful <code>sync</code> or <code>clear</code> updates the cart and resets the reminder schedule for the next abandonment window.</p>
 </li>
 </ul>
-<h3 id="suggested-zeptomail-merge_info-keys">Suggested ZeptoMail <code>merge_info</code> keys<a class="headerlink" href="#suggested-zeptomail-merge_info-keys" title="Permanent link">&para;</a></h3>
-<p>The reminder email builder sends a <code>merge_info</code> object including (among others): <code>name</code>, <code>team</code>, <code>support_email</code>, <code>support_phone</code>, <code>current_year</code>, <code>reminder_hours</code> (<code>"12"</code>, <code>"24"</code>, or <code>"48"</code>), <code>item_count</code>, <code>subtotal</code>, <code>currency</code>, and <code>cart_items</code> (array of <code>{ name, quantity, unit_price, line_total }</code>). Align your ZeptoMail template placeholders with these keys.</p>
+<h3 id="zeptomail-merge_info-keys">ZeptoMail <code>merge_info</code> keys<a class="headerlink" href="#zeptomail-merge_info-keys" title="Permanent link">&para;</a></h3>
+<p>The reminder email builder sends (among others): <code>name</code>, <code>team</code>, <code>support_email</code>, <code>support_phone</code>, <code>current_year</code>, <code>reminder_hours</code> (<code>"12"</code>, <code>"24"</code>, or <code>"48"</code>), <code>item_count</code>, <code>subtotal</code>, <code>currency</code>, <code>cart_items</code> (JSON array of <code>{ name, quantity, unit_price, line_total }</code>), <strong><code>cart_items_html</code></strong> (pre-rendered table rows for the template), and <strong><code>cart_url</code></strong> (from env <code>FRONTEND_CART_URL</code>, or <code>#</code> if unset).</p>
+<p>A ready-to-paste HTML layout lives at <code>src/docs/email-templates/zeptomail-abandoned-cart-reminder.html</code>. If ZeptoMail escapes <code>{{cart_items_html}}</code>, configure that merge field as HTML/raw per ZeptoMail’s docs.</p>
 <h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Orders: <code>api/orders.md</code></li>

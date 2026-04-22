@@ -12,6 +12,7 @@ from .views import (
     OrderViewSet,
     PaymentCredentialsViewSet,
     ShipmentViewSet,
+    StaffBackgroundTaskViewSet,
     StaffOrderPaymentViewSet,
     StaffShipmentEventViewSet,
     StaffShipmentViewSet,
@@ -30,6 +31,11 @@ router.register(r"payment-credentials", PaymentCredentialsViewSet, basename="pay
 router.register(r"staff/payments", StaffOrderPaymentViewSet, basename="staff-payment")
 router.register(r"staff/shipments", StaffShipmentViewSet, basename="staff-shipment")
 router.register(r"staff/shipment-events", StaffShipmentEventViewSet, basename="staff-shipment-event")
+router.register(
+    r"staff/background-tasks",
+    StaffBackgroundTaskViewSet,
+    basename="staff-background-task",
+)
 
 urlpatterns = [
     path("payments/stripe/webhook/", views.stripe_webhook_view, name="stripe-webhook"),

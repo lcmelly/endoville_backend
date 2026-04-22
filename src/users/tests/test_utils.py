@@ -165,6 +165,7 @@ def test_send_otp_email_passes_correct_data(mock_settings, mock_send):
     assert call_args[1]['to_email'] == 'test@example.com'
     assert call_args[1]['merge_data']['OTP'] == '123456'
     assert call_args[1]['merge_data']['name'] == 'John'
+    assert call_args[1]['merge_data']['purpose'] == 'activation'
     assert call_args[1]['to_name'] == 'John'
 
 
@@ -180,6 +181,35 @@ def test_send_otp_email_uses_settings_template_key(mock_settings, mock_send):
 
     call_args = mock_send.call_args
     assert call_args[1]['template_key'] == 'my-otp-template'
+
+
+@pytest.mark.django_db
+@patch('users.utils.send_template_email')
+@patch('users.utils.settings')
+def test_send_otp_email_login_purpose_uses_login_template_key(mock_settings, mock_send):
+    """purpose=login uses ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY when set."""
+    mock_settings.ZEPTOMAIL_OTP_TEMPLATE_KEY = 'activation-template'
+    mock_settings.ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY = 'login-template'
+    mock_send.return_value = True
+
+    send_otp_email('x@example.com', '111111', 'Pat', purpose='login')
+
+    assert mock_send.call_args[1]['template_key'] == 'login-template'
+    assert mock_send.call_args[1]['merge_data']['purpose'] == 'login'
+
+
+@pytest.mark.django_db
+@patch('users.utils.send_template_email')
+@patch('users.utils.settings')
+def test_send_otp_email_login_purpose_falls_back_to_activation_key(mock_settings, mock_send):
+    """purpose=login falls back to ZEPTOMAIL_OTP_TEMPLATE_KEY when login key empty."""
+    mock_settings.ZEPTOMAIL_OTP_TEMPLATE_KEY = 'only-template'
+    mock_settings.ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY = ''
+    mock_send.return_value = True
+
+    send_otp_email('x@example.com', '222222', 'Pat', purpose='login')
+
+    assert mock_send.call_args[1]['template_key'] == 'only-template'
 
 
 @pytest.mark.django_db

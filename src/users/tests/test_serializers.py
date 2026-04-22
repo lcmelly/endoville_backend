@@ -7,8 +7,10 @@ from users.serializers import (
     OTPSerializer,
     RequestOTPSerializer,
     VerifyOTPSerializer,
+    ResendOTPSerializer,
+    RequestLoginOTPSerializer,
     SignupSerializer,
-    LoginSerializer
+    LoginSerializer,
 )
 from users.models import OTP
 
@@ -308,3 +310,40 @@ def test_signup_with_blank_password():
     user = serializer.save()
 
     assert not user.has_usable_password()
+
+
+@pytest.mark.django_db
+def test_resend_otp_rejects_already_active_user():
+    """Resend activation OTP is only for inactive accounts."""
+    User.objects.create_user(
+        email='active@example.com',
+        password='pass12345',
+        is_active=True,
+    )
+    serializer = ResendOTPSerializer(data={'email': 'active@example.com'})
+    assert not serializer.is_valid()
+    assert 'already active' in str(serializer.errors).lower()
+
+
+@pytest.mark.django_db
+def test_request_login_otp_serializer_rejects_inactive():
+    User.objects.create_user(
+        email='in@example.com',
+        password='pass12345',
+        is_active=False,
+    )
+    serializer = RequestLoginOTPSerializer(data={'email': 'in@example.com'})
+    assert not serializer.is_valid()
+    assert 'not activated' in str(serializer.errors).lower()
+
+
+@pytest.mark.django_db
+def test_request_login_otp_serializer_accepts_active_user():
+    User.objects.create_user(
+        email='ok@example.com',
+        password='pass12345',
+        is_active=True,
+    )
+    serializer = RequestLoginOTPSerializer(data={'email': 'ok@example.com'})
+    assert serializer.is_valid()
+    assert serializer.validated_data['_user'].email == 'ok@example.com'

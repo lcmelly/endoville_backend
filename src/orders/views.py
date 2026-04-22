@@ -2,6 +2,7 @@
 API views for orders app.
 """
 
+from background_task.models import CompletedTask, Task
 from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse
@@ -15,7 +16,9 @@ from .currency_utils import order_total_in_currency
 from .models import Cart, CartItem, Order, OrderPayment, OrderStatus, PaymentCredentials, PaymentProvider, PaymentStatus, Shipment, ShipmentEvent
 from .permissions import IsStaffOnly, IsStaffOrOwner
 from .serializers import (
+    BackgroundTaskSerializer,
     CartSerializer,
+    CompletedBackgroundTaskSerializer,
     CreateOrderPaymentSerializer,
     CreateOrderSerializer,
     OrderPaymentSerializer,
@@ -424,6 +427,54 @@ class StaffShipmentEventViewSet(viewsets.ModelViewSet):
     permission_classes = [IsStaffOnly]
     queryset = ShipmentEvent.objects.select_related("shipment", "shipment__order").order_by("-occurred_at")
     serializer_class = StaffShipmentEventCreateSerializer
+
+
+class StaffBackgroundTaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """
+    Staff-only read access to django-background-tasks queue (`Task`) and recent archive (`CompletedTask`).
+
+    This shows **when the worker will run** reminder processing (and repeats), not ZeptoMail’s own
+    outbound queue. Cart emails send when `run_abandoned_cart_reminders_task` runs successfully.
+    """
+
+    permission_classes = [IsStaffOnly]
+    serializer_class = BackgroundTaskSerializer
+
+    def get_queryset(self):
+        qs = Task.objects.all()
+        tname = self.request.query_params.get("task_name", "").strip()
+        if tname:
+            qs = qs.filter(task_name__icontains=tname)
+        queue = self.request.query_params.get("queue", "").strip()
+        if queue:
+            qs = qs.filter(queue=queue)
+        return qs.order_by("run_at", "id")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        try:
+            lim = int(request.query_params.get("limit", "200"))
+        except ValueError:
+            lim = 200
+        lim = max(1, min(lim, 500))
+        serializer = self.get_serializer(queryset[:lim], many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="completed")
+    def completed(self, request):
+        qs = CompletedTask.objects.all().order_by("-run_at")
+        tname = request.query_params.get("task_name", "").strip()
+        if tname:
+            qs = qs.filter(task_name__icontains=tname)
+        queue = request.query_params.get("queue", "").strip()
+        if queue:
+            qs = qs.filter(queue=queue)
+        try:
+            lim = int(request.query_params.get("limit", "100"))
+        except ValueError:
+            lim = 100
+        lim = max(1, min(lim, 500))
+        return Response(CompletedBackgroundTaskSerializer(qs[:lim], many=True).data)
 
 
 @csrf_exempt
