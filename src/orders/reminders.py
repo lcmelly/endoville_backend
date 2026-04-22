@@ -8,6 +8,7 @@ from .models import Cart
 
 
 REMINDER_STEPS = (
+    (5, "reminder_5_sent_at"),
     (12, "reminder_12_sent_at"),
     (24, "reminder_24_sent_at"),
     (48, "reminder_48_sent_at"),
@@ -34,7 +35,9 @@ def process_abandoned_cart_reminders(now=None):
         inactivity = now - cart.updated_at
         target_hours = None
 
-        if inactivity >= timedelta(hours=12) and cart.reminder_12_sent_at is None:
+        if inactivity >= timedelta(hours=5) and cart.reminder_5_sent_at is None:
+            target_hours = 5
+        elif inactivity >= timedelta(hours=12) and cart.reminder_12_sent_at is None:
             target_hours = 12
         elif (
             inactivity >= timedelta(hours=24)
@@ -57,12 +60,14 @@ def process_abandoned_cart_reminders(now=None):
 
         with transaction.atomic():
             locked = Cart.objects.select_for_update().get(pk=cart.pk)
-            if target_hours == 12 and locked.reminder_12_sent_at is None:
-                locked.reminder_12_sent_at = now
+            if target_hours == 5 and locked.reminder_5_sent_at is None:
+                locked.reminder_5_sent_at = now if now is not None else timezone.now()
+            elif target_hours == 12 and locked.reminder_12_sent_at is None:
+                locked.reminder_12_sent_at = now if now is not None else timezone.now()
             elif target_hours == 24 and locked.reminder_24_sent_at is None:
-                locked.reminder_24_sent_at = now
+                locked.reminder_24_sent_at = now if now is not None else timezone.now()
             elif target_hours == 48 and locked.reminder_48_sent_at is None:
-                locked.reminder_48_sent_at = now
+                locked.reminder_48_sent_at = now if now is not None else timezone.now()
             else:
                 continue
             locked.save(update_fields=[f"reminder_{target_hours}_sent_at"])

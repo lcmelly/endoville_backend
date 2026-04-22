@@ -11,5 +11,5 @@ from .reminders import process_abandoned_cart_reminders
 
 @background()
 def run_abandoned_cart_reminders_task():
-    """Process due abandoned-cart reminder emails (12h / 24h / 48h logic)."""
+    """Process due abandoned-cart reminder emails (5h / 12h / 24h logic)."""
     process_abandoned_cart_reminders()
