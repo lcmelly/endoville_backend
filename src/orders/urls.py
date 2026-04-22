@@ -7,6 +7,7 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 from .views import (
+    CartViewSet,
     OrderPaymentViewSet,
     OrderViewSet,
     PaymentCredentialsViewSet,
@@ -20,6 +21,7 @@ app_name = "orders"
 
 router = DefaultRouter()
 router.register(r"orders", OrderViewSet, basename="order")
+router.register(r"cart", CartViewSet, basename="cart")
 router.register(r"shipments", ShipmentViewSet, basename="shipment")
 router.register(r"payments", OrderPaymentViewSet, basename="payment")
 

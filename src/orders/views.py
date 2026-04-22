@@ -12,14 +12,16 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from .currency_utils import order_total_in_currency
-from .models import Order, OrderPayment, OrderStatus, PaymentCredentials, PaymentProvider, PaymentStatus, Shipment, ShipmentEvent
+from .models import Cart, CartItem, Order, OrderPayment, OrderStatus, PaymentCredentials, PaymentProvider, PaymentStatus, Shipment, ShipmentEvent
 from .permissions import IsStaffOnly, IsStaffOrOwner
 from .serializers import (
+    CartSerializer,
     CreateOrderPaymentSerializer,
     CreateOrderSerializer,
     OrderPaymentSerializer,
     OrderSerializer,
     PaymentCredentialsSerializer,
+    SyncCartSerializer,
     StaffOrderPaymentUpdateSerializer,
     StaffShipmentEventCreateSerializer,
     StaffShipmentUpdateSerializer,
@@ -82,6 +84,59 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CartViewSet(viewsets.GenericViewSet):
+    """
+    User cart APIs for frontend synchronization.
+    """
+
+    permission_classes = [IsStaffOrOwner]
+    serializer_class = CartSerializer
+
+    def _get_or_create_cart(self, user):
+        cart, _ = Cart.objects.get_or_create(user=user)
+        return cart
+
+    @action(detail=False, methods=["get"], url_path="me")
+    def me(self, request):
+        cart = self._get_or_create_cart(request.user)
+        cart = Cart.objects.prefetch_related(
+            "items__product", "items__variant", "items__variant__product", "items__variant__options__attribute"
+        ).get(pk=cart.pk)
+        return Response(CartSerializer(cart, context={"request": request}).data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["put", "post"], url_path="sync")
+    @transaction.atomic
+    def sync(self, request):
+        serializer = SyncCartSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cart = self._get_or_create_cart(request.user)
+
+        CartItem.objects.filter(cart=cart).delete()
+        for item in serializer.validated_data["items"]:
+            CartItem.objects.create(
+                cart=cart,
+                product=item.get("product"),
+                variant=item.get("variant"),
+                quantity=item["quantity"],
+            )
+
+        cart.mark_active()
+        cart = Cart.objects.prefetch_related(
+            "items__product", "items__variant", "items__variant__product", "items__variant__options__attribute"
+        ).get(pk=cart.pk)
+        return Response(CartSerializer(cart, context={"request": request}).data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["delete"], url_path="clear")
+    @transaction.atomic
+    def clear(self, request):
+        cart = self._get_or_create_cart(request.user)
+        cart.clear_items()
+        cart = Cart.objects.prefetch_related(
+            "items__product", "items__variant", "items__variant__product", "items__variant__options__attribute"
+        ).get(pk=cart.pk)
+        return Response(CartSerializer(cart, context={"request": request}).data, status=status.HTTP_200_OK)
 
 
 class ShipmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):

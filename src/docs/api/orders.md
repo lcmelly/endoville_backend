@@ -226,6 +226,7 @@ Place and view orders.
     Notes:
     - Order creation reduces product/variant stock.
     - A shipment is created automatically with an initial event: **Order placed**.
+    - On successful create, the authenticated user’s **server-side cart is cleared** (see `api/cart.md`).
 
     Success (201):
 
@@ -295,5 +296,6 @@ Place and view orders.
 
 ## Related docs
 
+- Cart: `api/cart.md`
 - Payments: `api/payments.md`
 - Shipments: `api/shipments.md`

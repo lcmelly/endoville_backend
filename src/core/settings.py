@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'background_task',
     'rest_framework',
     'corsheaders',
     
@@ -96,8 +97,17 @@ OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', cast=int, default=5)
 # Email templates
 ZEPTOMAIL_OTP_TEMPLATE_KEY = config('ZEPTOMAIL_OTP_TEMPLATE_KEY')
 ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY = config('ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY', default='')
+ZEPTOMAIL_CART_REMINDER_TEMPLATE_KEY = config('ZEPTOMAIL_CART_REMINDER_TEMPLATE_KEY', default='')
 SUPPORT_EMAIL = config('SUPPORT_EMAIL', default=DEFAULT_FROM_EMAIL)
 SUPPORT_PHONE = config('SUPPORT_PHONE', default='')
+
+# django-background-tasks: run `python manage.py process_tasks` as a long-lived worker.
+# How often the repeating abandoned-cart job is re-queued after each run (seconds).
+ABANDONED_CART_REMINDER_BG_INTERVAL_SECONDS = config(
+    'ABANDONED_CART_REMINDER_BG_INTERVAL_SECONDS',
+    cast=int,
+    default=1800,
+)
 
 # Stripe (optional; used when Stripe is configured in PaymentCredentials)
 STRIPE_SUCCESS_URL = config('STRIPE_SUCCESS_URL', default='https://yourdomain.com/payment/success/')

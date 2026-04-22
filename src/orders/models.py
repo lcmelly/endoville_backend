@@ -68,6 +68,76 @@ class ShippingAddress(models.Model):
         return f"{self.full_name} - {self.city}"
 
 
+class Cart(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, related_name="cart", on_delete=models.CASCADE
+    )
+    reminder_12_sent_at = models.DateTimeField(null=True, blank=True)
+    reminder_24_sent_at = models.DateTimeField(null=True, blank=True)
+    reminder_48_sent_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    def __str__(self):
+        return f"Cart for {self.user}"
+
+    def reset_reminders(self):
+        self.reminder_12_sent_at = None
+        self.reminder_24_sent_at = None
+        self.reminder_48_sent_at = None
+
+    def mark_active(self):
+        self.reset_reminders()
+        self.save(
+            update_fields=[
+                "reminder_12_sent_at",
+                "reminder_24_sent_at",
+                "reminder_48_sent_at",
+                "updated_at",
+            ]
+        )
+
+    def clear_items(self):
+        self.items.all().delete()
+        self.mark_active()
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, related_name="items", on_delete=models.CASCADE)
+    product = models.ForeignKey("products.Product", on_delete=models.CASCADE, null=True, blank=True)
+    variant = models.ForeignKey(
+        "products.ProductVariant", on_delete=models.CASCADE, null=True, blank=True
+    )
+    quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(product__isnull=False) & models.Q(variant__isnull=True))
+                    | (models.Q(product__isnull=True) & models.Q(variant__isnull=False))
+                ),
+                name="orders_cartitem_product_xor_variant",
+            ),
+            models.UniqueConstraint(
+                fields=["cart", "product"],
+                condition=models.Q(product__isnull=False),
+                name="orders_cartitem_unique_product_per_cart",
+            ),
+            models.UniqueConstraint(
+                fields=["cart", "variant"],
+                condition=models.Q(variant__isnull=False),
+                name="orders_cartitem_unique_variant_per_cart",
+            ),
+        ]
+
+    def __str__(self):
+        target = self.variant_id or self.product_id
+        return f"CartItem {target} x{self.quantity}"
+
+
 class Order(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name="orders", on_delete=models.CASCADE

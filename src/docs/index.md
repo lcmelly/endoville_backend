@@ -30,6 +30,7 @@ Most endpoints require JWT authentication. You'll receive access and refresh tok
 - [Staff Check](api/is-staff.md)
 - [Blogs](api/blogs.md)
 - [Products](api/products.md)
+- [Cart](api/cart.md)
 - [Orders](api/orders.md)
 - [Payments](api/payments.md)
 - [Shipments](api/shipments.md)

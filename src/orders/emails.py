@@ -5,7 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from .currency_utils import get_primary_currency
-from .models import Order
+from .models import Cart, Order
 from users.utils import send_template_email
 
 
@@ -139,6 +139,77 @@ def send_order_confirmation_email(order_id):
         },
         "order_id": str(order.id),
         "tracking_url": shipment.tracking_url if shipment else "",
+    }
+
+    return send_template_email(
+        to_email=recipient_email,
+        template_key=template_key,
+        merge_data=merge_data,
+        to_name=recipient_name,
+    )
+
+
+def send_abandoned_cart_reminder_email(cart_id, reminder_hours):
+    template_key = getattr(settings, "ZEPTOMAIL_CART_REMINDER_TEMPLATE_KEY", "")
+    if not template_key:
+        return False
+
+    try:
+        cart = (
+            Cart.objects.select_related("user")
+            .prefetch_related("items__product", "items__variant", "items__variant__product")
+            .get(pk=cart_id)
+        )
+    except Cart.DoesNotExist:
+        logger.warning("Cart reminder email skipped; cart %s not found.", cart_id)
+        return False
+
+    items = list(cart.items.all())
+    if not items:
+        logger.info("Cart reminder email skipped; cart %s has no items.", cart.id)
+        return False
+
+    recipient_email = (getattr(cart.user, "email", None) or "").strip()
+    if not recipient_email:
+        logger.info("Cart reminder email skipped; no recipient email for cart %s.", cart.id)
+        return False
+
+    recipient_name = getattr(cart.user, "first_name", None) or "Customer"
+    primary_currency = get_primary_currency()
+    currency_code = getattr(primary_currency, "code", None) or "USD"
+
+    subtotal = Decimal("0")
+    item_summaries = []
+    for item in items:
+        product = item.variant.product if item.variant else item.product
+        if item.variant and item.variant.price is not None:
+            unit_price = Decimal(item.variant.price)
+        elif item.variant:
+            unit_price = Decimal(item.variant.product.price)
+        else:
+            unit_price = Decimal(item.product.price)
+        line_total = (unit_price * item.quantity).quantize(Decimal("0.01"))
+        subtotal += line_total
+        item_summaries.append(
+            {
+                "name": product.name if product else "",
+                "quantity": str(item.quantity),
+                "unit_price": _format_money(unit_price),
+                "line_total": _format_money(line_total),
+            }
+        )
+
+    merge_data = {
+        "name": recipient_name,
+        "team": getattr(settings, "DEFAULT_FROM_NAME", "Endoville Health"),
+        "support_email": getattr(settings, "SUPPORT_EMAIL", settings.DEFAULT_FROM_EMAIL),
+        "support_phone": getattr(settings, "SUPPORT_PHONE", ""),
+        "current_year": str(timezone.now().year),
+        "reminder_hours": str(reminder_hours),
+        "item_count": str(len(items)),
+        "subtotal": _format_money(subtotal),
+        "currency": currency_code,
+        "cart_items": item_summaries,
     }
 
     return send_template_email(

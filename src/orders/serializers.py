@@ -11,6 +11,8 @@ from products.models import Product, ProductVariant, VariationOption
 
 from .currency_utils import order_total_in_currency
 from .models import (
+    Cart,
+    CartItem,
     Order,
     OrderItem,
     OrderPayment,
@@ -148,6 +150,108 @@ class OrderSerializer(serializers.ModelSerializer):
         return OrderPaymentSummarySerializer(qs, many=True, context=self.context).data
 
 
+class CartItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.SerializerMethodField()
+    unit_price = serializers.SerializerMethodField()
+    line_total = serializers.SerializerMethodField()
+    variant_description = serializers.SerializerMethodField()
+    barcode = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CartItem
+        fields = [
+            "id",
+            "product",
+            "variant",
+            "quantity",
+            "product_name",
+            "variant_description",
+            "barcode",
+            "unit_price",
+            "line_total",
+        ]
+        read_only_fields = [
+            "id",
+            "product_name",
+            "variant_description",
+            "barcode",
+            "unit_price",
+            "line_total",
+        ]
+
+    def _resolved_product(self, obj):
+        return obj.variant.product if obj.variant else obj.product
+
+    def _resolved_unit_price(self, obj):
+        if obj.variant:
+            if obj.variant.price is not None:
+                return Decimal(obj.variant.price)
+            return Decimal(obj.variant.product.price)
+        return Decimal(obj.product.price)
+
+    def get_product_name(self, obj):
+        product = self._resolved_product(obj)
+        return product.name if product else ""
+
+    def get_unit_price(self, obj):
+        return self._resolved_unit_price(obj)
+
+    def get_line_total(self, obj):
+        return (self._resolved_unit_price(obj) * obj.quantity).quantize(Decimal("0.01"))
+
+    def get_variant_description(self, obj):
+        if not obj.variant:
+            return ""
+        opts = list(obj.variant.options.select_related("attribute").all())
+        if not opts:
+            return ""
+        return ", ".join([f"{o.attribute.name}: {o.value}" for o in opts])
+
+    def get_barcode(self, obj):
+        if obj.variant:
+            return obj.variant.barcode or ""
+        return obj.product.barcode or ""
+
+
+class CartSerializer(serializers.ModelSerializer):
+    items = CartItemSerializer(many=True, read_only=True)
+    subtotal = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Cart
+        fields = ["id", "user", "items", "subtotal", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "subtotal", "created_at", "updated_at"]
+
+    def get_subtotal(self, obj):
+        total = Decimal("0")
+        for item in obj.items.select_related("product", "variant", "variant__product"):
+            if item.variant:
+                unit_price = item.variant.price if item.variant.price is not None else item.variant.product.price
+            else:
+                unit_price = item.product.price
+            total += Decimal(unit_price) * item.quantity
+        return total.quantize(Decimal("0.01"))
+
+
+class SyncCartItemSerializer(serializers.Serializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), required=False)
+    variant = serializers.PrimaryKeyRelatedField(queryset=ProductVariant.objects.all(), required=False)
+    quantity = serializers.IntegerField(min_value=1)
+
+    def validate(self, attrs):
+        product = attrs.get("product")
+        variant = attrs.get("variant")
+        if not product and not variant:
+            raise serializers.ValidationError("Either product or variant is required.")
+        if product and variant:
+            raise serializers.ValidationError("Provide either product or variant, not both.")
+        return attrs
+
+
+class SyncCartSerializer(serializers.Serializer):
+    items = SyncCartItemSerializer(many=True)
+
+
 class CreateOrderItemSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), required=False)
     variant = serializers.PrimaryKeyRelatedField(queryset=ProductVariant.objects.all(), required=False)
@@ -248,7 +352,10 @@ class CreateOrderSerializer(serializers.Serializer):
         # Create a shipment + first event (order placed) so users see tracking immediately.
         shipment = Shipment.objects.create(order=order)
         ShipmentEvent.objects.create(shipment=shipment, status=shipment.status, message="Order placed")
-        # Email will be sent when payment is completed (see OrderPayment.save())
+        # Order has been placed; clear persisted cart state for this user.
+        cart = Cart.objects.filter(user=user).first()
+        if cart:
+            cart.clear_items()
 
         return order
 
