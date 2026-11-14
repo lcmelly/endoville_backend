@@ -7,6 +7,12 @@
         <loc>https://api.endovillehealth.com/guides/getting-started/</loc>
       </url>
       <url>
+        <loc>https://api.endovillehealth.com/architecture/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/</loc>
+      </url>
+      <url>
         <loc>https://api.endovillehealth.com/api/registration/</loc>
       </url>
       <url>
@@ -28,6 +34,12 @@
         <loc>https://api.endovillehealth.com/api/is-staff/</loc>
       </url>
       <url>
+        <loc>https://api.endovillehealth.com/api/staff-users/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/customers/</loc>
+      </url>
+      <url>
         <loc>https://api.endovillehealth.com/api/blogs/</loc>
       </url>
       <url>
@@ -40,9 +52,15 @@
         <loc>https://api.endovillehealth.com/api/orders/</loc>
       </url>
       <url>
+        <loc>https://api.endovillehealth.com/api/warehouses/</loc>
+      </url>
+      <url>
         <loc>https://api.endovillehealth.com/api/payments/</loc>
       </url>
       <url>
         <loc>https://api.endovillehealth.com/api/shipments/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/audit/</loc>
       </url>
 </urlset>

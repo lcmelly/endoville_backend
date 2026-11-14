@@ -1,11 +1,18 @@
-# OTP Management
+---
+title: OTP
+icon: lucide/mail-check
+---
 
-Resend OTP for **account activation** (inactive accounts) via `POST /api/users/send-otp/`. For **login code** emails (active users), see [Request login OTP](login.md) (`POST /api/users/request-login-otp/`).
+# Short codes
 
-ZeptoMail template keys (see `.env.example`):
+Use this when someone needs a new activation code. It works for accounts that are not active yet.
 
-- **Register** (`POST /api/users/register/`) uses the same key as activation resend: **`ZEPTOMAIL_OTP_TEMPLATE_KEY`** (`purpose=activation` in the API).
-- **Login OTP** uses **`ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY`** when set; otherwise it falls back to **`ZEPTOMAIL_OTP_TEMPLATE_KEY`** so a single template still works until you add a second key in `.env`.
+If the person is already active and wants a code to sign in, use [Request a login code](login.md) instead (`POST /api/users/request-login-otp/`).
+
+Which email template is used:
+
+- Registration and a new activation code use `ZEPTOMAIL_OTP_TEMPLATE_KEY`.
+- A login code uses `ZEPTOMAIL_OTP_LOGIN_TEMPLATE_KEY` when that is set. If it is not set, we fall back to the activation template, so one template is enough until you add a second key.
 
 === "Endpoint"
 
@@ -15,7 +22,7 @@ ZeptoMail template keys (see `.env.example`):
 
 === "Authentication"
 
-    No authentication required.
+    You do not need to be signed in.
 
 === "Request Body"
 

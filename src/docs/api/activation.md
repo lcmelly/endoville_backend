@@ -1,6 +1,11 @@
-# Account Activation
+---
+title: Activation
+icon: lucide/shield-check
+---
 
-Activate a user account using the OTP received via email.
+# Activate an account
+
+Turn an account on with the short code from the registration email. You do not need to be signed in.
 
 === "Endpoint"
 
@@ -10,7 +15,7 @@ Activate a user account using the OTP received via email.
 
 === "Authentication"
 
-    No authentication required.
+    You do not need to be signed in.
 
 === "Request Body"
 

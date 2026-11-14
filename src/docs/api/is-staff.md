@@ -1,6 +1,11 @@
-# Staff Check
+---
+title: Staff check
+icon: lucide/id-card
+---
 
-Check whether the currently authenticated user is a staff user.
+# Staff check
+
+Ask whether the signed-in person is a staff member. Use this when the app needs to show staff tools.
 
 === "Endpoint"
 
@@ -10,7 +15,7 @@ Check whether the currently authenticated user is a staff user.
 
 === "Authentication"
 
-    JWT required.
+    You need to be signed in.
 
 ## Response
 
@@ -18,9 +23,13 @@ Check whether the currently authenticated user is a staff user.
 
     ```json
     {
-      "is_staff": true
+      "is_staff": true,
+      "is_superuser": false,
+      "roles": ["Orders", "Shipping", "Stock"]
     }
     ```
+
+    `roles` is empty for a shopper. An admin (`is_superuser: true`) receives every role: `Orders`, `Shipping`, `Stock`, and `Manager`. A staff user receives only the roles an admin ticked. `Manager` is absent until it is ticked.
 
 === "Error (401 Unauthorized)"
 

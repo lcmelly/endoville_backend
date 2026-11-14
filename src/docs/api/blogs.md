@@ -1,6 +1,11 @@
+---
+title: Blogs
+icon: lucide/newspaper
+---
+
 # Blogs
 
-Manage blog posts, authors, and comments.
+Read posts, authors, and comments without signing in. Staff publish authors, categories, and posts. A signed-in reader can leave a comment.
 
 === "Base URL"
 
@@ -10,10 +15,10 @@ Manage blog posts, authors, and comments.
 
 === "Authentication"
 
-    - Reads are public.
-    - Writes depend on staff/ownership rules below.
+    - Anyone can read.
+    - Who can write depends on the table below.
 
-## Permissions Summary
+## Who can do what
 
 | Resource | Read | Create | Update | Delete |
 | --- | --- | --- | --- | --- |

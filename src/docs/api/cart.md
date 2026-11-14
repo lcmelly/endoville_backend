@@ -1,6 +1,11 @@
+---
+title: Cart
+icon: lucide/shopping-cart
+---
+
 # Cart
 
-Persist and sync the authenticated user’s shopping cart with the backend. Line items mirror order placement rules: each row is either a **product** or a **variant**, not both.
+This is the signed-in shopper's basket. Each person has one cart. A line is either a product or a variant, never both. Only that person can read or change it.
 
 === "Base URL"
 
@@ -10,24 +15,24 @@ Persist and sync the authenticated user’s shopping cart with the backend. Line
 
 === "Authentication"
 
-    JWT required.
+    You need to be signed in.
 
-    - Each user has at most **one** cart (`Cart` is one-to-one with the user).
-    - Only the signed-in user can read or modify their own cart.
+    - Each person has one cart.
+    - They can only read or change their own cart.
 
-## Frontend sync flow
+## How the storefront should keep the cart in step
 
-1. **On app load (logged in)**  
-   Call `GET /api/orders/cart/me/` and replace local cart state with the response `items` (and optionally show `subtotal`).
+1. **When the app opens and someone is signed in**
+   Call `GET /api/orders/cart/me/` and replace the cart on the device with `items` from the response. Show `subtotal` and `shipping_fee`. Pass `?country=Kenya`, or send `country` on sync, so `shipping_fee` is the fee for that destination.
 
-2. **When the user changes the cart**  
-   Debounce updates, then call `PUT` or `POST` `/api/orders/cart/sync/` with the full desired `items` list. The server **replaces** all cart items with the payload (idempotent full sync).
+2. **When they change the cart**
+   Wait a moment so you are not calling on every keystroke, then send `PUT` or `POST` `/api/orders/cart/sync/` with the full list of `items` you want. The server replaces the cart with that list.
 
-3. **After checkout**  
-   When `POST /api/orders/orders/` succeeds, the backend **clears** that user’s cart. Refresh local state from the create response or call `GET .../cart/me/` again (cart will be empty).
+3. **After they place an order**
+   A successful `POST /api/orders/orders/` clears the cart. Read the cart again, or trust that it is now empty.
 
-4. **Explicit empty cart**  
-   Optionally `DELETE /api/orders/cart/clear/` to remove all items without sending a full `items` array.
+4. **When they want an empty cart**
+   Call `DELETE /api/orders/cart/clear/` if you would rather not send an empty `items` list.
 
 ## Endpoints
 
@@ -70,13 +75,21 @@ Persist and sync the authenticated user’s shopping cart with the backend. Line
         }
       ],
       "subtotal": "55.50",
+      "weight_grams": 500,
+      "shipping_fee": "12.00",
+      "shipping_fees": [
+        { "country": "Kenya", "shipping_fee": "12.00" }
+      ],
       "created_at": "2026-04-20T08:00:00Z",
       "updated_at": "2026-04-22T12:30:00Z"
     }
     ```
 
+    Add `?country=Kenya` when the shopper has chosen a destination. `shipping_fee` is then the fee for that country. Without it, `shipping_fee` is filled when only one country is configured, or when no countries are configured and the fee is the base fee. When several countries are configured and none is chosen, `shipping_fee` is `null` and `shipping_fees` lists each one. A country that is not on the schedule leaves `shipping_fee` as `null` and still returns the cart.
+
     - `unit_price` follows the same rule as orders: variant override price, else product price.
     - `subtotal` is the sum of line totals for all items.
+    - `shipping_fee` uses the same rule as checkout: base fee plus the country's price per kilogram times `weight_grams`. See `api/shipping-rates.md`.
 
     **Response fields** (same object shape for `GET /cart/me/`, and for `PUT|POST /cart/sync/` and `DELETE /cart/clear/` success bodies):
 
@@ -86,6 +99,9 @@ Persist and sync the authenticated user’s shopping cart with the backend. Line
     | `user` | integer | Owner user id |
     | `items` | array | Line items (see below) |
     | `subtotal` | decimal / number | Sum of line totals |
+    | `weight_grams` | integer | Total product weight in the cart |
+    | `shipping_fee` | decimal string or `null` | Fee for the chosen country, the only configured country, or the base fee |
+    | `shipping_fees` | array | `{country, shipping_fee}` for every configured country, for this weight |
     | `created_at` | string (ISO 8601) | When the cart row was created |
     | `updated_at` | string (ISO 8601) | Last update (used for abandoned-cart timing) |
 
@@ -114,12 +130,15 @@ Persist and sync the authenticated user’s shopping cart with the backend. Line
 
     ```json
     {
+      "country": "Kenya",
       "items": [
         { "product": 5, "quantity": 2 },
         { "variant": 3, "quantity": 1 }
       ]
     }
     ```
+
+    `country` is optional. The success body uses it the same way as `?country=` on `GET /cart/me/`.
 
     Rules:
 
@@ -147,7 +166,7 @@ Persist and sync the authenticated user’s shopping cart with the backend. Line
 
 ## Abandoned cart reminders (ops)
 
-The backend can email users who leave items in the cart without purchasing. Reminders are sent at **12 hours**, then **24 hours**, then **48 hours** of cart inactivity (based on `updated_at`), then no further emails for that cart cycle.
+The backend can email users who leave items in the cart without purchasing. Reminders are sent at **12 hours**, then **24 hours**, then **48 hours** of cart inactivity (based on `updated_at`), then no further emails for that cart cycle. The cart stores that progress in `last_reminder_at`: empty until an email succeeds, then the cart's last activity plus the step that succeeded.
 
 - **Template**: set environment variable `ZEPTOMAIL_CART_REMINDER_TEMPLATE_KEY` to your ZeptoMail template key. If unset, reminder sending is skipped.
 - **Background processing** ([django-background-tasks](https://django-background-tasks.readthedocs.io/)): reminder work runs in the DB-backed task queue, not inline in the web process.
@@ -174,7 +193,7 @@ The backend can email users who leave items in the cart without purchasing. Remi
     python src/manage.py send_abandoned_cart_reminders
     ```
 
-- **Inspect queue (staff API):** django-background-tasks stores work in the DB. JWT required; user must be **staff**. This reflects the **task worker** schedule (when jobs run), not ZeptoMail’s outbound mail queue.
+- **See the reminder queue (staff):** reminder jobs live in the database. You need to be signed in as staff. This shows when the worker will run the job, not ZeptoMail's own mail queue.
 
     **List queued / due tasks**
 

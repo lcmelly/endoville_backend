@@ -1,15 +1,54 @@
-/* Reduce font size of h2 headings (Notes, Example Request, etc.) by a third */
-.md-content h2 {
-    font-size: 1.2em !important; /* Reduced from default ~1.8em by approximately 1/3 */
+.md-header__button.md-logo img,
+.md-nav__button.md-logo img {
+    height: 1.8rem;
+    width: 1.8rem;
 }
 
-/* Also reduce h3 if needed */
-.md-content h3 {
-    font-size: 1.05em !important;
+.md-typeset img.endoville-home-logo {
+    display: block;
+    height: auto;
+    margin: 0 0 1rem;
+    width: min(280px, 70%);
 }
 
-/* Reduce line spacing in bullet lists to 1.15 */
+/* Keep lists compact without shrinking the page title or section headings. */
 .md-content ul li,
 .md-content ol li {
-    line-height: 1.15 !important;
+    line-height: 1.35;
+}
+
+.md-typeset .grid.cards > ul > li {
+    line-height: 1.5;
+}
+
+/* Sidebar: colored icons, headed groups, and a tinted active row. */
+[data-md-color-primary="indigo"] {
+    --md-primary-fg-color: #4f46e5;
+    --md-primary-fg-color--light: #6366f1;
+    --md-accent-fg-color: #7c3aed;
+}
+
+.md-nav--primary .md-nav__link svg {
+    opacity: 1;
+    color: var(--md-accent-fg-color);
+}
+
+.md-nav--primary .md-nav__item--active > .md-nav__link svg,
+.md-nav--primary .md-nav__link--active svg {
+    color: var(--md-primary-fg-color);
+}
+
+.md-nav--primary .md-nav__item--section > .md-nav__link {
+    color: var(--md-primary-fg-color);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    margin-top: 0.8rem;
+    text-transform: uppercase;
+}
+
+.md-nav--primary .md-nav__item--active > .md-nav__link--active {
+    background: color-mix(in srgb, var(--md-primary-fg-color) 12%, transparent);
+    border-radius: 0.4rem;
+    color: var(--md-primary-fg-color);
 }

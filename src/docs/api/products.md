@@ -1,6 +1,13 @@
+---
+title: Products
+icon: lucide/package
+---
+
 # Products
 
-Manage product catalog: brands, categories, subcategories, products, variants (optional sku/barcode), and **product reviews**. Reviews are shared across all variants of a product. Each product has a stored **avg_rating** (0–5) and **review_count** updated automatically when reviews are added, updated, or deleted.
+This is the catalog: brands, categories, products, variants, and reviews. Anyone can read it. Only staff can change it.
+
+A review belongs to the product, so every variant of that product shares the same reviews. `avg_rating` is from 0 to 5 and `review_count` updates itself. A review that staff have flagged is left out of both numbers.
 
 === "Base URL"
 
@@ -10,26 +17,30 @@ Manage product catalog: brands, categories, subcategories, products, variants (o
 
 === "Authentication"
 
-    - Reads are public.
-    - Writes require `is_staff=true`.
+    - Anyone can read.
+    - Only staff can create, change, or delete.
 
-## Cost Price (Staff-only)
+## What only staff can see
 
-Products and variants include a `cost_price` field, but it is **only returned in API responses when the requester is a staff user**.
+`cost_price` is stored on products and variants, but the response includes it only when the caller is staff. Everyone else does not receive the field.
 
-- Public/non-staff: `cost_price` is omitted from responses.
-- Staff: `cost_price` is included for both products and nested variants.
+`supplier_order_urls` is the same. It is a list of links staff use when they need to buy that product from a supplier. An empty list is fine. Shoppers never see it.
 
-## Currency conversion (non-staff)
+`quantity_sold` is public. It is the number of units sold, and it changes when a line is added, removed, or the order is cancelled or refunded. `revenue` is the sum of those line totals in the primary currency, and only staff receive it.
 
-For **non-staff** product and variant responses, prices include `display_currency` and `currency_symbol`. Prices use the primary currency (e.g. USD) by default. Use `?currency=CODE` to convert. The API uses the Currency `usd_rate` for conversion when `?currency=` is passed.
-- **Default**: When no `?currency=` param is passed, the primary currency (typically USD) is used. Prices include `display_currency` and `currency_symbol`.
-- **With `?currency=CODE`**: Prices are converted; response includes `display_currency`, `currency_symbol`, and converted `price`.
-- **Staff**: Always see stored prices; `display_currency` and `currency_symbol` are included (primary/USD).
+## Prices for shoppers
+
+Shoppers see a price plus `display_currency` and `currency_symbol`. With no extra query, that is the primary currency, usually USD.
+
+Add `?currency=CODE` to convert. The rate is that currency's `usd_rate`: how many units of the currency equal 1 USD. A product stored at 10.00 USD with a KES rate of 160.25 is shown as 1602.50 KES.
+
+Those rates stay in step with Stripe. When Stripe credentials are active, the app asks Stripe for an FX quote and saves `exchange_rate` as `usd_rate`. That is the multiplier Stripe uses to turn USD into the shopper's currency, including Stripe's FX fee, so the price on the product is the amount checkout charges. USD stays at 1. A refresh runs when a price is shown or a payment is created, and at most once an hour (`STRIPE_FX_MAX_AGE_SECONDS`). You can also run `python manage.py update_currency_rates`, or keep it repeating with `python manage.py schedule_currency_rate_updates` while `python manage.py process_tasks` is running.
+
+`rate_synced_at` is when Stripe last wrote that rate. Until the first successful quote, the stored `usd_rate` is what shoppers see. Staff always see the price as it is stored, and still receive `display_currency` and `currency_symbol` for the primary currency.
 
 ## Currencies
 
-Manage currencies for price conversion. Stored prices are in the primary currency (e.g. USD). `usd_rate` means 1 USD = usd_rate × &lt;currency&gt; (e.g. KES with usd_rate 160.50 → 1 USD = 160.50 KES).
+Manage currencies for price conversion. Stored prices are in the primary currency (usually USD). `usd_rate` means 1 USD = usd_rate × this currency. Stripe refreshes that number for every active currency except USD. `rate_synced_at` is the time of the last successful quote.
 
 === "List"
 
@@ -47,6 +58,7 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
         "name": "US Dollar",
         "symbol": "$",
         "usd_rate": "1.000000",
+        "rate_synced_at": null,
         "is_primary": true,
         "is_active": true,
         "created_at": "2025-01-15T10:00:00Z",
@@ -58,6 +70,7 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
         "name": "Kenyan Shilling",
         "symbol": "KSh",
         "usd_rate": "160.500000",
+        "rate_synced_at": "2026-10-08T09:00:00Z",
         "is_primary": false,
         "is_active": true,
         "created_at": "2025-01-16T12:00:00Z",
@@ -83,6 +96,7 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
       "name": "Kenyan Shilling",
       "symbol": "KSh",
       "usd_rate": "160.500000",
+      "rate_synced_at": "2026-10-08T09:00:00Z",
       "is_primary": false,
       "is_active": true,
       "created_at": "2025-01-16T12:00:00Z",
@@ -124,6 +138,7 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
       "name": "Kenyan Shilling",
       "symbol": "KSh",
       "usd_rate": "160.500000",
+      "rate_synced_at": null,
       "is_primary": false,
       "is_active": true,
       "created_at": "2025-01-16T12:00:00Z",
@@ -168,6 +183,7 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
     - `PUT` expects the full object.
     - `PATCH` can send only the fields you want to change.
     - Setting `is_primary=true` on one currency clears `is_primary` on others.
+    - You can set `usd_rate` by hand. The next Stripe quote replaces it for every active currency except USD.
 
     **Example: 200 OK**
 
@@ -178,6 +194,7 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
       "name": "Kenyan Shilling",
       "symbol": "KSh",
       "usd_rate": "161.000000",
+      "rate_synced_at": null,
       "is_primary": false,
       "is_active": true,
       "created_at": "2025-01-16T12:00:00Z",
@@ -240,7 +257,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
     | `code` | string | Yes | Currency code (e.g. USD, KES). Unique. |
     | `name` | string | No | Display name (e.g. US Dollar) |
     | `symbol` | string | No | Symbol (e.g. $, KSh) |
-    | `usd_rate` | string | No | Conversion rate: 1 USD = usd_rate × this currency. Default 1. |
+    | `usd_rate` | string | No | Conversion rate: 1 USD = usd_rate × this currency. Default 1. Stripe overwrites this for every active currency except USD. |
+    | `rate_synced_at` | string | No | When Stripe last wrote `usd_rate`. Read-only. Null until the first successful quote. |
     | `is_primary` | boolean | No | Primary currency (typically USD). Only one can be primary. |
     | `is_active` | boolean | No | If false, currency is excluded from product conversion. Default true. |
 
@@ -294,6 +312,8 @@ Manage currencies for price conversion. Stored prices are in the primary currenc
 
 ## Brands
 
+`products_count` and `products_sold` are stored on the brand. They change when products are linked or when units are sold, removed, cancelled, or refunded. A list reads those stored numbers.
+
 Brands can have multiple images using aligned arrays:
 
 - `image_urls`: public image URLs
@@ -322,7 +342,9 @@ Brands can have multiple images using aligned arrays:
           "brands/nature-made-banner.png"
         ],
         "image_labels": ["logo", "banner"],
-        "description": "Trusted wellness and supplement brand."
+        "description": "Trusted wellness and supplement brand.",
+        "products_count": 12,
+        "products_sold": 340
       }
     ]
     ```
@@ -350,7 +372,9 @@ Brands can have multiple images using aligned arrays:
         "brands/nature-made-banner.png"
       ],
       "image_labels": ["logo", "banner"],
-      "description": "Trusted wellness and supplement brand."
+      "description": "Trusted wellness and supplement brand.",
+      "products_count": 12,
+      "products_sold": 340
     }
     ```
 
@@ -399,7 +423,9 @@ Brands can have multiple images using aligned arrays:
         "brands/nature-made-banner.png"
       ],
       "image_labels": ["logo", "banner"],
-      "description": "Trusted wellness and supplement brand."
+      "description": "Trusted wellness and supplement brand.",
+      "products_count": 0,
+      "products_sold": 0
     }
     ```
 
@@ -460,7 +486,9 @@ Brands can have multiple images using aligned arrays:
         "brands/nature-made-banner-v2.png"
       ],
       "image_labels": ["logo", "banner"],
-      "description": "Updated brand description."
+      "description": "Updated brand description.",
+      "products_count": 12,
+      "products_sold": 340
     }
     ```
 
@@ -513,8 +541,12 @@ Brands can have multiple images using aligned arrays:
     | `image_refs` | array[string] | No | Storage keys/paths for brand images, in the same order as `image_urls`. |
     | `image_labels` | array[string] | No | Labels for each brand image, in the same order as `image_urls`. |
     | `description` | string | No | Brand description. |
+    | `products_count` | integer | Read only | Products linked to this brand. Stored, and updated when products are added, moved, or deleted. |
+    | `products_sold` | integer | Read only | Units sold. Stored. A new order line adds the quantity. Removing a line, replacing it, cancelling the order, or refunding the order removes those units. |
 
 ## Categories
+
+`products_count` and `products_sold` are stored on the category. A product in more than one subcategory of the same category counts once. Sales follow the same rules as on a brand.
 
 === "List"
 
@@ -529,12 +561,16 @@ Brands can have multiple images using aligned arrays:
       {
         "id": 1,
         "name": "Supplements",
-        "description": "All supplement products"
+        "description": "All supplement products",
+        "products_count": 24,
+        "products_sold": 180
       },
       {
         "id": 2,
         "name": "Vitamins",
-        "description": "Vitamin products"
+        "description": "Vitamin products",
+        "products_count": 8,
+        "products_sold": 40
       }
     ]
     ```
@@ -553,7 +589,9 @@ Brands can have multiple images using aligned arrays:
     {
       "id": 1,
       "name": "Supplements",
-      "description": "All supplement products"
+      "description": "All supplement products",
+      "products_count": 24,
+      "products_sold": 180
     }
     ```
 
@@ -584,7 +622,9 @@ Brands can have multiple images using aligned arrays:
     {
       "id": 1,
       "name": "Supplements",
-      "description": "All supplement products"
+      "description": "All supplement products",
+      "products_count": 0,
+      "products_sold": 0
     }
     ```
 
@@ -627,7 +667,9 @@ Brands can have multiple images using aligned arrays:
     {
       "id": 1,
       "name": "Supplements",
-      "description": "Updated description"
+      "description": "Updated description",
+      "products_count": 24,
+      "products_sold": 180
     }
     ```
 
@@ -670,6 +712,15 @@ Brands can have multiple images using aligned arrays:
       "detail": "Not found."
     }
     ```
+
+=== "Fields"
+
+    | Field | Type | Required | Description |
+    | --- | --- | --- | --- |
+    | `name` | string | Yes | Category name. Unique. |
+    | `description` | string | No | Category description. |
+    | `products_count` | integer | Read only | Products in this category. A product in several of its subcategories counts once. Stored, and updated when those links change. |
+    | `products_sold` | integer | Read only | Units sold. Stored. A new order line adds the quantity. Removing a line, replacing it, cancelling the order, or refunding the order removes those units. |
 
 ## Subcategories
 
@@ -832,6 +883,8 @@ Product `sku` and `barcode` are **optional**. When provided, `barcode` must be u
 
 Optional content fields (all strings unless noted): `featured` (boolean, default `false`), `benefits`, `ingredients`, `how_to_use`. Staff can set them on create/update; they are returned on list/retrieve.
 
+`supplier_order_urls` is a list of http(s) links for the page where staff order this product from a supplier. You can send more than one link. An empty list is fine. Staff responses include it. Shopper responses omit it.
+
 === "List"
 
     ```
@@ -839,7 +892,7 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
     GET /api/products/products/?currency=KES
     ```
 
-    Non-staff: use `?currency=CODE` for converted prices; `display_currency` and `currency_symbol` are always included (default: primary/USD).
+    Non-staff: use `?currency=CODE` for converted prices; `display_currency` and `currency_symbol` are always included (default: primary/USD). Everyone receives `quantity_sold`. Staff responses also include `cost_price`, `supplier_order_urls`, and `revenue`. The example below is what a shopper receives.
 
     **Example: 200 OK**
 
@@ -862,12 +915,16 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
             "brands/nature-made-banner.png"
           ],
           "image_labels": ["logo", "banner"],
-          "description": "Trusted wellness and supplement brand."
+          "description": "Trusted wellness and supplement brand.",
+          "products_count": 12,
+          "products_sold": 340
         },
         "price": "19.99",
         "display_currency": "USD",
         "currency_symbol": "$",
+        "track_stock": true,
         "stock": 100,
+        "unit_weight": 1,
         "sku": "VIT-C-1000",
         "barcode": "0123456789001",
         "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
@@ -882,6 +939,7 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
         "slug": "vitamin-c-1000mg",
         "avg_rating": "4.25",
         "review_count": 12,
+        "quantity_sold": 40,
         "created_at": "2025-01-15T10:00:00Z",
         "updated_at": "2025-01-15T10:00:00Z",
         "variants": [
@@ -960,12 +1018,15 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
           "brands/nature-made-banner.png"
         ],
         "image_labels": ["logo", "banner"],
-        "description": "Trusted wellness and supplement brand."
+        "description": "Trusted wellness and supplement brand.",
+        "products_count": 12,
+        "products_sold": 340
       },
       "price": "3208.40",
       "display_currency": "KES",
       "currency_symbol": "KSh",
       "stock": 100,
+      "unit_weight": 1,
       "sku": "VIT-C-1000",
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
@@ -976,6 +1037,7 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
       "how_to_use": "Take one tablet daily with food, or as directed by your healthcare provider.",
       "avg_rating": "4.25",
       "review_count": 12,
+      "quantity_sold": 40,
       "variants": [
         {
           "id": 1,
@@ -1021,7 +1083,7 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
     POST /api/products/products/
     ```
 
-    Request body: `name`, `description`, `price`, and `stock` are required; `brand`, `sku`, `barcode`, `featured`, `benefits`, `ingredients`, `how_to_use`, and other fields are optional (when provided, `barcode` must be unique).
+    Creating or editing a product requires the `Stock` role or an admin. Request body: `name`, `description`, and `price` are required. `stock` is optional. Omit it and the product is created with `track_stock: false` and `stock: null`; checkout does not limit or reduce it. Send a stock number and `track_stock` turns on. Send `track_stock: false` to keep a number without using it. `track_stock: true` requires a stock number. `unit_weight` is the weight of one unit in grams and defaults to `1` when omitted. `brand`, `sku`, `barcode`, `featured`, `benefits`, `ingredients`, `how_to_use`, `supplier_order_urls`, and other fields are optional (when provided, `barcode` must be unique). Each `supplier_order_urls` item must be a non-empty `http` or `https` URL.
 
     ```json
     {
@@ -1031,10 +1093,12 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
       "price": "19.99",
       "cost_price": "12.00",
       "stock": 100,
+      "unit_weight": 1,
       "sku": "VIT-C-1000",
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
+      "supplier_order_urls": ["https://supplier.example/order/vit-c-1000"],
       "featured": true,
       "benefits": "Supports immune health and antioxidant protection.",
       "ingredients": "Ascorbic acid, microcrystalline cellulose, magnesium stearate.",
@@ -1065,15 +1129,19 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
           "brands/nature-made-banner.png"
         ],
         "image_labels": ["logo", "banner"],
-        "description": "Trusted wellness and supplement brand."
+        "description": "Trusted wellness and supplement brand.",
+        "products_count": 12,
+        "products_sold": 340
       },
       "price": "19.99",
       "cost_price": "12.00",
       "stock": 100,
+      "unit_weight": 1,
       "sku": "VIT-C-1000",
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
+      "supplier_order_urls": ["https://supplier.example/order/vit-c-1000"],
       "featured": true,
       "benefits": "Supports immune health and antioxidant protection.",
       "ingredients": "Ascorbic acid, microcrystalline cellulose, magnesium stearate.",
@@ -1084,6 +1152,8 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
       "slug": "vitamin-c-1000mg",
       "avg_rating": null,
       "review_count": 0,
+      "quantity_sold": 0,
+      "revenue": "0.00",
       "created_at": "2025-01-15T10:00:00Z",
       "updated_at": "2025-01-15T10:00:00Z",
       "variants": [],
@@ -1128,10 +1198,12 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
       "price": "21.99",
       "cost_price": "13.00",
       "stock": 80,
+      "unit_weight": 1,
       "sku": "VIT-C-1000",
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
+      "supplier_order_urls": ["https://supplier.example/order/vit-c-1000"],
       "featured": false,
       "benefits": "Updated benefits copy.",
       "ingredients": "Updated ingredients list.",
@@ -1143,6 +1215,8 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
     ```
 
     - `slug`, `avg_rating`, `review_count`, `created_at`, and `updated_at` are read-only. `sku` and `barcode` are optional.
+    - Sending `stock` turns `track_stock` on. Sending `stock: null` turns it off. Sending `track_stock` itself keeps that choice. `track_stock: true` still needs a stock number.
+    - `supplier_order_urls` replaces the whole list. Send `[]` to clear it.
     - Variants are managed via the variants endpoints (see below).
 
     **Example: 200 OK**
@@ -1165,15 +1239,19 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
           "brands/nature-made-banner.png"
         ],
         "image_labels": ["logo", "banner"],
-        "description": "Trusted wellness and supplement brand."
+        "description": "Trusted wellness and supplement brand.",
+        "products_count": 12,
+        "products_sold": 340
       },
       "price": "21.99",
       "cost_price": "13.00",
       "stock": 80,
+      "unit_weight": 1,
       "sku": "VIT-C-1000",
       "barcode": "0123456789001",
       "image_urls": ["https://cdn.example.com/p/vit-c-1.png"],
       "image_refs": ["p/vit-c-1.png"],
+      "supplier_order_urls": ["https://supplier.example/order/vit-c-1000"],
       "featured": false,
       "benefits": "Updated benefits copy.",
       "ingredients": "Updated ingredients list.",
@@ -1184,6 +1262,8 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
       "slug": "vitamin-c-1000mg",
       "avg_rating": "4.25",
       "review_count": 12,
+      "quantity_sold": 40,
+      "revenue": "799.60",
       "created_at": "2025-01-15T10:00:00Z",
       "updated_at": "2025-02-19T14:30:00Z",
       "variants": [],
@@ -1246,20 +1326,25 @@ Optional content fields (all strings unless noted): `featured` (boolean, default
     | Field | Type | Description |
     | --- | --- | --- |
     | `brand` | integer or null | Brand ID assigned to the product. |
-    | `brand_details` | object or null | Nested brand object returned in product responses. |
+    | `brand_details` | object or null | Nested brand, including `products_count` and `products_sold`. |
+    | `unit_weight` | integer | Weight of one unit in grams. Default `1`. Minimum `1`. |
+    | `supplier_order_urls` | array of strings | Links where staff order this product from a supplier. Default `[]`. Each item is an `http` or `https` URL. Returned only to staff. |
     | `featured` | boolean | When `true`, product can be highlighted (e.g. featured section). Default `false`. |
     | `benefits` | string | Product benefits / marketing copy. |
     | `ingredients` | string | Ingredients or composition. |
     | `how_to_use` | string | Usage instructions. |
-    | `avg_rating` | string (decimal) or null | Average of all review ratings (0–5). Updated when reviews change. |
-    | `review_count` | integer | Number of reviews. Updated when reviews change. |
-    | `reviews` | array | Up to 10 most recent reviews (see Product Reviews below). |
+    | `avg_rating` | string (decimal) or null | Average of visible review ratings (0–5). Flagged reviews are excluded. |
+    | `review_count` | integer | Number of visible reviews. Flagged reviews are excluded. |
+    | `quantity_sold` | integer | Units sold on orders that are not cancelled or refunded. Stored. Returned to everyone. |
+    | `revenue` | string (decimal) | Sum of those line totals, in the primary currency. Stored. Returned only to staff. |
+    | `reviews` | array | Up to 10 most recent visible reviews (see Product Reviews below). |
 
 ## Product Reviews
 
-Reviews are attached to a **product** and shared across all its variants. They are **linked to a completed order**: only users who have purchased the product (via a fully paid, placed order containing that product) can submit a review. Rating is **0–5**. One review per user per product. The product’s `avg_rating` and `review_count` are updated automatically on every review create/update/delete.
+Reviews belong to a product, and every variant of that product shares them. Someone can leave a review only after they have a completed, fully paid order whose `confirmed` line is that product. A line marked `unavailable` or `replaced` was not shipped, so it cannot be reviewed. The replacement product can. The rating is 0 to 5. One review per person per product. Flagged reviews are hidden from other customers and do not count toward `avg_rating` or `review_count`.
 
-- **Create**: Requires authentication and an `order` that belongs to you, is placed, is fully paid, and contains the product. You can submit at most one review per product.
+- **Create**: Requires authentication and that completed order. You can submit at most one review per product.
+- **Flag**: Staff cannot delete a review. They flag it as `PROFANITY`, `MALICIOUS`, or `OTHER` (with a note). Other customers do not see a flagged review on the product or in the review list, and it does not count toward the rating. Staff and the author still see it, with `is_flagged`, `flag_reason`, and `flagged_at`. `flag_note` is staff only. The author cannot change the flag. Staff can clear it.
 - **user_display**: Shown as the reviewer’s **first name** (or "Customer" if missing). If the review is **anonymous** (`is_anonymous: true`), `user_display` is redacted as **"Anonymous"**.
 
 === "List"
@@ -1341,7 +1426,7 @@ Reviews are attached to a **product** and shared across all its variants. They a
     POST /api/products/product-reviews/
     ```
 
-    Requires authentication. You must have a **completed** order (status `PLACED`, fully paid) that contains the product. One review per user per product.
+    Requires authentication. You must have a **completed** order (status `COMPLETE`, fully paid) with a **confirmed** line for that product. Unavailable and replaced lines do not count. One review per user per product.
 
     ```json
     {
@@ -1354,7 +1439,7 @@ Reviews are attached to a **product** and shared across all its variants. They a
     ```
 
     - `product` (required): Product ID you are reviewing.
-    - `order` (required): Order ID that contains this product (must be your order, placed, and fully paid).
+    - `order` (required): Order ID that contains this product (must be your order, status `COMPLETE`, and fully paid).
     - `rating` (required): **0–5** (inclusive).
     - `body` (optional): Review text.
     - `is_anonymous` (optional): If `true`, `user_display` is shown as "Anonymous". Default `false`.
@@ -1398,14 +1483,14 @@ Reviews are attached to a **product** and shared across all its variants. They a
     }
     ```
 
-=== "Update (owner or staff)"
+=== "Update (owner)"
 
     ```
     PUT /api/products/product-reviews/{id}/
     PATCH /api/products/product-reviews/{id}/
     ```
 
-    Only the review owner or staff can update (e.g. `rating`, `body`, `is_anonymous`).
+    Only the review author can update `rating`, `body`, and `is_anonymous`. Staff cannot edit the review text.
 
     ```json
     {
@@ -1448,17 +1533,41 @@ Reviews are attached to a **product** and shared across all its variants. They a
     }
     ```
 
-=== "Delete (owner or staff)"
+=== "Flag (staff)"
+
+    ```
+    POST /api/products/product-reviews/{id}/flag/
+    POST /api/products/product-reviews/{id}/unflag/
+    ```
+
+    Staff only. The author receives 403. `reason` is `PROFANITY`, `MALICIOUS`, or `OTHER`. `OTHER` requires `note`. Flagging hides the review from other customers and removes it from `avg_rating` and `review_count`. Sending `flag_reason` or `is_flagged` on update does not change the flag.
+
+    ```json
+    {
+      "reason": "PROFANITY",
+      "note": ""
+    }
+    ```
+
+    **Example: 403 Forbidden (staff delete)**
+
+    ```json
+    {
+      "detail": "Staff cannot delete reviews. Flag the review instead."
+    }
+    ```
+
+=== "Delete (author)"
 
     ```
     DELETE /api/products/product-reviews/{id}/
     ```
 
-    Only the review owner or staff can delete.
+    The review author can delete their own review. Staff cannot delete reviews.
 
     **Example: 204 No Content** — Empty response body.
 
-    **Example: 403 Forbidden (not owner and not staff)**
+    **Example: 403 Forbidden (not the author)**
 
     ```json
     {
@@ -1479,7 +1588,11 @@ Reviews are attached to a **product** and shared across all its variants. They a
     | Field | Type | Required (create) | Description |
     | --- | --- | --- | --- |
     | `product` | integer | Yes | Product ID. |
-    | `order` | integer | Yes | Order ID; must be your order, status PLACED, fully paid, and contain the product. |
+    | `order` | integer | Yes | Order ID; must be your completed, fully paid order with a confirmed line for this product. |
+    | `is_flagged` | boolean | — | Read-only. Returned to staff and the author. `true` when `flag_reason` is set. |
+    | `flag_reason` | string | — | Read-only. Returned to staff and the author. Empty, or `PROFANITY`, `MALICIOUS`, or `OTHER`. |
+    | `flagged_at` | string (datetime) or null | — | Read-only. Returned to staff and the author. |
+    | `flag_note` | string | — | Read-only. Staff only. Required when flagging as `OTHER`. |
     | `rating` | integer | Yes | Rating 0–5 (inclusive). |
     | `body` | string | No | Optional review text. |
     | `is_anonymous` | boolean | No | If true, `user_display` is shown as "Anonymous". Default false. |
@@ -1775,7 +1888,7 @@ Variant `sku` and `barcode` are **optional**. When provided, `barcode` must be u
     POST /api/products/variants/
     ```
 
-    Request body: `product` is required; `options`, `sku`, `barcode`, `price`, `cost_price`, `stock`, `image_urls`, `image_refs`, `is_active` are optional. `sku` and `barcode` may be omitted or null.
+    Creating or editing a variant requires the `Stock` role or an admin. Request body: `product` is required; `options`, `sku`, `barcode`, `price`, `cost_price`, `track_stock`, `stock`, `image_urls`, `image_refs`, `is_active` are optional. `sku` and `barcode` may be omitted or null. Stock belongs to the variant. Omit `stock` and the variant stays untracked, including when the product tracks stock. A stock number turns `track_stock` on. Checkout never changes the product's stock for a variant line.
 
     ```json
     {

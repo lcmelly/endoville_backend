@@ -1,6 +1,11 @@
-# Authentication
+---
+title: Login
+icon: lucide/log-in
+---
 
-Login with **email** and **either** a **password** or a **code** (OTP)—not both. Returns JWT tokens.
+# Sign in
+
+Sign in with an email and **either** a password **or** a short code. Do not send both. The response gives you an access token and a refresh token.
 
 === "Endpoint"
 
@@ -10,7 +15,7 @@ Login with **email** and **either** a **password** or a **code** (OTP)—not bot
 
 === "Authentication"
 
-    No authentication required (to get tokens).
+    You do not need to be signed in. This call is how you get the tokens.
 
 === "Option A: Password login"
 
@@ -126,7 +131,7 @@ For **code (OTP) login**, the client should request a login OTP first (active ac
 
 === "Authentication"
 
-    No authentication required.
+    You do not need to be signed in.
 
 === "Request body"
 

@@ -1,6 +1,13 @@
-# User Registration
+---
+title: Registration
+icon: lucide/user-plus
+---
 
-Register a new user account. The activation OTP email uses **`ZEPTOMAIL_OTP_TEMPLATE_KEY`** (registration / activation template), not the login OTP template.
+# User registration
+
+Create an account with an email and a password. We email a short code so the person can activate the account. This call does not sign them in.
+
+The activation email uses the template in `ZEPTOMAIL_OTP_TEMPLATE_KEY`. That is the registration template, not the one used for a login code.
 
 === "Endpoint"
 
@@ -10,7 +17,7 @@ Register a new user account. The activation OTP email uses **`ZEPTOMAIL_OTP_TEMP
 
 === "Authentication"
 
-    No authentication required.
+    You do not need to be signed in.
 
 === "Request Body"
 

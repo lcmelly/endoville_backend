@@ -1,6 +1,11 @@
-# User Profile
+---
+title: Profile
+icon: lucide/user
+---
 
-Get and update the currently authenticated user's profile.
+# Profile
+
+Read or update the profile of the person who is signed in. You can only see your own profile here.
 
 === "Endpoint"
 
@@ -11,7 +16,7 @@ Get and update the currently authenticated user's profile.
 
 === "Authentication"
 
-    JWT required.
+    You need to be signed in.
 
 === "Editable Fields"
 

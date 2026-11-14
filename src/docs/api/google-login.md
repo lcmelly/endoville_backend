@@ -1,6 +1,11 @@
-# Google OAuth Login
+---
+title: Google login
+icon: simple/google
+---
 
-Login or sign up using Google OAuth.
+# Sign in with Google
+
+Sign in with a Google account. If we have never seen that account, we create it. You get the same access token and refresh token as a normal sign-in. You do not need to register or activate first.
 
 === "Endpoint"
 
@@ -10,7 +15,7 @@ Login or sign up using Google OAuth.
 
 === "Authentication"
 
-    No authentication required (to get tokens).
+    You do not need to be signed in. This call is how you get the tokens.
 
 === "Request Body"
 
