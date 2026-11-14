@@ -47,7 +47,7 @@ The API is the only writer of orders, payments, and shipments. The storefront ne
 | Django 6 + Django REST framework | HTTP API and admin |
 | SimpleJWT | Access and refresh tokens. Access lifetime is 3 hours, refresh is 7 days |
 | `users.CustomUser` | Auth user. Login identifier is email or phone, not a username |
-| SQLite `src/db.sqlite3` | Database configured in `core.settings` |
+| SQLite `src/db.sqlite3`, or PostgreSQL when `DATABASE_URL` is set | Database configured in `core.settings`. Local development leaves `DATABASE_URL` empty. Production sets it to a `postgres://` URL |
 | django-allauth | Google social login |
 | django-import-export | Admin import and export on catalog and order models |
 | django-background-tasks | Repeating abandoned-cart reminder job |

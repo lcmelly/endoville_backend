@@ -128,6 +128,7 @@ ZOHO_ZEPTOMAIL_HOSTED_REGION=zeptomail.zoho.com
 ZEPTOMAIL_OTP_TEMPLATE_KEY=your-template-key
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
+DATABASE_URL=postgres://USER:PASSWORD@localhost:5432/endoville
 ```
 
 ### Run Migrations
@@ -158,14 +159,21 @@ deactivate
 
 ## Database Setup
 
-For production, consider using PostgreSQL. For SQLite (development/testing):
+Production uses PostgreSQL. Install it, create the database and user, then set `DATABASE_URL` in the environment file. With `DEBUG=False`, the connection requires SSL unless `DATABASE_SSL_REQUIRE=False`.
 
 ```bash
-# SQLite is already configured in settings.py
-# Just ensure the database file has correct permissions
-sudo chown -R endoville:endoville ~/endoville_backend/src/db.sqlite3
-sudo chmod 644 ~/endoville_backend/src/db.sqlite3
+sudo apt install postgresql postgresql-contrib
+sudo -u postgres createuser endoville
+sudo -u postgres createdb endoville --owner=endoville
 ```
+
+```env
+DATABASE_URL=postgres://endoville:PASSWORD@localhost:5432/endoville
+```
+
+Then run `python manage.py migrate` from `src`.
+
+Leave `DATABASE_URL` empty to use SQLite at `src/db.sqlite3` for local development.
 
 ---
 
@@ -633,9 +641,9 @@ sudo systemctl restart gunicorn
 
 ### Backup Database
 
-For SQLite:
+For PostgreSQL:
 ```bash
-cp ~/endoville_backend/src/db.sqlite3 ~/backups/db-$(date +%Y%m%d-%H%M%S).sqlite3
+pg_dump "$DATABASE_URL" > ~/backups/db-$(date +%Y%m%d-%H%M%S).sql
 ```
 
 ### Monitor Logs
