@@ -1,2 +1,2 @@
 [tool.vercel.scripts]
-build = "bash build_files.sh"
+build = "python build.py"
