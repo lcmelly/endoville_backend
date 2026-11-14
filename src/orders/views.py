@@ -4,17 +4,54 @@ API views for orders app.
 
 from background_task.models import CompletedTask, Task
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from rest_framework import mixins, status, viewsets
+from rest_framework.permissions import AllowAny, SAFE_METHODS
+from rest_framework.views import APIView
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
-from .currency_utils import order_total_in_currency
-from .models import Cart, CartItem, Order, OrderPayment, OrderStatus, PaymentCredentials, PaymentProvider, PaymentStatus, Shipment, ShipmentEvent
-from .permissions import IsStaffOnly, IsStaffOrOwner
+from .currency_utils import order_total_in_currency, snapshot_usd_rate
+from .models import (
+    CLOSED_PAYMENT_STATUSES,
+    Cart,
+    CartItem,
+    Order,
+    OrderItem,
+    OrderPayment,
+    OrderRefund,
+    OrderStatus,
+    PaymentCredentials,
+    PaymentProvider,
+    PaymentStatus,
+    Shipment,
+    ShipmentEvent,
+    Warehouse,
+)
+from users.roles import has_staff_role
+
+from .permissions import IsAdmin, IsManagerOrAdmin, IsStaffOnly, IsStaffOrOwner, StaffRolePermission
+
+
+def payment_create_rejection(order):
+    """
+    A new payment is refused when the order is cancelled or the money already covers it.
+    """
+    if order.status == OrderStatus.CANCELLED:
+        return Response(
+            {"detail": "Cannot record a payment for a cancelled order."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if order.is_fully_paid:
+        return Response(
+            {"detail": "Order is already fully paid."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return None
 from .serializers import (
     BackgroundTaskSerializer,
     CartSerializer,
@@ -22,13 +59,19 @@ from .serializers import (
     CreateOrderPaymentSerializer,
     CreateOrderSerializer,
     OrderPaymentSerializer,
+    OrderRefundSerializer,
     OrderSerializer,
+    ReplaceOrderItemSerializer,
     PaymentCredentialsSerializer,
+    ShippingQuoteSerializer,
+    ShippingRatesSerializer,
+    shipping_rates_payload,
     SyncCartSerializer,
     StaffOrderPaymentUpdateSerializer,
     StaffShipmentEventCreateSerializer,
     StaffShipmentUpdateSerializer,
     ShipmentSerializer,
+    WarehouseUpdateSerializer,
 )
 
 
@@ -43,10 +86,18 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = (
             Order.objects.select_related("user", "shipping_address")
-            .prefetch_related("items", "items__variant", "items__product", "shipment", "shipment__events")
+            .prefetch_related(
+                "items",
+                "items__variant",
+                "items__product",
+                "items__replacement",
+                "shipment",
+                "shipment__events",
+                "refunds",
+            )
             .order_by("-created_at")
         )
-        if self.request.user.is_staff:
+        if has_staff_role(self.request.user, "Orders", "Shipping"):
             return qs
         return qs.filter(user=self.request.user)
 
@@ -70,14 +121,14 @@ class OrderViewSet(viewsets.ModelViewSet):
     def _update_order(self, request, partial=False, **kwargs):
         order = self.get_object()
 
-        if not request.user.is_staff:
+        if not has_staff_role(request.user, "Orders"):
             status_value = request.data.get("status")
             if set(request.data.keys()) != {"status"} or status_value != OrderStatus.CANCELLED:
                 return Response(
                     {"detail": "You can only cancel your own unpaid orders."},
                     status=status.HTTP_403_FORBIDDEN,
                 )
-            if order.recalculate_is_fully_paid():
+            if order.is_fully_paid:
                 return Response(
                     {"detail": "Only unpaid orders can be cancelled."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -87,6 +138,70 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def _staff_line_change(self, request, item_id, action):
+        if not has_staff_role(request.user, "Orders"):
+            return Response({"detail": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
+        order = self.get_object()
+        try:
+            item = order.items.get(pk=item_id)
+        except OrderItem.DoesNotExist:
+            return Response({"detail": "Order line not found."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            action(order, item)
+        except ValidationError as exc:
+            message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+            return Response({"detail": message}, status=status.HTTP_400_BAD_REQUEST)
+        cache = getattr(order, "_prefetched_objects_cache", None)
+        if cache is not None:
+            cache.pop("items", None)
+            cache.pop("refunds", None)
+        order.refresh_from_db()
+        return Response(OrderSerializer(order, context={"request": request}).data, status=status.HTTP_200_OK)
+
+    def _line_note(self, request):
+        note = request.data.get("note", "") if hasattr(request.data, "get") else ""
+        return note if isinstance(note, str) else ""
+
+    @action(detail=True, methods=["post"], url_path=r"items/(?P<item_id>[^/.]+)/confirm")
+    def confirm_item(self, request, pk=None, item_id=None):
+        note = self._line_note(request)
+        return self._staff_line_change(
+            request,
+            item_id,
+            lambda order, item: order.confirm_line(item, request.user, note=note),
+        )
+
+    @action(detail=True, methods=["post"], url_path=r"items/(?P<item_id>[^/.]+)/unavailable")
+    def unavailable_item(self, request, pk=None, item_id=None):
+        note = self._line_note(request)
+        return self._staff_line_change(
+            request,
+            item_id,
+            lambda order, item: order.mark_line_unavailable(item, request.user, note=note),
+        )
+
+    @action(detail=True, methods=["post"], url_path=r"items/(?P<item_id>[^/.]+)/remove")
+    def remove_item(self, request, pk=None, item_id=None):
+        note = self._line_note(request)
+        return self._staff_line_change(
+            request,
+            item_id,
+            lambda order, item: order.mark_line_unavailable(item, request.user, note=note),
+        )
+
+    @action(detail=True, methods=["post"], url_path=r"items/(?P<item_id>[^/.]+)/replace")
+    def replace_item(self, request, pk=None, item_id=None):
+        serializer = ReplaceOrderItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        product = serializer.validated_data.get("product")
+        variant = serializer.validated_data.get("variant")
+
+        def _replace(order, item):
+            quantity = serializer.validated_data.get("quantity", item.quantity)
+            order.replace_line(item, product, variant, quantity, request.user)
+
+        return self._staff_line_change(request, item_id, _replace)
 
 
 class CartViewSet(viewsets.GenericViewSet):
@@ -129,7 +244,11 @@ class CartViewSet(viewsets.GenericViewSet):
         cart = Cart.objects.prefetch_related(
             "items__product", "items__variant", "items__variant__product", "items__variant__options__attribute"
         ).get(pk=cart.pk)
-        return Response(CartSerializer(cart, context={"request": request}).data, status=status.HTTP_200_OK)
+        country = serializer.validated_data.get("country") or request.query_params.get("country") or ""
+        return Response(
+            CartSerializer(cart, context={"request": request, "country": country}).data,
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=["delete"], url_path="clear")
     @transaction.atomic
@@ -153,7 +272,7 @@ class ShipmentViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets
 
     def get_queryset(self):
         qs = Shipment.objects.select_related("order", "order__user").prefetch_related("events").order_by("-created_at")
-        if self.request.user.is_staff:
+        if has_staff_role(self.request.user, "Orders", "Shipping"):
             return qs
         return qs.filter(order__user=self.request.user)
 
@@ -169,7 +288,7 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
 
     def get_queryset(self):
         qs = OrderPayment.objects.select_related("order", "order__user").filter(is_deleted=False).order_by("-created_at")
-        if self.request.user.is_staff:
+        if has_staff_role(self.request.user, "Orders"):
             return qs
         return qs.filter(order__user=self.request.user)
 
@@ -187,11 +306,7 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
             "provider_state": payment.provider_state or "",
         }
         # Only call third-party API when status is still pending or processing
-        if payment.status not in (
-            PaymentStatus.COMPLETED,
-            PaymentStatus.FAILED,
-            PaymentStatus.CANCELLED,
-        ):
+        if payment.status not in CLOSED_PAYMENT_STATUSES:
             if payment.provider == PaymentProvider.INTASEND and (
                 payment.provider_invoice_id or payment.provider_payment_id
             ):
@@ -199,6 +314,22 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
                     from .payments.intasend import IntaSendAPI
 
                     client = IntaSendAPI()
+                    check_result = client.check_payment_status(payment)
+                    payment.refresh_from_db()
+                    result["is_complete"] = payment.status == PaymentStatus.COMPLETED
+                    result["status"] = payment.status
+                    result["provider_state"] = payment.provider_state or ""
+                    result["success"] = check_result.get("success", False)
+                    if not check_result.get("success"):
+                        result["error"] = check_result.get("error")
+                except Exception as e:
+                    result["success"] = False
+                    result["error"] = str(e)
+            elif payment.provider == PaymentProvider.STRIPE and payment.provider_payment_id:
+                try:
+                    from .payments.stripe import StripeAPI
+
+                    client = StripeAPI()
                     check_result = client.check_payment_status(payment)
                     payment.refresh_from_db()
                     result["is_complete"] = payment.status == PaymentStatus.COMPLETED
@@ -227,23 +358,31 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
         order = Order.objects.select_related("user", "shipping_address").get(pk=order.pk)
 
         # Enforce ownership (auth required by permission)
-        if not request.user.is_staff and order.user_id != request.user.id:
+        if order.user_id != request.user.id and not has_staff_role(request.user, "Orders"):
             return Response({"detail": "Not allowed."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Block creating payments for fully paid orders
-        if order.recalculate_is_fully_paid():
-            return Response(
-                {"detail": "Order is already fully paid."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        from .payments.stripe import sync_open_stripe_payments
+
+        stripe_error = sync_open_stripe_payments(order)
+        if stripe_error:
+            return Response({"detail": stripe_error}, status=status.HTTP_400_BAD_REQUEST)
+        order.refresh_from_db(fields=["status", "total", "is_fully_paid"])
+
+        rejection = payment_create_rejection(order)
+        if rejection is not None:
+            return rejection
 
         # Payment is linked to the order from the request; amount = order total (converted to payment currency)
         provider = serializer.validated_data["provider"]
         method = serializer.validated_data["method"]
         currency = serializer.validated_data.get("currency") or "USD"
         amount = serializer.validated_data.get("amount")
+        from .payments.stripe_rates import ensure_stripe_rates_fresh
+
+        ensure_stripe_rates_fresh()
         if amount is None:
             amount = order_total_in_currency(order.total, currency)
+        fx_rate = snapshot_usd_rate(currency)
 
         # IntaSend: sync all related payments from stored provider_state and API; block if order fully paid
         if provider == PaymentProvider.INTASEND:
@@ -255,11 +394,7 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
             intasend_client = None
             for payment in intasend_payments:
                 state = (payment.provider_state or "").upper()
-                if state in ("COMPLETE", "COMPLETED", "PAID", "SETTLED") and payment.status not in (
-                    PaymentStatus.COMPLETED,
-                    PaymentStatus.FAILED,
-                    PaymentStatus.CANCELLED,
-                ):
+                if state in ("COMPLETE", "COMPLETED", "PAID", "SETTLED") and payment.status not in CLOSED_PAYMENT_STATUSES:
                     payment.status = PaymentStatus.COMPLETED
                     payment.save(update_fields=["status", "updated_at"])
                 elif payment.provider_invoice_id or payment.provider_payment_id:
@@ -270,7 +405,8 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
                         intasend_client.check_payment_status(payment)
                     except Exception:
                         pass
-            if order.recalculate_is_fully_paid():
+            order.refresh_from_db(fields=["status", "total", "is_fully_paid"])
+            if order.is_fully_paid:
                 return Response(
                     {"detail": "Order is already fully paid."},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -298,6 +434,7 @@ class OrderPaymentViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin, mi
             provider=provider,
             amount=amount,
             currency=currency,
+            usd_rate=fx_rate,
         )
 
         # Kick off provider workflow
@@ -374,18 +511,25 @@ class PaymentCredentialsViewSet(viewsets.ModelViewSet):
     Staff-only CRUD for global payment credentials.
     """
 
-    permission_classes = [IsStaffOnly]
+    permission_classes = [StaffRolePermission("Orders")]
     queryset = PaymentCredentials.objects.all().order_by("-created_at")
     serializer_class = PaymentCredentialsSerializer
 
 
-class StaffOrderPaymentViewSet(viewsets.ModelViewSet):
+class StaffOrderPaymentViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     """
-    Staff-only CRUD to manually update payment status/provider fields.
+    Staff can record and read payments. Payments are not edited or deleted.
+    Returning money is a refund.
     """
 
-    permission_classes = [IsStaffOnly]
+    permission_classes = [StaffRolePermission("Orders")]
     serializer_class = StaffOrderPaymentUpdateSerializer
+    http_method_names = ["get", "post", "head", "options"]
 
     def get_queryset(self):
         qs = OrderPayment.objects.select_related("order").order_by("-created_at")
@@ -394,19 +538,56 @@ class StaffOrderPaymentViewSet(viewsets.ModelViewSet):
             return qs
         return qs.filter(is_deleted=False)
 
-    def perform_destroy(self, instance):
-        # Soft delete and record who deleted it
-        instance.soft_delete(user=self.request.user)
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         order = serializer.validated_data.get("order")
-        if order and order.recalculate_is_fully_paid():
-            return Response({"detail": "Order is already fully paid."}, status=status.HTTP_400_BAD_REQUEST)
+        if order is not None:
+            from .payments.stripe import sync_open_stripe_payments
+
+            stripe_error = sync_open_stripe_payments(order)
+            if stripe_error:
+                return Response({"detail": stripe_error}, status=status.HTTP_400_BAD_REQUEST)
+            order.refresh_from_db(fields=["status", "total", "is_fully_paid"])
+            rejection = payment_create_rejection(order)
+            if rejection is not None:
+                return rejection
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class StaffOrderRefundViewSet(viewsets.ModelViewSet):
+    """
+    Staff record a refund for a completed payment on a cancelled order.
+    """
+
+    permission_classes = [StaffRolePermission("Orders")]
+    serializer_class = OrderRefundSerializer
+    http_method_names = ["get", "post", "patch", "head", "options"]
+    queryset = OrderRefund.objects.select_related("order", "payment", "initiated_by").order_by("-created_at")
+
+
+class WarehouseViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    Read receiving warehouses, or set and change an address.
+    Creates and updates are limited to managers and Django admins.
+    """
+
+    queryset = Warehouse.objects.all().order_by("name")
+    serializer_class = WarehouseUpdateSerializer
+    http_method_names = ["get", "post", "put", "patch", "head", "options"]
+
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [IsStaffOnly()]
+        return [IsManagerOrAdmin()]
 
 
 class StaffShipmentViewSet(viewsets.ModelViewSet):
@@ -414,7 +595,7 @@ class StaffShipmentViewSet(viewsets.ModelViewSet):
     Staff-only CRUD for shipments (status + tracking info).
     """
 
-    permission_classes = [IsStaffOnly]
+    permission_classes = [StaffRolePermission("Shipping")]
     queryset = Shipment.objects.select_related("order", "order__user").order_by("-created_at")
     serializer_class = StaffShipmentUpdateSerializer
 
@@ -424,7 +605,7 @@ class StaffShipmentEventViewSet(viewsets.ModelViewSet):
     Staff-only CRUD for shipment events (timeline updates users see).
     """
 
-    permission_classes = [IsStaffOnly]
+    permission_classes = [StaffRolePermission("Shipping")]
     queryset = ShipmentEvent.objects.select_related("shipment", "shipment__order").order_by("-occurred_at")
     serializer_class = StaffShipmentEventCreateSerializer
 
@@ -505,7 +686,7 @@ def stripe_webhook_view(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsStaffOnly])
+@permission_classes([StaffRolePermission("Orders")])
 def intasend_test_connection(request):
     """
     Test IntaSend API connection using stored credentials.
@@ -529,4 +710,36 @@ def intasend_test_connection(request):
             {"status": "error", "message": str(e)},
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
+
+
+class ShippingRatesView(APIView):
+    """
+    Read the shipping schedule, or replace it.
+    Anyone can read. Only an admin can change the base fee and country rates.
+    """
+
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [AllowAny()]
+        return [IsAdmin()]
+
+    def get(self, request):
+        return Response(shipping_rates_payload())
+
+    def put(self, request):
+        serializer = ShippingRatesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(shipping_rates_payload())
+
+
+class ShippingQuoteView(APIView):
+    """Quote a shipping fee from a destination country and the items' product weights."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ShippingQuoteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.quote())
 

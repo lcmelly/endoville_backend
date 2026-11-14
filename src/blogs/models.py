@@ -45,7 +45,7 @@ class Author(models.Model):
 
 class Post(models.Model):
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, blank=True, db_index=True)
+    slug = models.SlugField(max_length=200, unique=True, blank=True, db_index=True)
     author = models.ForeignKey(Author, on_delete=models.CASCADE, related_name='posts')
     subcategories = models.ManyToManyField(Subcategory, related_name="posts", blank=True)
     related_products = models.ManyToManyField(

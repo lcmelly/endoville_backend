@@ -5,24 +5,95 @@ Serializers for orders app.
 from decimal import Decimal
 
 from background_task.models import CompletedTask, Task
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
 
 from products.models import Product, ProductVariant, VariationOption
+from users.models import CustomUser
+from users.roles import has_staff_role
 
 from .currency_utils import order_total_in_currency
+from .shipping_fees import cart_shipping, quote_shipping, weight_grams
 from .models import (
     Cart,
     CartItem,
     Order,
     OrderItem,
     OrderPayment,
+    OrderRefund,
+    OrderStatus,
     PaymentProvider,
+    ShippingStatus,
     PaymentCredentials,
+    PaymentStatus,
+    RefundStatus,
     Shipment,
     ShipmentEvent,
     ShippingAddress,
+    ShippingCountryRate,
+    ShippingFee,
+    Warehouse,
 )
+
+
+class WarehouseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Warehouse
+        fields = [
+            "id",
+            "code",
+            "name",
+            "phone",
+            "address_line_1",
+            "address_line_2",
+            "city",
+            "state",
+            "postal_code",
+            "country",
+        ]
+        read_only_fields = fields
+
+
+class WarehouseUpdateSerializer(serializers.ModelSerializer):
+    """Staff can read a warehouse. Only managers and admins can add or change the address."""
+
+    class Meta:
+        model = Warehouse
+        fields = [
+            "id",
+            "code",
+            "name",
+            "phone",
+            "address_line_1",
+            "address_line_2",
+            "city",
+            "state",
+            "postal_code",
+            "country",
+            "is_active",
+        ]
+        read_only_fields = ["id", "is_active"]
+
+    def get_fields(self):
+        fields = super().get_fields()
+        if self.instance is not None:
+            fields["code"].read_only = True
+        return fields
+
+    def validate(self, attrs):
+        required = ("name", "address_line_1", "city", "state", "postal_code", "country")
+        if self.instance is None:
+            required = ("code",) + required
+        errors = {}
+        for field in required:
+            if self.instance is not None and field not in attrs:
+                continue
+            if not str(attrs.get(field, "")).strip():
+                errors[field] = "This field is required."
+        if errors:
+            raise serializers.ValidationError(errors)
+        return attrs
 
 
 class ShippingAddressSerializer(serializers.ModelSerializer):
@@ -72,6 +143,8 @@ class ShipmentSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    replacement = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderItem
         fields = [
@@ -84,8 +157,36 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "quantity",
             "unit_price",
             "line_total",
+            "availability",
+            "availability_note",
+            "replaces",
+            "replacement",
         ]
-        read_only_fields = ["id", "product_name", "variant_description", "barcode", "line_total"]
+        read_only_fields = [
+            "id",
+            "product_name",
+            "variant_description",
+            "barcode",
+            "line_total",
+            "availability",
+            "availability_note",
+            "replaces",
+            "replacement",
+        ]
+
+    def get_replacement(self, obj):
+        try:
+            return obj.replacement.pk
+        except OrderItem.DoesNotExist:
+            return None
+
+
+def _reject_until_lines_are_ready(order):
+    try:
+        order.assert_ready_to_ship()
+    except DjangoValidationError as exc:
+        message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+        raise serializers.ValidationError(message) from exc
 
 
 class OrderPaymentSummarySerializer(serializers.ModelSerializer):
@@ -100,6 +201,7 @@ class OrderPaymentSummarySerializer(serializers.ModelSerializer):
             "amount",
             "currency",
             "checkout_url",
+            "transaction_id",
             "provider_payment_id",
             "provider_invoice_id",
             "created_at",
@@ -112,6 +214,7 @@ class OrderPaymentSummarySerializer(serializers.ModelSerializer):
             "amount",
             "currency",
             "checkout_url",
+            "transaction_id",
             "provider_payment_id",
             "provider_invoice_id",
             "created_at",
@@ -119,11 +222,104 @@ class OrderPaymentSummarySerializer(serializers.ModelSerializer):
         ]
 
 
+class OrderRefundSerializer(serializers.ModelSerializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+
+    def validate_reason(self, value):
+        cleaned = (value or "").strip()
+        if not cleaned:
+            raise serializers.ValidationError("A reason is required.")
+        return cleaned
+
+    def validate_transaction_id(self, value):
+        cleaned = (value or "").strip()
+        if not cleaned:
+            raise serializers.ValidationError("A transaction id is required.")
+        taken = OrderRefund.objects.filter(transaction_id=cleaned)
+        if self.instance is not None:
+            taken = taken.exclude(pk=self.instance.pk)
+        if taken.exists():
+            raise serializers.ValidationError("This transaction id is already used.")
+        return cleaned
+
+    class Meta:
+        model = OrderRefund
+        fields = [
+            "id",
+            "order",
+            "payment",
+            "status",
+            "amount",
+            "currency",
+            "reason",
+            "transaction_id",
+            "provider_refund_id",
+            "initiated_by",
+            "completed_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "order",
+            "currency",
+            "initiated_by",
+            "completed_at",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate(self, attrs):
+        payment = attrs.get("payment") or getattr(self.instance, "payment", None)
+        if payment is None:
+            raise serializers.ValidationError({"payment": "This field is required."})
+        if self.instance and attrs.get("payment") and attrs["payment"].pk != self.instance.payment_id:
+            raise serializers.ValidationError({"payment": "Payment cannot be changed."})
+        if payment.is_deleted:
+            raise serializers.ValidationError({"payment": "Deleted payments cannot be refunded."})
+        if payment.order.status not in (OrderStatus.CANCELLED, OrderStatus.REFUNDED):
+            raise serializers.ValidationError({"payment": "Refunds are recorded for cancelled orders."})
+        if self.instance is None and payment.status not in (
+            PaymentStatus.COMPLETED,
+            PaymentStatus.REFUND_INITIATED,
+        ):
+            raise serializers.ValidationError({"payment": "Only a completed payment can be refunded."})
+
+        available = payment.refundable_amount()
+        if self.instance is not None:
+            available += Decimal(self.instance.amount)
+        amount = attrs.get("amount", None)
+        if amount is None and self.instance is None:
+            if available <= 0:
+                raise serializers.ValidationError({"amount": "This payment has already been refunded."})
+            attrs["amount"] = available
+        elif amount is not None and (amount <= 0 or amount > available):
+            raise serializers.ValidationError(
+                {"amount": "Amount cannot exceed the payment balance still held."}
+            )
+
+        status_value = attrs.get("status")
+        if status_value is not None and status_value not in RefundStatus.values:
+            raise serializers.ValidationError({"status": "Status must be initiated or completed."})
+        return attrs
+
+    def create(self, validated_data):
+        payment = validated_data["payment"]
+        validated_data["order"] = payment.order
+        validated_data["currency"] = payment.currency
+        request = self.context.get("request")
+        if request is not None and request.user.is_authenticated:
+            validated_data["initiated_by"] = request.user
+        return super().create(validated_data)
+
+
 class OrderSerializer(serializers.ModelSerializer):
     shipping_address = ShippingAddressSerializer(read_only=True)
+    warehouse = WarehouseSerializer(read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
     shipment = ShipmentSerializer(read_only=True)
     payments = serializers.SerializerMethodField()
+    refunds = OrderRefundSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
@@ -132,6 +328,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "user",
             "status",
             "shipping_address",
+            "warehouse",
             "subtotal",
             "shipping_fee",
             "total",
@@ -142,8 +339,26 @@ class OrderSerializer(serializers.ModelSerializer):
             "items",
             "shipment",
             "payments",
+            "refunds",
         ]
-        read_only_fields = ["id", "user", "subtotal", "total", "created_at", "updated_at"]
+        read_only_fields = ["id", "user", "subtotal", "total", "is_fully_paid", "created_at", "updated_at"]
+
+    def update(self, instance, validated_data):
+        fee_changed = "shipping_fee" in validated_data
+        order = super().update(instance, validated_data)
+        if fee_changed:
+            order.recalculate_totals()
+        return order
+
+    def validate(self, attrs):
+        new_status = attrs.get("status")
+        if (
+            self.instance is not None
+            and new_status in (OrderStatus.SHIPPING, OrderStatus.COMPLETE)
+            and self.instance.status not in (OrderStatus.SHIPPING, OrderStatus.COMPLETE)
+        ):
+            _reject_until_lines_are_ready(self.instance)
+        return attrs
 
     def get_payments(self, obj):
         """Payments for this order (excludes soft-deleted)."""
@@ -217,21 +432,68 @@ class CartItemSerializer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
     subtotal = serializers.SerializerMethodField()
+    weight_grams = serializers.SerializerMethodField()
+    shipping_fee = serializers.SerializerMethodField()
+    shipping_fees = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ["id", "user", "items", "subtotal", "created_at", "updated_at"]
-        read_only_fields = ["id", "user", "subtotal", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "user",
+            "items",
+            "subtotal",
+            "weight_grams",
+            "shipping_fee",
+            "shipping_fees",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "user",
+            "subtotal",
+            "weight_grams",
+            "shipping_fee",
+            "shipping_fees",
+            "created_at",
+            "updated_at",
+        ]
+
+    def _lines(self, obj):
+        return obj.items.select_related("product", "variant", "variant__product")
+
+    def _shipping(self, obj):
+        cached = getattr(self, "_shipping_for", None)
+        if cached is not None and cached[0] == obj.pk:
+            return cached[1]
+        grams = sum(weight_grams(item.product, item.variant, item.quantity) for item in self._lines(obj))
+        country = self.context.get("country") or ""
+        request = self.context.get("request")
+        if not country and request is not None:
+            country = request.query_params.get("country") or ""
+        payload = cart_shipping(country, grams)
+        self._shipping_for = (obj.pk, payload)
+        return payload
 
     def get_subtotal(self, obj):
         total = Decimal("0")
-        for item in obj.items.select_related("product", "variant", "variant__product"):
+        for item in self._lines(obj):
             if item.variant:
                 unit_price = item.variant.price if item.variant.price is not None else item.variant.product.price
             else:
                 unit_price = item.product.price
             total += Decimal(unit_price) * item.quantity
         return total.quantize(Decimal("0.01"))
+
+    def get_weight_grams(self, obj):
+        return self._shipping(obj)["weight_grams"]
+
+    def get_shipping_fee(self, obj):
+        return self._shipping(obj)["shipping_fee"]
+
+    def get_shipping_fees(self, obj):
+        return self._shipping(obj)["shipping_fees"]
 
 
 class SyncCartItemSerializer(serializers.Serializer):
@@ -251,6 +513,24 @@ class SyncCartItemSerializer(serializers.Serializer):
 
 class SyncCartSerializer(serializers.Serializer):
     items = SyncCartItemSerializer(many=True)
+    country = serializers.CharField(max_length=100, required=False, allow_blank=True, default="")
+
+
+class ReplaceOrderItemSerializer(serializers.Serializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), required=False)
+    variant = serializers.PrimaryKeyRelatedField(
+        queryset=ProductVariant.objects.select_related("product"), required=False
+    )
+    quantity = serializers.IntegerField(min_value=1, required=False)
+
+    def validate(self, attrs):
+        product = attrs.get("product")
+        variant = attrs.get("variant")
+        if not product and not variant:
+            raise serializers.ValidationError("Either product or variant is required.")
+        if product and variant:
+            raise serializers.ValidationError("Provide either product or variant, not both.")
+        return attrs
 
 
 class CreateOrderItemSerializer(serializers.Serializer):
@@ -268,13 +548,104 @@ class CreateOrderItemSerializer(serializers.Serializer):
         return attrs
 
 
-class CreateOrderSerializer(serializers.Serializer):
-    """Place an order. Shipping address is required."""
+class ShippingCountryInputSerializer(serializers.Serializer):
+    country = serializers.CharField(max_length=100)
+    per_kg = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
 
+    def validate_country(self, value):
+        name = value.strip()
+        if not name:
+            raise serializers.ValidationError("Enter a country.")
+        return name
+
+
+class ShippingRatesSerializer(serializers.Serializer):
+    base_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
+    countries = ShippingCountryInputSerializer(many=True)
+
+    def validate_countries(self, rows):
+        seen = set()
+        for row in rows:
+            key = row["country"].casefold()
+            if key in seen:
+                raise serializers.ValidationError(f"{row['country']} is listed more than once.")
+            seen.add(key)
+        return rows
+
+    def save(self):
+        data = self.validated_data
+        with transaction.atomic():
+            fee = ShippingFee.load()
+            fee.base_fee = data["base_fee"]
+            fee.save(update_fields=["base_fee"])
+            ShippingCountryRate.objects.all().delete()
+            ShippingCountryRate.objects.bulk_create(
+                [
+                    ShippingCountryRate(country=row["country"], per_kg=row["per_kg"])
+                    for row in data["countries"]
+                ]
+            )
+        return fee
+
+
+def shipping_rates_payload():
+    fee = ShippingFee.load()
+    return {
+        "base_fee": f"{Decimal(fee.base_fee):.2f}",
+        "countries": [
+            {"country": row.country, "per_kg": f"{Decimal(row.per_kg):.2f}"}
+            for row in ShippingCountryRate.objects.all()
+        ],
+    }
+
+
+class ShippingQuoteSerializer(serializers.Serializer):
+    country = serializers.CharField(max_length=100)
+    items = CreateOrderItemSerializer(many=True)
+
+    def validate_country(self, value):
+        name = value.strip()
+        if not name:
+            raise serializers.ValidationError("Enter a country.")
+        return name
+
+    def validate_items(self, items):
+        if not items:
+            raise serializers.ValidationError("Add at least one item.")
+        return items
+
+    def quote(self):
+        data = self.validated_data
+        grams = sum(
+            weight_grams(item.get("product"), item.get("variant"), item["quantity"])
+            for item in data["items"]
+        )
+        try:
+            fee = quote_shipping(data["country"], grams)
+        except DjangoValidationError as exc:
+            message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+            raise serializers.ValidationError({"country": message}) from exc
+        return {
+            "country": data["country"],
+            "weight_grams": grams,
+            "shipping_fee": f"{fee:.2f}",
+        }
+
+
+class CreateOrderSerializer(serializers.Serializer):
+    """Place an order. Shipping address is required. Staff may set user to the customer."""
+
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False)
     shipping_address = ShippingAddressSerializer()  # required
     items = CreateOrderItemSerializer(many=True)
     shipping_fee = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, default=Decimal("0"))
     notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+    def validate_user(self, customer):
+        request = self.context["request"]
+        if customer.pk != request.user.pk and not has_staff_role(request.user, "Orders"):
+            raise serializers.ValidationError("You can only place an order for yourself.")
+        return customer
 
     @staticmethod
     def _variant_description(variant: ProductVariant) -> str:
@@ -286,18 +657,28 @@ class CreateOrderSerializer(serializers.Serializer):
     @transaction.atomic
     def create(self, validated_data):
         request = self.context["request"]
-        user = request.user
+        user = validated_data.get("user") or request.user
 
         addr_data = validated_data["shipping_address"]
         items_data = validated_data["items"]
-        shipping_fee = validated_data.get("shipping_fee", Decimal("0"))
         notes = validated_data.get("notes", "")
+        grams = sum(
+            weight_grams(item.get("product"), item.get("variant"), item["quantity"])
+            for item in items_data
+        )
+        try:
+            shipping_fee = quote_shipping(addr_data.get("country", ""), grams)
+        except DjangoValidationError as exc:
+            message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+            raise serializers.ValidationError({"shipping_address": {"country": message}}) from exc
 
         shipping_address = ShippingAddress.objects.create(user=user, **addr_data)
+        warehouse = Warehouse.objects.filter(is_active=True).order_by("id").first()
 
         order = Order.objects.create(
             user=user,
             shipping_address=shipping_address,
+            warehouse=warehouse,
             shipping_fee=shipping_fee,
             notes=notes,
         )
@@ -311,25 +692,18 @@ class CreateOrderSerializer(serializers.Serializer):
             if variant:
                 product = variant.product
                 unit_price = variant.price if variant.price is not None else product.price
-                barcode = variant.barcode
+                barcode = variant.barcode or ""
                 variant_desc = self._variant_description(variant)
-
-                if variant.stock is not None:
-                    if variant.stock < qty:
-                        raise serializers.ValidationError("Insufficient variant stock.")
-                    variant.stock -= qty
-                    variant.save(update_fields=["stock", "updated_at"])
             else:
                 unit_price = product.price
                 barcode = ""
                 variant_desc = ""
 
-            # fall back to product stock if variant doesn't manage stock
-            if not variant and product.stock < qty:
-                raise serializers.ValidationError("Insufficient product stock.")
-            if not variant:
-                product.stock -= qty
-                product.save(update_fields=["stock"])
+            try:
+                stock_taken = Order._take_stock(product, variant, qty)
+            except DjangoValidationError as exc:
+                message = exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+                raise serializers.ValidationError(message) from exc
 
             line_total = (Decimal(unit_price) * qty).quantize(Decimal("0.01"))
             subtotal += line_total
@@ -344,11 +718,28 @@ class CreateOrderSerializer(serializers.Serializer):
                 quantity=qty,
                 unit_price=unit_price,
                 line_total=line_total,
+                stock_taken=stock_taken,
             )
 
         order.subtotal = subtotal
         order.total = subtotal + Decimal(order.shipping_fee)
         order.save(update_fields=["subtotal", "total", "updated_at"])
+        order.apply_paid_state()
+
+        from users.audit import log_staff_change, money
+
+        log_staff_change(
+            action="order.created",
+            target_type="order",
+            target_id=order.pk,
+            order_id=order.pk,
+            summary=f"Created order #{order.pk} for {user.email}",
+            changes={
+                "user_id": user.pk,
+                "total": money(order.total),
+                "item_count": len(items_data),
+            },
+        )
 
         # Create a shipment + first event (order placed) so users see tracking immediately.
         shipment = Shipment.objects.create(order=order)
@@ -371,7 +762,9 @@ class OrderPaymentSerializer(serializers.ModelSerializer):
             "status",
             "amount",
             "currency",
+            "usd_rate",
             "checkout_url",
+            "transaction_id",
             "provider_payment_id",
             "provider_invoice_id",
             "provider_state",
@@ -382,7 +775,9 @@ class OrderPaymentSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "status",
+            "usd_rate",
             "checkout_url",
+            "transaction_id",
             "provider_payment_id",
             "provider_invoice_id",
             "provider_state",
@@ -429,7 +824,7 @@ class CreateOrderPaymentSerializer(serializers.Serializer):
         request = self.context.get("request")
 
         # Non-staff can only use IntaSend or Stripe
-        if request and not getattr(request.user, "is_staff", False):
+        if request and not has_staff_role(request.user, "Orders"):
             if provider not in (PaymentProvider.INTASEND, PaymentProvider.STRIPE):
                 raise serializers.ValidationError(
                     {"provider": "Only IntaSend and Stripe are available. Use staff API for cash/other."}
@@ -505,8 +900,23 @@ class PaymentCredentialsSerializer(serializers.ModelSerializer):
 
 class StaffOrderPaymentUpdateSerializer(serializers.ModelSerializer):
     """
-    Staff-facing serializer to manually update payment status / provider fields.
+    Staff record a payment. transaction_id is optional and is returned with the payment.
     """
+
+    transaction_id = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
+
+    def validate_transaction_id(self, value):
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        taken = OrderPayment.objects.filter(transaction_id=cleaned)
+        if self.instance is not None:
+            taken = taken.exclude(pk=self.instance.pk)
+        if taken.exists():
+            raise serializers.ValidationError("This transaction id is already used.")
+        return cleaned
 
     class Meta:
         model = OrderPayment
@@ -518,6 +928,7 @@ class StaffOrderPaymentUpdateSerializer(serializers.ModelSerializer):
             "amount",
             "currency",
             "checkout_url",
+            "transaction_id",
             "provider_payment_id",
             "provider_invoice_id",
             "provider_state",
@@ -549,12 +960,39 @@ class StaffShipmentUpdateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
+    def validate(self, attrs):
+        status_value = attrs.get("status", getattr(self.instance, "status", None))
+        forward = (
+            ShippingStatus.DISPATCHED,
+            ShippingStatus.OUT_FOR_DELIVERY,
+            ShippingStatus.DELIVERED,
+        )
+        if status_value in forward and self.instance is not None:
+            order = self.instance.order
+            if order.status not in (OrderStatus.SHIPPING, OrderStatus.COMPLETE):
+                _reject_until_lines_are_ready(order)
+        return attrs
+
 
 class StaffShipmentEventCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShipmentEvent
         fields = ["id", "shipment", "status", "message", "location", "occurred_at"]
         read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        status_value = attrs.get("status", getattr(self.instance, "status", None))
+        shipment = attrs.get("shipment") or getattr(self.instance, "shipment", None)
+        forward = (
+            ShippingStatus.DISPATCHED,
+            ShippingStatus.OUT_FOR_DELIVERY,
+            ShippingStatus.DELIVERED,
+        )
+        if shipment is not None and status_value in forward:
+            order = shipment.order
+            if order.status not in (OrderStatus.SHIPPING, OrderStatus.COMPLETE):
+                _reject_until_lines_are_ready(order)
+        return attrs
 
 
 class BackgroundTaskSerializer(serializers.ModelSerializer):

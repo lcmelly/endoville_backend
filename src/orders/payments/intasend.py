@@ -18,7 +18,7 @@ from django.conf import settings
 from intasend import APIService
 
 from orders.currency_utils import amount_to_primary, order_total_in_currency
-from orders.models import OrderPayment, PaymentCredentials, PaymentProvider, PaymentStatus
+from orders.models import CLOSED_PAYMENT_STATUSES, OrderPayment, PaymentCredentials, PaymentProvider, PaymentStatus
 
 
 class IntaSendAPI:
@@ -240,7 +240,7 @@ class IntaSendAPI:
         otherwise payment ID via get_payment_request. Updates payment from API response.
         """
         try:
-            if payment.status in (PaymentStatus.COMPLETED, PaymentStatus.FAILED, PaymentStatus.CANCELLED):
+            if payment.status in CLOSED_PAYMENT_STATUSES:
                 return {
                     "success": True,
                     "state": payment.provider_state or "UNKNOWN",

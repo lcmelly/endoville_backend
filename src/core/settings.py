@@ -118,6 +118,17 @@ ABANDONED_CART_REMINDER_BG_INTERVAL_SECONDS = config(
 STRIPE_SUCCESS_URL = config('STRIPE_SUCCESS_URL', default='https://yourdomain.com/payment/success/')
 STRIPE_CANCEL_URL = config('STRIPE_CANCEL_URL', default='https://yourdomain.com/payment/cancel/')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
+# Refresh Currency.usd_rate from Stripe FX quotes so shopper prices match checkout.
+# A price view or payment refreshes stale rates, and schedule_currency_rate_updates
+# repeats the same job while `process_tasks` is running.
+STRIPE_FX_SYNC_ENABLED = config('STRIPE_FX_SYNC_ENABLED', cast=bool, default=True)
+STRIPE_FX_MAX_AGE_SECONDS = config('STRIPE_FX_MAX_AGE_SECONDS', cast=int, default=3600)
+# How often process_tasks asks Stripe about open checkout sessions.
+STRIPE_PAYMENT_STATUS_INTERVAL_SECONDS = config(
+    'STRIPE_PAYMENT_STATUS_INTERVAL_SECONDS',
+    cast=int,
+    default=60,
+)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -126,6 +137,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'users.middleware.StaffAuditMiddleware',
     'allauth.account.middleware.AccountMiddleware',  # Required for django-allauth
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

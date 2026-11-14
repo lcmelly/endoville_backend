@@ -33,6 +33,12 @@ def order_total_in_currency(order_total_primary: Decimal, target_currency_code: 
     Uses Currency.usd_rate: 1 USD = usd_rate × target. Returns value rounded to 2 decimals.
     If target is primary or rate not found, returns order_total_primary unchanged.
     """
+    try:
+        from orders.payments.stripe_rates import ensure_stripe_rates_fresh
+
+        ensure_stripe_rates_fresh()
+    except Exception:
+        pass
     if order_total_primary is None:
         return Decimal("0")
     order_total_primary = Decimal(str(order_total_primary))
@@ -49,10 +55,29 @@ def order_total_in_currency(order_total_primary: Decimal, target_currency_code: 
     return (order_total_primary * rate).quantize(Decimal("0.01"))
 
 
-def amount_to_primary(amount: Decimal, currency_code: str) -> Decimal:
+def snapshot_usd_rate(currency_code: str):
+    """
+    Units of this currency per 1 USD, for storing on a payment.
+    Returns 1 for USD or the primary currency, the currency row's usd_rate otherwise,
+    or None when the currency is unknown.
+    """
+    primary = get_primary_currency()
+    code = (currency_code or "").strip().upper()
+    if not code:
+        return None
+    if code == "USD" or (primary and code == primary.code):
+        return Decimal("1")
+    currency = get_currency_rate(code)
+    if not currency or not currency.usd_rate:
+        return None
+    return Decimal(str(currency.usd_rate))
+
+
+def amount_to_primary(amount: Decimal, currency_code: str, usd_rate=None) -> Decimal:
     """
     Convert a payment amount from the given currency to primary (USD).
     amount_primary = amount / usd_rate. For primary currency, returns amount unchanged.
+    Pass the rate stored on the payment so a later Stripe refresh does not change it.
     """
     if amount is None:
         return Decimal("0")
@@ -61,10 +86,37 @@ def amount_to_primary(amount: Decimal, currency_code: str) -> Decimal:
     code = (currency_code or "").strip().upper()
     if not code or (primary and code == primary.code):
         return amount
-    currency = get_currency_rate(code)
-    if not currency or not currency.usd_rate:
-        return amount
-    rate = Decimal(str(currency.usd_rate))
+    if usd_rate is not None:
+        rate = Decimal(str(usd_rate))
+    else:
+        currency = get_currency_rate(code)
+        if not currency or not currency.usd_rate:
+            return amount
+        rate = Decimal(str(currency.usd_rate))
     if rate == 0:
         return amount
     return (amount / rate).quantize(Decimal("0.01"))
+
+
+def primary_to_currency_amount(amount_primary, currency_code: str, usd_rate=None) -> Decimal:
+    """
+    Convert a primary-currency amount into a payment currency.
+    Uses the payment's stored usd_rate when set. Unknown currencies stay unchanged,
+    matching amount_to_primary.
+    """
+    if amount_primary is None:
+        return Decimal("0.00")
+    amount_primary = Decimal(str(amount_primary))
+    primary = get_primary_currency()
+    code = (currency_code or "").strip().upper()
+    if not code or (primary and code == primary.code):
+        return amount_primary.quantize(Decimal("0.01"))
+    if usd_rate is None:
+        currency = get_currency_rate(code)
+        usd_rate = currency.usd_rate if currency else None
+    if usd_rate is None:
+        return amount_primary.quantize(Decimal("0.01"))
+    rate = Decimal(str(usd_rate))
+    if rate == 0:
+        return amount_primary.quantize(Decimal("0.01"))
+    return (amount_primary * rate).quantize(Decimal("0.01"))

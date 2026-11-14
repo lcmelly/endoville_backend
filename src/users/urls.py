@@ -15,5 +15,9 @@ urlpatterns = [
     path('google-login/', views.google_login_view, name='google-login'),
     path('me/', views.me_view, name='me'),
     path('is-staff/', views.is_staff_view, name='is-staff'),
+    path('staff/', views.staff_users_view, name='staff-users'),
+    path('staff/<int:user_id>/', views.staff_user_detail_view, name='staff-user'),
+    path('staff-changes/', views.staff_change_log_view, name='staff-changes'),
+    path('customers/', views.staff_customers_view, name='customers'),
 ]
 

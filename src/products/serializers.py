@@ -4,6 +4,8 @@ Serializers for products app.
 
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import URLValidator
 from django.db.models import Q
 from rest_framework import serializers
 
@@ -17,7 +19,30 @@ from .models import (
     Subcategory,
     VariationAttribute,
     VariationOption,
+    explicit_track_stock,
 )
+
+
+def _require_stock_quantity_when_tracking(serializer, attrs):
+    data = serializer.initial_data if isinstance(getattr(serializer, "initial_data", None), dict) else {}
+    if "track_stock" not in data or not attrs.get("track_stock", False):
+        return
+    if "stock" in attrs:
+        stock = attrs["stock"]
+    elif serializer.instance is not None:
+        stock = serializer.instance.stock
+    else:
+        stock = None
+    if stock is None:
+        raise serializers.ValidationError({"stock": "Enter a stock quantity to track it."})
+
+
+def _save_stock_choice(serializer, method, *args):
+    data = serializer.initial_data if isinstance(getattr(serializer, "initial_data", None), dict) else {}
+    if "track_stock" not in data:
+        return method(*args)
+    with explicit_track_stock():
+        return method(*args)
 
 
 def _get_display_currency(request):
@@ -26,6 +51,12 @@ def _get_display_currency(request):
     Uses ?currency=CODE if present and valid; otherwise defaults to primary currency (e.g. USD).
     Invalid or missing code falls back to primary. Returns None if no Currency exists in DB.
     """
+    try:
+        from orders.payments.stripe_rates import ensure_stripe_rates_fresh
+
+        ensure_stripe_rates_fresh()
+    except Exception:
+        pass
     try:
         if not request or not getattr(request, "query_params", None):
             code = None
@@ -52,12 +83,13 @@ class CurrencySerializer(serializers.ModelSerializer):
             "name",
             "symbol",
             "usd_rate",
+            "rate_synced_at",
             "is_primary",
             "is_active",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "rate_synced_at", "created_at", "updated_at"]
 
 
 def _convert_price(price_value, currency):
@@ -70,13 +102,22 @@ def _convert_price(price_value, currency):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ["id", "name", "description"]
+        fields = ["id", "name", "description", "products_count", "products_sold"]
 
 
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = ["id", "name", "image_urls", "image_refs", "image_labels", "description"]
+        fields = [
+            "id",
+            "name",
+            "image_urls",
+            "image_refs",
+            "image_labels",
+            "description",
+            "products_count",
+            "products_sold",
+        ]
 
 
 class SubcategorySerializer(serializers.ModelSerializer):
@@ -99,8 +140,19 @@ class VariationOptionSerializer(serializers.ModelSerializer):
         fields = ["id", "attribute", "attribute_name", "value"]
 
 
+def reviews_for_viewer(product, request):
+    qs = product.reviews.select_related("user").order_by("-created_at")
+    user = getattr(request, "user", None) if request else None
+    if user and user.is_authenticated and user.is_staff:
+        return qs
+    if user and user.is_authenticated:
+        return qs.filter(Q(flag_reason="") | Q(user=user))
+    return qs.filter(flag_reason="")
+
+
 class ProductReviewSerializer(serializers.ModelSerializer):
     user_display = serializers.SerializerMethodField()
+    is_flagged = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductReview
@@ -113,10 +165,46 @@ class ProductReviewSerializer(serializers.ModelSerializer):
             "rating",
             "body",
             "is_anonymous",
+            "is_flagged",
+            "flag_reason",
+            "flag_note",
+            "flagged_at",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "user", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "user",
+            "is_flagged",
+            "flag_reason",
+            "flag_note",
+            "flagged_at",
+            "created_at",
+            "updated_at",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if getattr(self, "instance", None) is not None:
+            self.fields["product"].read_only = True
+            self.fields["order"].read_only = True
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request else None
+        is_staff = bool(user and user.is_authenticated and user.is_staff)
+        is_author = bool(user and user.is_authenticated and instance.user_id == user.pk)
+        if not is_staff:
+            data.pop("flag_note", None)
+        if not is_staff and not is_author:
+            data.pop("is_flagged", None)
+            data.pop("flag_reason", None)
+            data.pop("flagged_at", None)
+        return data
+
+    def get_is_flagged(self, obj):
+        return bool(obj.flag_reason)
 
     def get_user_display(self, obj):
         if obj.is_anonymous:
@@ -147,14 +235,13 @@ class ProductReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"order": "Order is required. You can only review a product you purchased."}
             )
-        from orders.models import Order, OrderItem
-        from orders.models import OrderStatus
+        from orders.models import SHIPPED_LINE_AVAILABILITY, OrderItem, OrderStatus
 
         if order.user_id != request.user.pk:
             raise serializers.ValidationError(
                 {"order": "This order does not belong to you."}
             )
-        if order.status != OrderStatus.PLACED:
+        if order.status != OrderStatus.COMPLETE:
             raise serializers.ValidationError(
                 {"order": "Only completed orders can be used for reviews."}
             )
@@ -162,12 +249,13 @@ class ProductReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"order": "Order must be fully paid before you can review."}
             )
-        order_has_product = OrderItem.objects.filter(order=order).filter(
-            Q(product_id=product.pk) | Q(variant__product_id=product.pk)
-        ).exists()
-        if not order_has_product:
+        shipped = OrderItem.objects.filter(
+            order=order,
+            availability__in=SHIPPED_LINE_AVAILABILITY,
+        ).filter(Q(product_id=product.pk) | Q(variant__product_id=product.pk))
+        if not shipped.exists():
             raise serializers.ValidationError(
-                {"order": "This order does not contain the selected product."}
+                {"order": "You can only review a product that was shipped on this order."}
             )
         if ProductReview.objects.filter(product=product, user=request.user).exists():
             raise serializers.ValidationError(
@@ -196,6 +284,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             "barcode",
             "price",
             "cost_price",
+            "track_stock",
             "stock",
             "image_urls",
             "image_refs",
@@ -207,6 +296,16 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             "reviews",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        _require_stock_quantity_when_tracking(self, attrs)
+        return attrs
+
+    def create(self, validated_data):
+        return _save_stock_choice(self, super().create, validated_data)
+
+    def update(self, instance, validated_data):
+        return _save_stock_choice(self, super().update, instance, validated_data)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -236,7 +335,8 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         return obj.product.review_count
 
     def get_reviews(self, obj):
-        qs = obj.product.reviews.select_related("user").order_by("-created_at")[:10]
+        request = self.context.get("request")
+        qs = reviews_for_viewer(obj.product, request)[:10]
         return ProductReviewSerializer(qs, many=True, context=self.context).data
 
 
@@ -261,11 +361,14 @@ class ProductSerializer(serializers.ModelSerializer):
             "brand_details",
             "price",
             "cost_price",
+            "track_stock",
             "stock",
+            "unit_weight",
             "sku",
             "barcode",
             "image_urls",
             "image_refs",
+            "supplier_order_urls",
             "featured",
             "is_cancelled",
             "benefits",
@@ -277,12 +380,24 @@ class ProductSerializer(serializers.ModelSerializer):
             "slug",
             "avg_rating",
             "review_count",
+            "quantity_sold",
+            "revenue",
             "created_at",
             "updated_at",
             "variants",
             "reviews",
         ]
         read_only_fields = ["id", "slug", "avg_rating", "review_count", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        _require_stock_quantity_when_tracking(self, attrs)
+        return attrs
+
+    def create(self, validated_data):
+        return _save_stock_choice(self, super().create, validated_data)
+
+    def update(self, instance, validated_data):
+        return _save_stock_choice(self, super().update, instance, validated_data)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -294,6 +409,8 @@ class ProductSerializer(serializers.ModelSerializer):
             data["currency_symbol"] = getattr(display_currency, "symbol", None) or ""
         else:
             data.pop("cost_price", None)
+            data.pop("supplier_order_urls", None)
+            data.pop("revenue", None)
             display_currency = _get_display_currency(request)
             if display_currency and instance.price is not None:
                 data["price"] = str(_convert_price(instance.price, display_currency))
@@ -304,10 +421,29 @@ class ProductSerializer(serializers.ModelSerializer):
                 data["currency_symbol"] = getattr(display_currency, "symbol", None) or ""
         return data
 
+    def validate_supplier_order_urls(self, value):
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Expected a list of URLs.")
+        validator = URLValidator(schemes=["http", "https"])
+        cleaned = []
+        for item in value:
+            if not isinstance(item, str) or not item.strip():
+                raise serializers.ValidationError("Each supplier order URL must be a non-empty string.")
+            url = item.strip()
+            try:
+                validator(url)
+            except DjangoValidationError:
+                raise serializers.ValidationError(f"Invalid URL: {url}")
+            cleaned.append(url)
+        return cleaned
+
     def get_variants(self, obj):
         qs = obj.variants.all()
         return ProductVariantSerializer(qs, many=True, context=self.context).data
 
     def get_reviews(self, obj):
-        qs = obj.reviews.select_related("user").order_by("-created_at")[:10]
+        request = self.context.get("request")
+        qs = reviews_for_viewer(obj, request)[:10]
         return ProductReviewSerializer(qs, many=True, context=self.context).data

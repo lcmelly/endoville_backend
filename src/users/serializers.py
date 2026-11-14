@@ -4,6 +4,7 @@ Serializers for User and OTP models
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import OTP
+from .roles import STAFF_ROLES
 
 User = get_user_model()
 
@@ -433,3 +434,23 @@ class SignupSerializer(serializers.ModelSerializer):
             user = User.objects.create_user(password=None, **validated_data)
 
         return user
+
+
+class StaffAccountSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(min_length=8, write_only=True, required=False)
+    first_name = serializers.CharField(required=False, allow_blank=True, default="")
+    last_name = serializers.CharField(required=False, allow_blank=True, default="")
+    phone = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    roles = serializers.ListField(child=serializers.ChoiceField(choices=[(name, name) for name in STAFF_ROLES]))
+    is_active = serializers.BooleanField(required=False)
+
+    def validate_roles(self, value):
+        if not value:
+            raise serializers.ValidationError("Choose at least one role.")
+        return list(dict.fromkeys(value))
+
+    def validate_phone(self, value):
+        if value is None or value == "":
+            return None
+        return value

@@ -2,8 +2,12 @@
 API views for products app.
 """
 
-from rest_framework import viewsets
-from rest_framework.permissions import AllowAny
+from django.db.models import Q
+from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.response import Response
 
 from .models import (
     Brand,
@@ -12,11 +16,12 @@ from .models import (
     Product,
     ProductReview,
     ProductVariant,
+    ReviewFlagReason,
     Subcategory,
     VariationAttribute,
     VariationOption,
 )
-from .permissions import ProductReviewPermission, StaffWriteReadOnly
+from .permissions import AdminWritePublicRead, ProductReviewPermission, StaffWriteReadOnly, StockWritePublicRead
 from .serializers import (
     BrandSerializer,
     CategorySerializer,
@@ -39,7 +44,7 @@ class CurrencyViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in self.read_only_actions:
             return [AllowAny()]
-        return [StaffWriteReadOnly()]
+        return [AdminWritePublicRead()]
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -94,7 +99,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in self.read_only_actions:
             return [AllowAny()]
-        return [StaffWriteReadOnly()]
+        return [StockWritePublicRead()]
 
 
 class VariationAttributeViewSet(viewsets.ModelViewSet):
@@ -134,22 +139,95 @@ class ProductVariantViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in self.read_only_actions:
             return [AllowAny()]
-        return [StaffWriteReadOnly()]
+        return [StockWritePublicRead()]
 
 
 class ProductReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ProductReviewSerializer
     permission_classes = [ProductReviewPermission]
 
+    def get_permissions(self):
+        if self.action in ("flag", "unflag"):
+            return [IsAdminUser()]
+        return super().get_permissions()
+
     def get_queryset(self):
         qs = ProductReview.objects.select_related("product", "order", "user").order_by("-created_at")
         product_id = self.request.query_params.get("product")
         if product_id:
             qs = qs.filter(product_id=product_id)
+        user = self.request.user
+        if not (user.is_authenticated and user.is_staff):
+            visible = Q(flag_reason="")
+            if user.is_authenticated:
+                visible |= Q(user=user)
+            qs = qs.filter(visible)
         return qs
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        if request.user.is_staff:
+            return Response(
+                {"detail": "Staff cannot delete reviews. Flag the review instead."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        review = self.get_object()
+        if request.user.is_staff and review.user_id != request.user.pk:
+            return Response(
+                {"detail": "Staff cannot edit reviews. Flag the review instead."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        review = self.get_object()
+        if request.user.is_staff and review.user_id != request.user.pk:
+            return Response(
+                {"detail": "Staff cannot edit reviews. Flag the review instead."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().partial_update(request, *args, **kwargs)
+
+    @action(detail=True, methods=["post"], url_path="flag")
+    def flag(self, request, pk=None):
+        review = self.get_object()
+        reason = request.data.get("reason") or ""
+        note = (request.data.get("note") or "").strip()
+        if reason not in ReviewFlagReason.values:
+            return Response(
+                {"reason": "Choose PROFANITY, MALICIOUS, or OTHER."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if reason == ReviewFlagReason.OTHER and not note:
+            return Response(
+                {"note": "Describe the issue."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        review.flag_reason = reason
+        review.flag_note = note
+        review.flagged_by = request.user
+        review.flagged_at = timezone.now()
+        review.save(
+            update_fields=["flag_reason", "flag_note", "flagged_by", "flagged_at", "updated_at"]
+        )
+        return Response(self.get_serializer(review).data)
+
+    @action(detail=True, methods=["post"], url_path="unflag")
+    def unflag(self, request, pk=None):
+        review = self.get_object()
+        review.flag_reason = ""
+        review.flag_note = ""
+        review.flagged_by = None
+        review.flagged_at = None
+        review.save(
+            update_fields=["flag_reason", "flag_note", "flagged_by", "flagged_at", "updated_at"]
+        )
+        return Response(self.get_serializer(review).data)
 
 
 

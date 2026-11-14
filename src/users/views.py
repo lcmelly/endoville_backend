@@ -3,9 +3,12 @@ API views for user management
 """
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
+
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, BasePermission
+
+from users.roles import role_names, set_staff_roles
 
 from .serializers import (
     RegisterSerializer,
@@ -15,6 +18,7 @@ from .serializers import (
     LoginSerializer,
     UserSerializer,
     UserProfileSerializer,
+    StaffAccountSerializer,
 )
 
 User = get_user_model()
@@ -422,8 +426,217 @@ def me_view(request):
 @permission_classes([IsAuthenticated])
 def is_staff_view(request):
     """
-    Check if the authenticated user is staff.
+    Check if the authenticated user is staff or a superuser admin.
 
     GET /api/users/is-staff/
     """
-    return Response({"is_staff": bool(request.user.is_staff)}, status=status.HTTP_200_OK)
+    return Response(
+        {
+            "is_staff": bool(request.user.is_staff),
+            "is_superuser": bool(request.user.is_superuser),
+            "roles": role_names(request.user),
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+class IsSuperuser(BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(user and user.is_authenticated and user.is_active and user.is_superuser)
+
+
+def _staff_payload(user):
+    return {
+        "id": user.id,
+        "email": user.email,
+        "phone": user.phone,
+        "first_name": user.first_name or "",
+        "last_name": user.last_name or "",
+        "is_active": user.is_active,
+        "is_staff": user.is_staff,
+        "is_superuser": user.is_superuser,
+        "roles": role_names(user),
+    }
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsSuperuser])
+def staff_users_view(request):
+    """
+    Admins list staff and add a staff user with ticked roles.
+
+    GET /api/users/staff/
+    POST /api/users/staff/
+    """
+    if request.method == "GET":
+        staff = User.objects.filter(is_staff=True).order_by("email", "id")
+        return Response([_staff_payload(user) for user in staff])
+
+    serializer = StaffAccountSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    if not data.get("password"):
+        return Response({"password": ["This field is required."]}, status=status.HTTP_400_BAD_REQUEST)
+    if User.objects.filter(email__iexact=data["email"]).exists():
+        return Response({"email": ["A user with this email already exists."]}, status=status.HTTP_400_BAD_REQUEST)
+    phone = data.get("phone")
+    if phone and User.objects.filter(phone=phone).exists():
+        return Response({"phone": ["A user with this phone already exists."]}, status=status.HTTP_400_BAD_REQUEST)
+    from django.core.exceptions import ValidationError
+
+    try:
+        user = User.objects.create_user(
+            email=data["email"].lower(),
+            phone=phone,
+            password=data["password"],
+            first_name=data.get("first_name") or "",
+            last_name=data.get("last_name") or "",
+            is_staff=True,
+            is_active=data.get("is_active", True),
+        )
+    except ValidationError as exc:
+        return Response({"detail": exc.messages}, status=status.HTTP_400_BAD_REQUEST)
+    set_staff_roles(user, data["roles"])
+    return Response(_staff_payload(user), status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET", "PATCH"])
+@permission_classes([IsSuperuser])
+def staff_user_detail_view(request, user_id):
+    """
+    Read or change one staff user. Roles replace the previous ticks.
+
+    GET /api/users/staff/{id}/
+    PATCH /api/users/staff/{id}/
+    """
+    try:
+        user = User.objects.get(pk=user_id, is_staff=True)
+    except User.DoesNotExist:
+        return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+    if request.method == "GET":
+        return Response(_staff_payload(user))
+
+    serializer = StaffAccountSerializer(data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    if "email" in request.data and data.get("email", "").lower() != (user.email or "").lower():
+        return Response({"email": ["Email cannot be changed."]}, status=status.HTTP_400_BAD_REQUEST)
+    if "password" in data and data["password"]:
+        user.set_password(data["password"])
+    if "first_name" in data:
+        user.first_name = data["first_name"]
+    if "last_name" in data:
+        user.last_name = data["last_name"]
+    if "phone" in data:
+        phone = data["phone"]
+        if phone and User.objects.exclude(pk=user.pk).filter(phone=phone).exists():
+            return Response({"phone": ["A user with this phone already exists."]}, status=status.HTTP_400_BAD_REQUEST)
+        user.phone = phone
+    if "is_active" in data:
+        user.is_active = data["is_active"]
+    user.save()
+    if "roles" in data and not user.is_superuser:
+        set_staff_roles(user, data["roles"])
+    return Response(_staff_payload(user))
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def staff_change_log_view(request):
+    """
+    Staff changes to orders, payments, prices, and refunds.
+
+    GET /api/users/staff-changes/?target_type=&order_id=&action=&limit=
+    """
+    from users.models import StaffChangeLog
+
+    logs = StaffChangeLog.objects.select_related("actor")
+    target_type = request.query_params.get("target_type")
+    action = request.query_params.get("action")
+    order_id = request.query_params.get("order_id")
+    if target_type:
+        logs = logs.filter(target_type=target_type)
+    if action:
+        logs = logs.filter(action=action)
+    if order_id:
+        logs = logs.filter(order_id=order_id)
+    try:
+        limit = min(int(request.query_params.get("limit") or 100), 500)
+    except (TypeError, ValueError):
+        limit = 100
+    rows = []
+    for log in logs[:limit]:
+        rows.append(
+            {
+                "id": log.pk,
+                "actor_id": log.actor_id,
+                "actor_email": log.actor.email if log.actor_id else None,
+                "action": log.action,
+                "target_type": log.target_type,
+                "target_id": log.target_id,
+                "order_id": log.order_id,
+                "summary": log.summary,
+                "changes": log.changes,
+                "created_at": log.created_at,
+            }
+        )
+    return Response(rows)
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def staff_customers_view(request):
+    """
+    Customers and the shipping addresses saved on their orders.
+
+    GET /api/users/customers/
+    """
+    from django.db.models import Prefetch
+
+    from orders.models import ShippingAddress
+
+    address_fields = (
+        "full_name",
+        "phone",
+        "email",
+        "address_line_1",
+        "address_line_2",
+        "city",
+        "state",
+        "postal_code",
+        "country",
+    )
+    customers = (
+        User.objects.filter(is_staff=False)
+        .prefetch_related(
+            Prefetch(
+                "shippingaddress_set",
+                queryset=ShippingAddress.objects.order_by("-created_at", "-id"),
+            )
+        )
+        .order_by("first_name", "last_name", "email", "id")
+    )
+    rows = []
+    for customer in customers:
+        seen = set()
+        addresses = []
+        for address in customer.shippingaddress_set.all():
+            key = tuple((getattr(address, field) or "").strip().lower() for field in address_fields)
+            if key in seen:
+                continue
+            seen.add(key)
+            addresses.append({"id": address.id, **{field: getattr(address, field) for field in address_fields}})
+        rows.append(
+            {
+                "id": customer.id,
+                "email": customer.email,
+                "phone": customer.phone,
+                "first_name": customer.first_name,
+                "last_name": customer.last_name,
+                "is_active": customer.is_active,
+                "created_at": customer.created_at,
+                "addresses": addresses,
+            }
+        )
+    return Response(rows)

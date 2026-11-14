@@ -23,7 +23,7 @@ def test_is_staff_false_for_normal_user(api_client):
     api_client.force_authenticate(user=user)
     resp = api_client.get("/api/users/is-staff/")
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json() == {"is_staff": False}
+    assert resp.json() == {"is_staff": False, "is_superuser": False, "roles": []}
 
 
 def test_is_staff_true_for_staff_user(api_client):
@@ -33,5 +33,9 @@ def test_is_staff_true_for_staff_user(api_client):
     api_client.force_authenticate(user=user)
     resp = api_client.get("/api/users/is-staff/")
     assert resp.status_code == status.HTTP_200_OK
-    assert resp.json() == {"is_staff": True}
+    assert resp.json() == {
+        "is_staff": True,
+        "is_superuser": False,
+        "roles": ["Orders", "Shipping", "Stock"],
+    }
 

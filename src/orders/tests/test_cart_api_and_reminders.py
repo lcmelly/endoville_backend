@@ -95,6 +95,7 @@ def test_order_creation_clears_user_cart(api_client, user, product):
         format="json",
     )
     assert resp.status_code == status.HTTP_201_CREATED
+    assert resp.json()["warehouse"] is None
     cart.refresh_from_db()
     assert cart.items.count() == 0
 
@@ -119,17 +120,17 @@ def test_abandoned_cart_reminders_send_in_12_24_48_sequence(monkeypatch, user, p
 
     assert process_abandoned_cart_reminders(now=base_now) == 1
     cart.refresh_from_db()
-    assert cart.reminder_12_sent_at is not None
+    assert cart.last_reminder_at == cart.updated_at + timedelta(hours=12)
     assert sent_steps[-1][1] == 12
 
     assert process_abandoned_cart_reminders(now=base_now + timedelta(minutes=1)) == 1
     cart.refresh_from_db()
-    assert cart.reminder_24_sent_at is not None
+    assert cart.last_reminder_at == cart.updated_at + timedelta(hours=24)
     assert sent_steps[-1][1] == 24
 
     assert process_abandoned_cart_reminders(now=base_now + timedelta(minutes=2)) == 1
     cart.refresh_from_db()
-    assert cart.reminder_48_sent_at is not None
+    assert cart.last_reminder_at == cart.updated_at + timedelta(hours=48)
     assert sent_steps[-1][1] == 48
 
     assert process_abandoned_cart_reminders(now=base_now + timedelta(minutes=3)) == 0

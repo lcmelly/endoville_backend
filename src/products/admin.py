@@ -1,4 +1,6 @@
+from django import forms
 from django.contrib import admin
+from django.utils import timezone
 from import_export.admin import ImportExportModelAdmin
 
 from .models import (
@@ -8,6 +10,7 @@ from .models import (
     Product,
     ProductReview,
     ProductVariant,
+    ReviewFlagReason,
     Subcategory,
     VariationAttribute,
     VariationOption,
@@ -16,7 +19,7 @@ from .models import (
 
 @admin.register(Currency)
 class CurrencyAdmin(ImportExportModelAdmin):
-    list_display = ["code", "name", "symbol", "usd_rate", "is_primary", "is_active", "created_at", "updated_at"]
+    list_display = ["code", "name", "symbol", "usd_rate", "rate_synced_at", "is_primary", "is_active", "created_at", "updated_at"]
     list_filter = ["is_primary", "is_active"]
     search_fields = ["code", "name", "symbol"]
     ordering = ["code"]
@@ -24,14 +27,14 @@ class CurrencyAdmin(ImportExportModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(ImportExportModelAdmin):
-    list_display = ["name"]
+    list_display = ["name", "products_count", "products_sold"]
     search_fields = ["name", "description"]
     ordering = ["name"]
 
 
 @admin.register(Brand)
 class BrandAdmin(ImportExportModelAdmin):
-    list_display = ["name", "brand_images_count"]
+    list_display = ["name", "products_count", "products_sold", "brand_images_count"]
     search_fields = ["name", "description"]
     ordering = ["name"]
 
@@ -52,8 +55,8 @@ class SubcategoryAdmin(ImportExportModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(ImportExportModelAdmin):
-    list_display = ["name", "brand", "featured", "is_cancelled", "sku", "barcode", "price", "stock", "avg_rating", "review_count", "image_refs_count", "slug", "created_at", "updated_at"]
-    list_filter = ["brand", "featured", "is_cancelled", "created_at", "updated_at"]
+    list_display = ["name", "brand", "featured", "is_cancelled", "sku", "barcode", "price", "track_stock", "stock", "quantity_sold", "revenue", "unit_weight", "avg_rating", "review_count", "image_refs_count", "supplier_order_urls_count", "slug", "created_at", "updated_at"]
+    list_filter = ["brand", "featured", "is_cancelled", "track_stock", "created_at", "updated_at"]
     search_fields = [
         "name",
         "brand__name",
@@ -77,6 +80,11 @@ class ProductAdmin(ImportExportModelAdmin):
         refs = obj.image_refs or []
         return len(refs) if refs else "-"
 
+    @admin.display(description="Supplier links")
+    def supplier_order_urls_count(self, obj):
+        urls = obj.supplier_order_urls or []
+        return len(urls) if urls else "-"
+
 
 @admin.register(VariationAttribute)
 class VariationAttributeAdmin(ImportExportModelAdmin):
@@ -96,8 +104,8 @@ class VariationOptionAdmin(ImportExportModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(ImportExportModelAdmin):
-    list_display = ["product", "sku", "barcode", "price", "stock", "image_refs_count", "is_active", "updated_at"]
-    list_filter = ["is_active", "created_at", "updated_at"]
+    list_display = ["product", "sku", "barcode", "price", "track_stock", "stock", "image_refs_count", "is_active", "updated_at"]
+    list_filter = ["is_active", "track_stock", "created_at", "updated_at"]
     search_fields = ["barcode", "sku", "product__name"]
     ordering = ["-created_at"]
     list_select_related = ["product"]
@@ -108,11 +116,54 @@ class ProductVariantAdmin(ImportExportModelAdmin):
         return len(refs) if refs else "-"
 
 
+class ProductReviewAdminForm(forms.ModelForm):
+    class Meta:
+        model = ProductReview
+        fields = "__all__"
+
+    def clean(self):
+        cleaned = super().clean()
+        reason = cleaned.get("flag_reason") or ""
+        note = (cleaned.get("flag_note") or "").strip()
+        if reason == ReviewFlagReason.OTHER and not note:
+            raise forms.ValidationError("Describe the issue when flagging for another reason.")
+        return cleaned
+
+
 @admin.register(ProductReview)
 class ProductReviewAdmin(admin.ModelAdmin):
-    list_display = ["product", "order", "user", "rating", "is_anonymous", "created_at"]
-    list_filter = ["rating", "is_anonymous", "created_at"]
-    search_fields = ["product__name", "body"]
+    form = ProductReviewAdminForm
+    list_display = ["product", "order", "user", "rating", "is_anonymous", "flag_reason", "created_at"]
+    list_filter = ["rating", "is_anonymous", "flag_reason", "created_at"]
+    search_fields = ["product__name", "body", "flag_note"]
     ordering = ["-created_at"]
-    list_select_related = ["product", "order", "user"]
-    raw_id_fields = ["product", "order", "user"]
+    list_select_related = ["product", "order", "user", "flagged_by"]
+    raw_id_fields = ["order", "user", "flagged_by"]
+    readonly_fields = [
+        "product",
+        "order",
+        "user",
+        "rating",
+        "body",
+        "is_anonymous",
+        "flagged_by",
+        "flagged_at",
+        "created_at",
+        "updated_at",
+    ]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if obj.flag_reason:
+            obj.flagged_by = request.user
+            obj.flagged_at = timezone.now()
+        else:
+            obj.flag_note = ""
+            obj.flagged_by = None
+            obj.flagged_at = None
+        super().save_model(request, obj, form, change)

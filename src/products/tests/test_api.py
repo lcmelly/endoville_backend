@@ -118,8 +118,20 @@ def test_currencies_list_public(api_client):
     assert data[0]["usd_rate"] == "1.000000"
 
 
-def test_currencies_crud_staff_only(api_client, staff_user):
+def test_currencies_crud_admin_only(api_client, staff_user):
     api_client.force_authenticate(user=staff_user)
+    denied = api_client.post(
+        "/api/products/currencies/",
+        {"code": "KES", "name": "Kenyan Shilling", "symbol": "KSh", "usd_rate": "160.50"},
+        format="json",
+    )
+    assert denied.status_code == status.HTTP_403_FORBIDDEN
+
+    admin = CustomUser.objects.create_superuser(
+        email="admin@example.com",
+        password="strongpass",
+    )
+    api_client.force_authenticate(user=admin)
     resp = api_client.post(
         "/api/products/currencies/",
         {"code": "KES", "name": "Kenyan Shilling", "symbol": "KSh", "usd_rate": "160.50"},
@@ -145,6 +157,7 @@ def test_product_detail_includes_variants(api_client, product, variant):
     assert resp.status_code == status.HTTP_200_OK
     data = resp.json()
     assert data["id"] == product.id
+    assert data["unit_weight"] == 1
     assert "variants" in data
     assert len(data["variants"]) == 1
     assert data["variants"][0]["barcode"] == "BARCODE-1"
@@ -278,6 +291,44 @@ def test_cost_price_visible_to_staff(api_client, staff_user, product, variant):
     assert data["variants"][0]["currency_symbol"] == "$"
 
 
+def test_supplier_order_urls_are_staff_only(api_client, staff_user, product):
+    product.supplier_order_urls = ["https://supplier.example/order/vd3"]
+    product.save(update_fields=["supplier_order_urls"])
+
+    public = api_client.get(f"/api/products/products/{product.id}/")
+    assert public.status_code == status.HTTP_200_OK
+    assert "supplier_order_urls" not in public.json()
+
+    api_client.force_authenticate(user=staff_user)
+    staff = api_client.get(f"/api/products/products/{product.id}/")
+    assert staff.status_code == status.HTTP_200_OK
+    assert staff.json()["supplier_order_urls"] == ["https://supplier.example/order/vd3"]
+
+    updated = api_client.patch(
+        f"/api/products/products/{product.id}/",
+        {
+            "supplier_order_urls": [
+                "https://supplier.example/order/vd3",
+                "https://supplier.example/order/vd3-alt",
+            ]
+        },
+        format="json",
+    )
+    assert updated.status_code == status.HTTP_200_OK
+    product.refresh_from_db()
+    assert product.supplier_order_urls == [
+        "https://supplier.example/order/vd3",
+        "https://supplier.example/order/vd3-alt",
+    ]
+
+    invalid = api_client.patch(
+        f"/api/products/products/{product.id}/",
+        {"supplier_order_urls": ["not-a-url"]},
+        format="json",
+    )
+    assert invalid.status_code == status.HTTP_400_BAD_REQUEST
+
+
 def test_writes_are_staff_only(api_client, user, staff_user):
     api_client.force_authenticate(user=user)
     resp = api_client.post("/api/products/categories/", {"name": "X"}, format="json")
@@ -373,4 +424,198 @@ def test_variant_barcode_must_be_unique(api_client, staff_user, product, red_opt
         format="json",
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def _address():
+    return {
+        "full_name": "John Doe",
+        "phone": "0712345678",
+        "email": "john@example.com",
+        "address_line_1": "Street 1",
+        "address_line_2": "",
+        "city": "Nairobi",
+        "state": "",
+        "postal_code": "",
+        "country": "Kenya",
+    }
+
+
+def test_stock_stays_untracked_until_a_quantity_is_set(api_client, staff_user, user):
+    api_client.force_authenticate(user=staff_user)
+    created = api_client.post(
+        "/api/products/products/",
+        {"name": "Open serum", "description": "desc", "price": "5.00"},
+        format="json",
+    )
+    assert created.status_code == status.HTTP_201_CREATED
+    body = created.json()
+    assert body["track_stock"] is False
+    assert body["stock"] is None
+    product_id = body["id"]
+
+    refused = api_client.post(
+        "/api/products/products/",
+        {"name": "Counted serum", "description": "desc", "price": "5.00", "track_stock": True},
+        format="json",
+    )
+    assert refused.status_code == status.HTTP_400_BAD_REQUEST
+
+    api_client.force_authenticate(user=user)
+    ordered = api_client.post(
+        "/api/orders/orders/",
+        {
+            "shipping_address": _address(),
+            "items": [{"product": product_id, "quantity": 4}],
+        },
+        format="json",
+    )
+    assert ordered.status_code == status.HTTP_201_CREATED
+    product = Product.objects.get(pk=product_id)
+    assert product.stock is None
+    assert product.track_stock is False
+
+    api_client.force_authenticate(user=staff_user)
+    counted = api_client.patch(
+        f"/api/products/products/{product_id}/",
+        {"stock": 3},
+        format="json",
+    )
+    assert counted.status_code == status.HTTP_200_OK
+    assert counted.json()["track_stock"] is True
+    assert counted.json()["stock"] == 3
+
+    api_client.force_authenticate(user=user)
+    short = api_client.post(
+        "/api/orders/orders/",
+        {
+            "shipping_address": _address(),
+            "items": [{"product": product_id, "quantity": 4}],
+        },
+        format="json",
+    )
+    assert short.status_code == status.HTTP_400_BAD_REQUEST
+    bought = api_client.post(
+        "/api/orders/orders/",
+        {
+            "shipping_address": _address(),
+            "items": [{"product": product_id, "quantity": 2}],
+        },
+        format="json",
+    )
+    assert bought.status_code == status.HTTP_201_CREATED
+    product.refresh_from_db()
+    assert product.stock == 1
+
+    api_client.force_authenticate(user=staff_user)
+    paused = api_client.patch(
+        f"/api/products/products/{product_id}/",
+        {"track_stock": False},
+        format="json",
+    )
+    assert paused.status_code == status.HTTP_200_OK
+    assert paused.json()["track_stock"] is False
+    assert paused.json()["stock"] == 1
+
+    api_client.force_authenticate(user=user)
+    ignored = api_client.post(
+        "/api/orders/orders/",
+        {
+            "shipping_address": _address(),
+            "items": [{"product": product_id, "quantity": 5}],
+        },
+        format="json",
+    )
+    assert ignored.status_code == status.HTTP_201_CREATED
+    product.refresh_from_db()
+    assert product.stock == 1
+    assert product.track_stock is False
+
+
+def test_variant_stock_does_not_change_the_product(api_client, staff_user, user):
+    product = Product.objects.create(
+        name="Parent serum",
+        description="desc",
+        price="10.00",
+        stock=5,
+        slug="parent-serum",
+    )
+    tracked = ProductVariant.objects.create(product=product, price="10.00", stock=2)
+    open_variant = ProductVariant.objects.create(product=product, price="10.00")
+    assert product.track_stock is True
+    assert tracked.track_stock is True
+    assert open_variant.track_stock is False
+
+    api_client.force_authenticate(user=user)
+    sold = api_client.post(
+        "/api/orders/orders/",
+        {
+            "shipping_address": _address(),
+            "items": [{"variant": tracked.id, "quantity": 1}],
+        },
+        format="json",
+    )
+    assert sold.status_code == status.HTTP_201_CREATED
+    line_id = sold.json()["items"][0]["id"]
+    order_id = sold.json()["id"]
+    product.refresh_from_db()
+    tracked.refresh_from_db()
+    assert product.stock == 5
+    assert tracked.stock == 1
+
+    open_sale = api_client.post(
+        "/api/orders/orders/",
+        {
+            "shipping_address": _address(),
+            "items": [{"variant": open_variant.id, "quantity": 3}],
+        },
+        format="json",
+    )
+    assert open_sale.status_code == status.HTTP_201_CREATED
+    product.refresh_from_db()
+    open_variant.refresh_from_db()
+    assert product.stock == 5
+    assert open_variant.stock is None
+
+    api_client.force_authenticate(user=staff_user)
+    removed = api_client.post(
+        f"/api/orders/orders/{order_id}/items/{line_id}/remove/",
+        format="json",
+    )
+    assert removed.status_code == status.HTTP_200_OK
+    product.refresh_from_db()
+    tracked.refresh_from_db()
+    assert product.stock == 5
+    assert tracked.stock == 2
+
+
+def test_product_unit_weight_defaults_to_one_gram(api_client, staff_user):
+    api_client.force_authenticate(user=staff_user)
+    created = api_client.post(
+        "/api/products/products/",
+        {
+            "name": "Light item",
+            "description": "desc",
+            "price": "5.00",
+            "stock": 3,
+        },
+        format="json",
+    )
+    assert created.status_code == status.HTTP_201_CREATED
+    assert created.json()["unit_weight"] == 1
+
+    product_id = created.json()["id"]
+    updated = api_client.patch(
+        f"/api/products/products/{product_id}/",
+        {"unit_weight": 250},
+        format="json",
+    )
+    assert updated.status_code == status.HTTP_200_OK
+    assert updated.json()["unit_weight"] == 250
+
+    rejected = api_client.patch(
+        f"/api/products/products/{product_id}/",
+        {"unit_weight": 0},
+        format="json",
+    )
+    assert rejected.status_code == status.HTTP_400_BAD_REQUEST
 

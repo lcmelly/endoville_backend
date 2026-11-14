@@ -6,13 +6,25 @@ from django.utils import timezone
 from .emails import send_abandoned_cart_reminder_email
 from .models import Cart
 
+REMINDER_STEPS = (12, 24, 48)
 
-REMINDER_STEPS = (
-    (5, "reminder_5_sent_at"),
-    (12, "reminder_12_sent_at"),
-    (24, "reminder_24_sent_at"),
-    (48, "reminder_48_sent_at"),
-)
+
+def _covered(cart):
+    if cart.last_reminder_at is None or cart.last_reminder_at < cart.updated_at:
+        return timedelta(0)
+    return cart.last_reminder_at - cart.updated_at
+
+
+def _next_step(cart, now):
+    idle = now - cart.updated_at
+    covered = _covered(cart)
+    for hours in REMINDER_STEPS:
+        if covered >= timedelta(hours=hours):
+            continue
+        if idle >= timedelta(hours=hours):
+            return hours
+        return None
+    return None
 
 
 def process_abandoned_cart_reminders(now=None):
@@ -31,46 +43,18 @@ def process_abandoned_cart_reminders(now=None):
     for cart in carts:
         if not cart.items.exists():
             continue
-
-        inactivity = now - cart.updated_at
-        target_hours = None
-
-        if inactivity >= timedelta(hours=5) and cart.reminder_5_sent_at is None:
-            target_hours = 5
-        elif inactivity >= timedelta(hours=12) and cart.reminder_12_sent_at is None:
-            target_hours = 12
-        elif (
-            inactivity >= timedelta(hours=24)
-            and cart.reminder_12_sent_at is not None
-            and cart.reminder_24_sent_at is None
-        ):
-            target_hours = 24
-        elif (
-            inactivity >= timedelta(hours=48)
-            and cart.reminder_24_sent_at is not None
-            and cart.reminder_48_sent_at is None
-        ):
-            target_hours = 48
-
+        target_hours = _next_step(cart, now)
         if target_hours is None:
             continue
-
         if not send_abandoned_cart_reminder_email(cart.id, reminder_hours=target_hours):
             continue
 
         with transaction.atomic():
             locked = Cart.objects.select_for_update().get(pk=cart.pk)
-            if target_hours == 5 and locked.reminder_5_sent_at is None:
-                locked.reminder_5_sent_at = now if now is not None else timezone.now()
-            elif target_hours == 12 and locked.reminder_12_sent_at is None:
-                locked.reminder_12_sent_at = now if now is not None else timezone.now()
-            elif target_hours == 24 and locked.reminder_24_sent_at is None:
-                locked.reminder_24_sent_at = now if now is not None else timezone.now()
-            elif target_hours == 48 and locked.reminder_48_sent_at is None:
-                locked.reminder_48_sent_at = now if now is not None else timezone.now()
-            else:
+            if _next_step(locked, now) != target_hours:
                 continue
-            locked.save(update_fields=[f"reminder_{target_hours}_sent_at"])
+            locked.last_reminder_at = locked.updated_at + timedelta(hours=target_hours)
+            locked.save(update_fields=["last_reminder_at"])
             sent += 1
 
     return sent

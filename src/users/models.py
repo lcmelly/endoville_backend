@@ -5,6 +5,7 @@ This module defines a Custom User Model with Email OR Phone Number Authenticatio
 import random
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
@@ -120,6 +121,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         """Override save to ensure clean is called."""
         self.full_clean()
         super().save(*args, **kwargs)
+        if self.is_staff and not kwargs.get("raw"):
+            from users.roles import ensure_default_staff_roles
+
+            ensure_default_staff_roles(self)
 
     def __str__(self):
         """Return email or phone, name if available and is_active, is_staff flags."""
@@ -231,6 +236,33 @@ class OTP(models.Model):
         count = expired.count()
         expired.delete()
         return count
+
+
+class StaffChangeLog(models.Model):
+    """
+    Who changed an order, payment, price, or refund, and what the values were before and after.
+    """
+
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="staff_change_logs",
+    )
+    action = models.CharField(max_length=64, db_index=True)
+    target_type = models.CharField(max_length=32, db_index=True)
+    target_id = models.CharField(max_length=64, db_index=True)
+    order_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
+    summary = models.CharField(max_length=255)
+    changes = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.action} {self.target_type}:{self.target_id}"
 
 
 
