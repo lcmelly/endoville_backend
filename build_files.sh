@@ -7,6 +7,7 @@ echo "Building the project..."
 python3 -m pip install -r "$ROOT/requirements.txt"
 echo "Make Migration..."
 cd "$ROOT/src"
+zensical build
 python3 manage.py makemigrations --noinput
 python3 manage.py migrate --noinput
 echo "Collect Static..."
