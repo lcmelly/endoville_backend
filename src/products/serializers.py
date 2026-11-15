@@ -47,31 +47,40 @@ def _save_stock_choice(serializer, method, *args):
 
 def _get_display_currency(request):
     """
-    Return display Currency for non-staff product/variant responses.
-    Uses ?currency=CODE if present and valid; otherwise defaults to primary currency (e.g. USD).
-    Invalid or missing code falls back to primary. Returns None if no Currency exists in DB.
+    Return display Currency for product and variant responses.
+
+    Uses ?currency=CODE if present and valid; otherwise the primary currency.
+    Invalid or missing code falls back to primary. Returns None if no Currency exists.
+    The result is stored on the request so a list does not look it up once per row.
     """
+    if request is not None and hasattr(request, "_display_currency"):
+        return request._display_currency
     try:
         from orders.payments.stripe_rates import ensure_stripe_rates_fresh
 
         ensure_stripe_rates_fresh()
     except Exception:
         pass
+    currency = None
     try:
         if not request or not getattr(request, "query_params", None):
             code = None
         else:
             code = request.query_params.get("currency", "").strip().upper() or None
+        wanted = Q(is_primary=True) | Q(code__iexact="USD")
         if code:
-            currency = Currency.objects.filter(code=code, is_active=True).first()
-            if currency:
-                return currency
-        return (
-            Currency.objects.filter(is_primary=True, is_active=True).first()
-            or Currency.objects.filter(code="USD", is_active=True).first()
-        )
+            wanted |= Q(code__iexact=code)
+        rows = list(Currency.objects.filter(is_active=True).filter(wanted))
+        by_code = {row.code.upper(): row for row in rows}
+        if code and code in by_code:
+            currency = by_code[code]
+        else:
+            currency = next((row for row in rows if row.is_primary), None) or by_code.get("USD")
     except Exception:
-        return None
+        currency = None
+    if request is not None:
+        request._display_currency = currency
+    return currency
 
 
 class CurrencySerializer(serializers.ModelSerializer):
@@ -140,14 +149,28 @@ class VariationOptionSerializer(serializers.ModelSerializer):
         fields = ["id", "attribute", "attribute_name", "value"]
 
 
-def reviews_for_viewer(product, request):
-    qs = product.reviews.select_related("user").order_by("-created_at")
-    user = getattr(request, "user", None) if request else None
+def _review_is_visible(review, user):
     if user and user.is_authenticated and user.is_staff:
-        return qs
-    if user and user.is_authenticated:
-        return qs.filter(Q(flag_reason="") | Q(user=user))
-    return qs.filter(flag_reason="")
+        return True
+    if not review.flag_reason:
+        return True
+    return bool(user and user.is_authenticated and review.user_id == user.pk)
+
+
+def reviews_for_viewer(product, request):
+    user = getattr(request, "user", None) if request else None
+    prefetched = getattr(product, "_prefetched_objects_cache", {})
+    if "reviews" in prefetched:
+        reviews = [review for review in prefetched["reviews"] if _review_is_visible(review, user)]
+        reviews.sort(key=lambda review: review.created_at, reverse=True)
+        return reviews[:10]
+    qs = product.reviews.select_related("user").order_by("-created_at")
+    if not (user and user.is_authenticated and user.is_staff):
+        if user and user.is_authenticated:
+            qs = qs.filter(Q(flag_reason="") | Q(user=user))
+        else:
+            qs = qs.filter(flag_reason="")
+    return list(qs[:10])
 
 
 class ProductReviewSerializer(serializers.ModelSerializer):
@@ -326,6 +349,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             else:
                 data["display_currency"] = getattr(display_currency, "code", None) or "USD"
                 data["currency_symbol"] = getattr(display_currency, "symbol", None) or ""
+        data.pop("reviews", None)
         return data
 
     def get_avg_rating(self, obj):
@@ -335,9 +359,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         return obj.product.review_count
 
     def get_reviews(self, obj):
-        request = self.context.get("request")
-        qs = reviews_for_viewer(obj.product, request)[:10]
-        return ProductReviewSerializer(qs, many=True, context=self.context).data
+        return []
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -419,6 +441,8 @@ class ProductSerializer(serializers.ModelSerializer):
             else:
                 data["display_currency"] = getattr(display_currency, "code", None) or "USD"
                 data["currency_symbol"] = getattr(display_currency, "symbol", None) or ""
+        if getattr(self.context.get("view"), "action", None) != "retrieve":
+            data.pop("reviews", None)
         return data
 
     def validate_supplier_order_urls(self, value):
@@ -444,6 +468,12 @@ class ProductSerializer(serializers.ModelSerializer):
         return ProductVariantSerializer(qs, many=True, context=self.context).data
 
     def get_reviews(self, obj):
+        view = self.context.get("view")
+        if getattr(view, "action", None) != "retrieve":
+            return []
         request = self.context.get("request")
-        qs = reviews_for_viewer(obj, request)[:10]
-        return ProductReviewSerializer(qs, many=True, context=self.context).data
+        return ProductReviewSerializer(
+            reviews_for_viewer(obj, request),
+            many=True,
+            context=self.context,
+        ).data

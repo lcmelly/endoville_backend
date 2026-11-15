@@ -187,6 +187,38 @@ def test_product_list_returns_currency_and_symbol(api_client, product, staff_use
     assert data[0]["currency_symbol"] == "$"
 
 
+def test_product_list_query_count_does_not_grow_with_the_catalog(api_client, subcategory, settings):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    settings.STRIPE_FX_SYNC_ENABLED = False
+    Currency.objects.create(code="USD", name="US Dollar", symbol="$", usd_rate=1, is_primary=True)
+    Currency.objects.create(code="KES", name="Kenyan Shilling", symbol="KSh", usd_rate="160.50", is_active=True)
+
+    def add_product(slug):
+        created = Product.objects.create(name=slug, description="desc", price="10.00", slug=slug)
+        created.subcategories.add(subcategory)
+        ProductVariant.objects.create(product=created, price="12.00", stock=1)
+
+    add_product("one")
+    with CaptureQueriesContext(connection) as first:
+        first_response = api_client.get("/api/products/products/", {"currency": "KES"})
+    assert first_response.status_code == status.HTTP_200_OK
+
+    add_product("two")
+    add_product("three")
+    with CaptureQueriesContext(connection) as second:
+        second_response = api_client.get("/api/products/products/", {"currency": "KES"})
+    assert second_response.status_code == status.HTTP_200_OK
+    listed = second_response.json()
+    assert len(listed) == 3
+    assert "reviews" not in listed[0]
+    assert "avg_rating" in listed[0]
+    assert "review_count" in listed[0]
+    assert len(second) == len(first)
+    assert len(second) <= 12
+
+
 def test_product_currency_param_returns_correct_currency_and_symbol(api_client, product, variant):
     """?currency= param returns correct display_currency and currency_symbol."""
     Currency.objects.create(code="USD", name="US Dollar", symbol="$", usd_rate=1, is_primary=True)

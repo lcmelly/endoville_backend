@@ -2,7 +2,7 @@
 API views for products app.
 """
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -84,17 +84,37 @@ class SubcategoryViewSet(viewsets.ModelViewSet):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = (
-        Product.objects.select_related("brand").prefetch_related(
-            "subcategories",
-            "variants",
-            "reviews",
-        )
-        .order_by("-created_at")
-    )
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
     read_only_actions = {"list", "retrieve"}
+
+    def get_queryset(self):
+        prefetches = [
+            "subcategories",
+            Prefetch(
+                "variants",
+                queryset=ProductVariant.objects.prefetch_related(
+                    Prefetch(
+                        "options",
+                        queryset=VariationOption.objects.select_related("attribute"),
+                    )
+                ),
+            ),
+        ]
+        if self.action == "retrieve":
+            reviews = ProductReview.objects.select_related("user").order_by("-created_at")
+            user = self.request.user
+            if not (user.is_authenticated and user.is_staff):
+                visible = Q(flag_reason="")
+                if user.is_authenticated:
+                    visible |= Q(user=user)
+                reviews = reviews.filter(visible)
+            prefetches.append(Prefetch("reviews", queryset=reviews))
+        return (
+            Product.objects.select_related("brand")
+            .prefetch_related(*prefetches)
+            .order_by("-created_at")
+        )
 
     def get_permissions(self):
         if self.action in self.read_only_actions:
@@ -129,7 +149,12 @@ class VariationOptionViewSet(viewsets.ModelViewSet):
 class ProductVariantViewSet(viewsets.ModelViewSet):
     queryset = (
         ProductVariant.objects.select_related("product")
-        .prefetch_related("options", "product__reviews")
+        .prefetch_related(
+            Prefetch(
+                "options",
+                queryset=VariationOption.objects.select_related("attribute"),
+            ),
+        )
         .order_by("-created_at")
     )
     serializer_class = ProductVariantSerializer
