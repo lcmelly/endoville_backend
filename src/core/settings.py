@@ -35,8 +35,6 @@ ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 # Default to allowing all hosts only if DEBUG is True (development)
 if not ALLOWED_HOSTS and DEBUG:
     ALLOWED_HOSTS = ['*']
-if os.environ.get('VERCEL') and '.vercel.app' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('.vercel.app')
 
 # Change auth user
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -148,23 +146,25 @@ MIDDLEWARE = [
 ]
 
 # CORS
-# In .env:
-# CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://139.153.66.141:3000
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
-CORS_ALLOWED_ORIGINS = [o.strip() for o in CORS_ALLOWED_ORIGINS if o.strip()]
-# Optional: Allow credentials (cookies, auth headers)
+# The storefront is always allowed. CORS_ALLOWED_ORIGINS in the environment adds more.
+_configured_origins = [
+    origin.strip().rstrip("/")
+    for origin in config("CORS_ALLOWED_ORIGINS", default="").split(",")
+    if origin.strip()
+]
+_dev_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://0.0.0.0:3000",
+] if DEBUG else []
+CORS_ALLOWED_ORIGINS = list(dict.fromkeys([
+    "https://endovillehealth.com",
+    "https://www.endovillehealth.com",
+    *_configured_origins,
+    *_dev_origins,
+]))
 CORS_ALLOW_CREDENTIALS = True
-
-# Allow common dev origins if not explicitly set and DEBUG is True
-if DEBUG and not CORS_ALLOWED_ORIGINS:
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://0.0.0.0:3000",
-    ]
-
-# If your frontend sends Authorization header/cookies, enable this as needed:
-# CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = list(CORS_ALLOWED_ORIGINS)
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
