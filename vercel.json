@@ -12,30 +12,13 @@
       }
     }
   ],
-  "routes": [
-    {
-      "src": "/docs",
-      "dest": "/docs/index.html"
-    },
-    {
-      "src": "/docs/",
-      "dest": "/docs/index.html"
-    },
-    {
-      "src": "/docs/(.+)/",
-      "dest": "/docs/$1/index.html"
-    },
-    {
-      "src": "/docs/(.*)",
-      "dest": "/docs/$1"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "src/core/wsgi.py"
-    }
-  ]
+ "headers": [
+  {
+    "source": "/(.*)",
+    "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://endovillehealth.com" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" }
+      ]
+  }
+ ]
 }
