@@ -152,6 +152,8 @@ MIDDLEWARE = [
 # CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://139.153.66.141:3000
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
 CORS_ALLOWED_ORIGINS = [o.strip() for o in CORS_ALLOWED_ORIGINS if o.strip()]
+# Optional: Allow credentials (cookies, auth headers)
+CORS_ALLOW_CREDENTIALS = True
 
 # Allow common dev origins if not explicitly set and DEBUG is True
 if DEBUG and not CORS_ALLOWED_ORIGINS:
