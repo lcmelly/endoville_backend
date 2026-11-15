@@ -192,8 +192,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 STATIC_URL = 'static/'
-# Collected into staticfiles/static so Vercel's static build can serve /static/.
-STATIC_ROOT = BASE_DIR.parent / 'staticfiles' / 'static' 
+STATIC_ROOT = os.path.join(BASE_DIR, 'static') 
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
