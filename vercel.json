@@ -14,6 +14,22 @@
   ],
   "routes": [
     {
+      "src": "/docs",
+      "dest": "/docs/index.html"
+    },
+    {
+      "src": "/docs/",
+      "dest": "/docs/index.html"
+    },
+    {
+      "src": "/docs/(.+)/",
+      "dest": "/docs/$1/index.html"
+    },
+    {
+      "src": "/docs/(.*)",
+      "dest": "/docs/$1"
+    },
+    {
       "src": "/static/(.*)",
       "dest": "/static/$1"
     },
