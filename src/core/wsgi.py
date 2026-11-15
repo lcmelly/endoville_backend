@@ -8,6 +8,11 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/wsgi/
 """
 
 import os
+import sys
+from pathlib import Path
+
+# Vercel loads this file directly, so the src directory must be on the path.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from django.core.wsgi import get_wsgi_application
 

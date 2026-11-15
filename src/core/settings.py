@@ -35,6 +35,8 @@ ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 # Default to allowing all hosts only if DEBUG is True (development)
 if not ALLOWED_HOSTS and DEBUG:
     ALLOWED_HOSTS = ['*']
+if os.environ.get('VERCEL') and '.vercel.app' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.vercel.app')
 
 # Change auth user
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -190,7 +192,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static') 
+# Collected into staticfiles/static so Vercel's static build can serve /static/.
+STATIC_ROOT = BASE_DIR.parent / 'staticfiles' / 'static' 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
