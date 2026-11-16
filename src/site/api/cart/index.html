@@ -1316,6 +1316,36 @@
   
   
     <li class="md-nav__item">
+      <a href="../shipping-rates/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-truck" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping rates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../warehouses/" class="md-nav__link">
         
   
@@ -1628,7 +1658,7 @@
 <ol>
 <li>
 <p><strong>When the app opens and someone is signed in</strong>
-   Call <code>GET /api/orders/cart/me/</code> and replace the cart on the device with <code>items</code> from the response. You can also show <code>subtotal</code>.</p>
+   Call <code>GET /api/orders/cart/me/</code> and replace the cart on the device with <code>items</code> from the response. Show <code>subtotal</code> and <code>shipping_fee</code>. Pass <code>?country=Kenya</code>, or send <code>country</code> on sync, so <code>shipping_fee</code> is the fee for that destination.</p>
 </li>
 <li>
 <p><strong>When they change the cart</strong>
@@ -1679,13 +1709,20 @@
 </span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">  </span><span class="p">],</span>
 </span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">  </span><span class="nt">&quot;subtotal&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;55.50&quot;</span><span class="p">,</span>
-</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">  </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-20T08:00:00Z&quot;</span><span class="p">,</span>
-</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">  </span><span class="nt">&quot;updated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T12:30:00Z&quot;</span>
-</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="p">}</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">  </span><span class="nt">&quot;weight_grams&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">  </span><span class="nt">&quot;shipping_fee&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12.00&quot;</span><span class="p">,</span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">  </span><span class="nt">&quot;shipping_fees&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;country&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Kenya&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;shipping_fee&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;12.00&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">  </span><span class="p">],</span>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">  </span><span class="nt">&quot;created_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-20T08:00:00Z&quot;</span><span class="p">,</span>
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="w">  </span><span class="nt">&quot;updated_at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-04-22T12:30:00Z&quot;</span>
+</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="p">}</span>
 </span></code></pre></div>
+<p>Add <code>?country=Kenya</code> when the shopper has chosen a destination. <code>shipping_fee</code> is then the fee for that country. Without it, <code>shipping_fee</code> is filled when only one country is configured, or when no countries are configured and the fee is <code>0.00</code>. When several countries are configured and none is chosen, <code>shipping_fee</code> is <code>null</code> and <code>shipping_fees</code> lists each one. A country that is not on the schedule leaves <code>shipping_fee</code> as <code>null</code> and still returns the cart.</p>
 <ul>
 <li><code>unit_price</code> follows the same rule as orders: variant override price, else product price.</li>
 <li><code>subtotal</code> is the sum of line totals for all items.</li>
+<li><code>shipping_fee</code> uses the same rule as checkout: the country's unit fee when the basket is at or below that unit weight, otherwise weight divided by the unit weight times the fee. See <code>api/shipping-rates.md</code>.</li>
 </ul>
 <p><strong>Response fields</strong> (same object shape for <code>GET /cart/me/</code>, and for <code>PUT|POST /cart/sync/</code> and <code>DELETE /cart/clear/</code> success bodies):</p>
 <table>
@@ -1716,6 +1753,21 @@
 <td><code>subtotal</code></td>
 <td>decimal / number</td>
 <td>Sum of line totals</td>
+</tr>
+<tr>
+<td><code>weight_grams</code></td>
+<td>integer</td>
+<td>Total product weight in the cart</td>
+</tr>
+<tr>
+<td><code>shipping_fee</code></td>
+<td>decimal string or <code>null</code></td>
+<td>Fee for the chosen country, the only configured country, or <code>0.00</code> when no countries are configured</td>
+</tr>
+<tr>
+<td><code>shipping_fees</code></td>
+<td>array</td>
+<td><code>{country, shipping_fee}</code> for every configured country, for this weight</td>
 </tr>
 <tr>
 <td><code>created_at</code></td>
@@ -1793,12 +1845,14 @@
 </span></code></pre></div>
 <p>Request body:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;product&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;quantity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">},</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;variant&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;quantity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="p">]</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">}</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;country&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Kenya&quot;</span><span class="p">,</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;product&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;quantity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;variant&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;quantity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="p">]</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="p">}</span>
 </span></code></pre></div>
+<p><code>country</code> is optional. The success body uses it the same way as <code>?country=</code> on <code>GET /cart/me/</code>.</p>
 <p>Rules:</p>
 <ul>
 <li>Each element must include <strong><code>quantity</code></strong> (integer ≥ 1).</li>

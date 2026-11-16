@@ -15,7 +15,7 @@
         <link rel="prev" href="../cart/">
       
       
-        <link rel="next" href="../warehouses/">
+        <link rel="next" href="../shipping-rates/">
       
       
         
@@ -1277,6 +1277,36 @@
   
   
     <li class="md-nav__item">
+      <a href="../shipping-rates/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-truck" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping rates
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../warehouses/" class="md-nav__link">
         
   
@@ -1769,6 +1799,7 @@
 </span><span id="__span-8-19"><a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>Notes:
+- <code>shipping_fee</code> on this request is ignored. Checkout sets it from the shipping table: the country's fee for one unit of weight, or that fee times weight divided by the unit weight when the basket is heavier. See <code>api/shipping-rates.md</code>.
 - Order creation reduces stock only when that product or variant has <code>track_stock</code> on. A variant line never changes the product's stock. A product or variant with <code>track_stock</code> off can be ordered without a stock check.
 - A shipment is created automatically with an initial event: <strong>Order placed</strong>.
 - On successful create, that customer’s <strong>server-side cart is cleared</strong> (see <code>api/cart.md</code>).
@@ -2035,6 +2066,7 @@
 <h2 id="related-docs">Related docs<a class="headerlink" href="#related-docs" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Cart: <code>api/cart.md</code></li>
+<li>Shipping rates: <code>api/shipping-rates.md</code></li>
 <li>Warehouses: <code>api/warehouses.md</code></li>
 <li>Payments: <code>api/payments.md</code></li>
 <li>Shipments: <code>api/shipments.md</code></li>

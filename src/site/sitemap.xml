@@ -52,6 +52,9 @@
         <loc>https://api.endovillehealth.com/api/orders/</loc>
       </url>
       <url>
+        <loc>https://api.endovillehealth.com/api/shipping-rates/</loc>
+      </url>
+      <url>
         <loc>https://api.endovillehealth.com/api/warehouses/</loc>
       </url>
       <url>
