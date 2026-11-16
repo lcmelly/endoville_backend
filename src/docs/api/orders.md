@@ -262,7 +262,7 @@ Place an order, then come back and read it. A shopper sees only their own orders
     ```
 
     Notes:
-    - `shipping_fee` on this request is ignored. Checkout sets it from the shipping schedule: base fee plus the country's USD-per-kilogram rate times the products' weight in kilograms. See `api/shipping-rates.md`.
+    - `shipping_fee` on this request is ignored. Checkout sets it from the shipping table: the country's fee for one unit of weight, or that fee times weight divided by the unit weight when the basket is heavier. See `api/shipping-rates.md`.
     - Order creation reduces stock only when that product or variant has `track_stock` on. A variant line never changes the product's stock. A product or variant with `track_stock` off can be ordered without a stock check.
     - A shipment is created automatically with an initial event: **Order placed**.
     - On successful create, that customer’s **server-side cart is cleared** (see `api/cart.md`).

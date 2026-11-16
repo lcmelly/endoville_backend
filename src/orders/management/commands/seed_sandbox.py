@@ -120,6 +120,20 @@ class Command(BaseCommand):
             name="Endoville",
             defaults={"description": "Endoville Health house brand."},
         )
+        endoville.image_urls = [
+            "https://endovillehealth.com/logo_white.png",
+            "https://endovillehealth.com/logo_dark.png",
+            "https://endovillehealth.com/hero1.jpg",
+            "https://endovillehealth.com/hero2.jpg",
+        ]
+        endoville.image_refs = [
+            "logo_white.png",
+            "logo_dark.png",
+            "hero1.jpg",
+            "hero2.jpg",
+        ]
+        endoville.image_labels = ["logo_white", "logo_dark", "hero1", "hero2"]
+        endoville.save(update_fields=["image_urls", "image_refs", "image_labels"])
         nordic, _ = Brand.objects.get_or_create(
             name="Nordic Labs",
             defaults={"description": "Specialist formulations supplied to order."},

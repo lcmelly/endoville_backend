@@ -158,7 +158,7 @@ You can read the catalog and the blog without signing in. For anything else, sig
 
     ---
 
-    An admin sets a base fee and a price per kilogram for each country. Checkout adds that to the order.
+    An admin sets each country's fee for one unit of weight. Checkout charges that fee, or more when the basket is heavier.
 
     [:octicons-arrow-right-24: Shipping rates](api/shipping-rates.md)
 

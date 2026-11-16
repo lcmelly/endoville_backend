@@ -85,11 +85,11 @@ This is the signed-in shopper's basket. Each person has one cart. A line is eith
     }
     ```
 
-    Add `?country=Kenya` when the shopper has chosen a destination. `shipping_fee` is then the fee for that country. Without it, `shipping_fee` is filled when only one country is configured, or when no countries are configured and the fee is the base fee. When several countries are configured and none is chosen, `shipping_fee` is `null` and `shipping_fees` lists each one. A country that is not on the schedule leaves `shipping_fee` as `null` and still returns the cart.
+    Add `?country=Kenya` when the shopper has chosen a destination. `shipping_fee` is then the fee for that country. Without it, `shipping_fee` is filled when only one country is configured, or when no countries are configured and the fee is `0.00`. When several countries are configured and none is chosen, `shipping_fee` is `null` and `shipping_fees` lists each one. A country that is not on the schedule leaves `shipping_fee` as `null` and still returns the cart.
 
     - `unit_price` follows the same rule as orders: variant override price, else product price.
     - `subtotal` is the sum of line totals for all items.
-    - `shipping_fee` uses the same rule as checkout: base fee plus the country's price per kilogram times `weight_grams`. See `api/shipping-rates.md`.
+    - `shipping_fee` uses the same rule as checkout: the country's unit fee when the basket is at or below that unit weight, otherwise weight divided by the unit weight times the fee. See `api/shipping-rates.md`.
 
     **Response fields** (same object shape for `GET /cart/me/`, and for `PUT|POST /cart/sync/` and `DELETE /cart/clear/` success bodies):
 
@@ -100,7 +100,7 @@ This is the signed-in shopper's basket. Each person has one cart. A line is eith
     | `items` | array | Line items (see below) |
     | `subtotal` | decimal / number | Sum of line totals |
     | `weight_grams` | integer | Total product weight in the cart |
-    | `shipping_fee` | decimal string or `null` | Fee for the chosen country, the only configured country, or the base fee |
+    | `shipping_fee` | decimal string or `null` | Fee for the chosen country, the only configured country, or `0.00` when no countries are configured |
     | `shipping_fees` | array | `{country, shipping_fee}` for every configured country, for this weight |
     | `created_at` | string (ISO 8601) | When the cart row was created |
     | `updated_at` | string (ISO 8601) | Last update (used for abandoned-cart timing) |

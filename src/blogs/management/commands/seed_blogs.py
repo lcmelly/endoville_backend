@@ -4,7 +4,8 @@ Load published blog posts from a JSON file.
     python manage.py seed_blogs
     python manage.py seed_blogs --path "../seed/blogs seed.json"
 
-Matched on slug. Running it again updates the title, body, excerpt, image, and category.
+Matched on slug. Running it again updates the title, body, excerpt, image, category,
+and related products. Related products are matched by SKU from the product catalog.
 """
 
 import json
@@ -15,6 +16,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from blogs.models import Author, Category, Post, Subcategory
+from products.models import Product
 
 DEFAULT_PATH = Path(__file__).resolve().parents[4] / "seed" / "blogs seed.json"
 AUTHOR_EMAIL = "editorial@endovillehealth.com"
@@ -80,4 +82,7 @@ class Command(BaseCommand):
                 setattr(post, field, value)
             post.save()
         post.subcategories.set([subcategory])
+        skus = [str(sku).strip() for sku in (row.get("related_product_skus") or []) if str(sku).strip()]
+        found = {product.sku: product for product in Product.objects.filter(sku__in=skus)}
+        post.related_products.set([found[sku] for sku in skus if sku in found])
         return post

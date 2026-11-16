@@ -7,15 +7,15 @@ icon: lucide/truck
 
 Checkout sets the shipping fee. A fee sent with the order is ignored.
 
-The fee is in USD:
+The fee is in USD. Each country is one row: a unit weight in grams, and the USD fee for that unit.
 
-`base fee + (total product weight in kilograms × the country's price per kilogram)`
+A basket at or below the unit weight pays that fee. A heavier basket pays `(weight in grams ÷ unit weight) × fee`.
 
-Product weight is `unit_weight`, in grams. A variant line uses the product's weight. Half a kilogram is 500 grams.
+Product weight is `unit_weight`, in grams. A variant line uses the product's weight.
 
-Example: the base fee is `2.00` and Kenya is `20.00` per kilogram. A basket that weighs 500 grams ships for `2.00 + 10.00 = 12.00`.
+Example: Kenya is `20.00` per `1000` grams. A 500 gram basket ships for `20.00`. A 1500 gram basket ships for `30.00`.
 
-Until an admin adds a country, every destination pays only the base fee. After at least one country is saved, checkout and quotes refuse a country that is not on the list. The message is `Shipping to this country is not set.`
+Until an admin adds a country, every destination pays `0.00`. After at least one country is saved, checkout and quotes refuse a country that is not on the list. The message is `Shipping to this country is not set.`
 
 The `Orders` role can still change `shipping_fee` on an order that has already been placed.
 
@@ -31,7 +31,7 @@ The `Orders` role can still change `shipping_fee` on an order that has already b
     |---|---|
     | Read the schedule | Anyone |
     | Quote a basket | Anyone |
-    | Replace the base fee and the countries | An admin (`is_superuser`) |
+    | Replace the country rates | An admin (`is_superuser`) |
 
     A staff user who is not an admin gets `403` on the update.
 
@@ -47,14 +47,13 @@ The `Orders` role can still change `shipping_fee` on an order that has already b
 
     ```json
     {
-      "base_fee": "2.00",
       "countries": [
-        { "country": "Kenya", "per_kg": "20.00" }
+        { "country": "Kenya", "unit_weight": 1000, "fee": "20.00" }
       ]
     }
     ```
 
-    A new shop has `"base_fee": "0.00"` and `"countries": []`.
+    A new shop has `"countries": []`. `unit_weight` is grams. `fee` is USD for that many grams.
 
 === "Replace"
 
@@ -62,19 +61,18 @@ The `Orders` role can still change `shipping_fee` on an order that has already b
     PUT /api/orders/shipping-rates/
     ```
 
-    Admins only. This replaces the whole schedule. A country left out of `countries` is removed.
+    Admins only. This replaces the whole table. A country left out of `countries` is removed. The same rows can be edited one at a time in Django admin.
 
     ```json
     {
-      "base_fee": "2.00",
       "countries": [
-        { "country": "Kenya", "per_kg": "20.00" },
-        { "country": "Nigeria", "per_kg": "15.00" }
+        { "country": "Kenya", "unit_weight": 1000, "fee": "20.00" },
+        { "country": "Nigeria", "unit_weight": 500, "fee": "15.00" }
       ]
     }
     ```
 
-    Success (200) returns the saved schedule. `base_fee` and `per_kg` cannot be negative. The same country cannot be listed twice. Matching ignores letter case, so `kenya` and `Kenya` are one country.
+    Success (200) returns the saved table. `fee` cannot be negative. `unit_weight` is at least 1 gram. The same country cannot be listed twice. Matching ignores letter case, so `kenya` and `Kenya` are one country.
 
 === "Quote"
 
@@ -100,7 +98,7 @@ The `Orders` role can still change `shipping_fee` on an order that has already b
     {
       "country": "Kenya",
       "weight_grams": 500,
-      "shipping_fee": "12.00"
+      "shipping_fee": "20.00"
     }
     ```
 

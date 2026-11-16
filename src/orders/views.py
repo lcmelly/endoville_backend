@@ -714,8 +714,8 @@ def intasend_test_connection(request):
 
 class ShippingRatesView(APIView):
     """
-    Read the shipping schedule, or replace it.
-    Anyone can read. Only an admin can change the base fee and country rates.
+    Read the shipping table, or replace it.
+    Anyone can read. Only an admin can change the country rates.
     """
 
     def get_permissions(self):

@@ -15,6 +15,7 @@ from hashlib import sha256
 
 from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.validators import MinValueValidator
 from django.db.models import Sum
 from django.utils.encoding import force_bytes
 
@@ -155,50 +156,33 @@ class Warehouse(models.Model):
         return self.name
 
 
-class ShippingFee(models.Model):
-    """
-    The USD amount added to every shipment before the country weight rate.
-    One row. Admins replace it through the shipping rates API.
-    """
-
-    base_fee = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=Decimal("0"),
-        help_text="USD charged on every shipment, before the country weight rate.",
-    )
-
-    class Meta:
-        verbose_name = "Shipping base fee"
-
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def load(cls):
-        fee, _ = cls.objects.get_or_create(pk=1)
-        return fee
-
-    def __str__(self):
-        return f"Base fee {self.base_fee} USD"
-
-
 class ShippingCountryRate(models.Model):
-    """USD charged per kilogram of product weight for one destination country."""
+    """
+    USD charged for one unit of product weight to one destination country.
+
+    Admins edit these rows, or replace the whole table through the shipping rates API.
+    A shipment lighter than unit_weight pays fee. A heavier shipment pays
+    (weight ÷ unit_weight) × fee.
+    """
 
     country = models.CharField(max_length=100, unique=True)
-    per_kg = models.DecimalField(
+    unit_weight = models.PositiveIntegerField(
+        default=1000,
+        validators=[MinValueValidator(1)],
+        help_text="Grams in one shipping unit. A lighter shipment is charged as one unit.",
+    )
+    fee = models.DecimalField(
         max_digits=12,
         decimal_places=2,
-        help_text="USD per kilogram shipped to this country.",
+        validators=[MinValueValidator(Decimal("0"))],
+        help_text="USD for one unit of weight. Heavier shipments multiply this by weight ÷ unit weight.",
     )
 
     class Meta:
         ordering = ["country"]
 
     def __str__(self):
-        return f"{self.country}: {self.per_kg} USD/kg"
+        return f"{self.country}: {self.fee} USD per {self.unit_weight} g"
 
 
 class ShippingAddress(models.Model):

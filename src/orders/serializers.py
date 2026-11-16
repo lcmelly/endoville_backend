@@ -32,7 +32,6 @@ from .models import (
     ShipmentEvent,
     ShippingAddress,
     ShippingCountryRate,
-    ShippingFee,
     Warehouse,
 )
 
@@ -550,7 +549,8 @@ class CreateOrderItemSerializer(serializers.Serializer):
 
 class ShippingCountryInputSerializer(serializers.Serializer):
     country = serializers.CharField(max_length=100)
-    per_kg = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
+    unit_weight = serializers.IntegerField(min_value=1)
+    fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
 
     def validate_country(self, value):
         name = value.strip()
@@ -560,7 +560,6 @@ class ShippingCountryInputSerializer(serializers.Serializer):
 
 
 class ShippingRatesSerializer(serializers.Serializer):
-    base_fee = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0"))
     countries = ShippingCountryInputSerializer(many=True)
 
     def validate_countries(self, rows):
@@ -575,25 +574,28 @@ class ShippingRatesSerializer(serializers.Serializer):
     def save(self):
         data = self.validated_data
         with transaction.atomic():
-            fee = ShippingFee.load()
-            fee.base_fee = data["base_fee"]
-            fee.save(update_fields=["base_fee"])
             ShippingCountryRate.objects.all().delete()
             ShippingCountryRate.objects.bulk_create(
                 [
-                    ShippingCountryRate(country=row["country"], per_kg=row["per_kg"])
+                    ShippingCountryRate(
+                        country=row["country"],
+                        unit_weight=row["unit_weight"],
+                        fee=row["fee"],
+                    )
                     for row in data["countries"]
                 ]
             )
-        return fee
+        return ShippingCountryRate.objects.all()
 
 
 def shipping_rates_payload():
-    fee = ShippingFee.load()
     return {
-        "base_fee": f"{Decimal(fee.base_fee):.2f}",
         "countries": [
-            {"country": row.country, "per_kg": f"{Decimal(row.per_kg):.2f}"}
+            {
+                "country": row.country,
+                "unit_weight": row.unit_weight,
+                "fee": f"{Decimal(row.fee):.2f}",
+            }
             for row in ShippingCountryRate.objects.all()
         ],
     }

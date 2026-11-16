@@ -11,7 +11,6 @@ from .models import (
     ShipmentEvent,
     ShippingAddress,
     ShippingCountryRate,
-    ShippingFee,
     Warehouse,
 )
 
@@ -35,20 +34,10 @@ class WarehouseAdmin(ImportExportModelAdmin):
     ordering = ["name"]
 
 
-@admin.register(ShippingFee)
-class ShippingFeeAdmin(admin.ModelAdmin):
-    list_display = ["base_fee"]
-
-    def has_add_permission(self, request):
-        return not ShippingFee.objects.exists()
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-
 @admin.register(ShippingCountryRate)
 class ShippingCountryRateAdmin(ImportExportModelAdmin):
-    list_display = ["country", "per_kg"]
+    list_display = ["country", "unit_weight", "fee"]
+    list_editable = ["unit_weight", "fee"]
     search_fields = ["country"]
     ordering = ["country"]
 
