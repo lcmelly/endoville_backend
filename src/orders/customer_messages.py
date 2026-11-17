@@ -51,9 +51,6 @@ def clean_email(value: str) -> str:
 
 def verify_human(token: str, remote_ip: str) -> None:
     """Ask the captcha provider whether this token was solved by a person."""
-    # Local runserver cannot reach Cloudflare. Production still verifies the token.
-    if settings.DEBUG:
-        return
     secret = (getattr(settings, "CUSTOMER_MESSAGE_CAPTCHA_SECRET", "") or "").strip()
     if not secret:
         raise serializers.ValidationError("Human verification is not configured.")

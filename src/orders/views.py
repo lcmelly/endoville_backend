@@ -747,7 +747,7 @@ class CustomerMessageView(APIView):
         return Response(
             {
                 "message_max_length": MESSAGE_MAX_LENGTH,
-                "captcha_required": not settings.DEBUG,
+                "captcha_required": True,
             }
         )
 
