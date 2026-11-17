@@ -1,0 +1,1258 @@
+{
+  "brands": [
+    {
+      "name": "Endoville",
+      "description": "Endoville Health house brand.",
+      "image_urls": [
+        "https://endovillehealth.com/logo_white.png",
+        "https://endovillehealth.com/logo_dark.png",
+        "https://endovillehealth.com/hero1.jpg",
+        "https://endovillehealth.com/hero2.jpg"
+      ],
+      "image_refs": [
+        "logo_white.png",
+        "logo_dark.png",
+        "hero1.jpg",
+        "hero2.jpg"
+      ],
+      "image_labels": ["logo_white", "logo_dark", "hero1", "hero2"]
+    },
+    {
+      "name": "21st Century",
+      "description": ""
+    },
+    {
+      "name": "California Gold Nutrition",
+      "description": ""
+    },
+    {
+      "name": "Doctor's Best",
+      "description": ""
+    },
+    {
+      "name": "Life Extension",
+      "description": ""
+    },
+    {
+      "name": "NOW Foods",
+      "description": ""
+    },
+    {
+      "name": "Nature's Way",
+      "description": ""
+    },
+    {
+      "name": "Nutricost",
+      "description": ""
+    },
+    {
+      "name": "Sports Research",
+      "description": ""
+    },
+    {
+      "name": "Thorne",
+      "description": ""
+    }
+  ],
+  "categories": [
+    {
+      "name": "Supplements",
+      "description": "Vitamins, minerals, and other daily supplements.",
+      "subcategories": [
+        {
+          "name": "Minerals",
+          "description": "Magnesium, zinc, iron, potassium, and calcium."
+        },
+        {
+          "name": "Vitamins",
+          "description": "Vitamin D, vitamin C, B vitamins, and multivitamins."
+        },
+        {
+          "name": "Omega-3",
+          "description": "Fish oil and other omega-3 fatty acids."
+        },
+        {
+          "name": "Collagen",
+          "description": "Collagen peptides for skin and joints."
+        },
+        {
+          "name": "Sports Nutrition",
+          "description": "Creatine and training supplements."
+        },
+        {
+          "name": "Probiotics",
+          "description": "Live cultures for digestive balance."
+        },
+        {
+          "name": "Amino Acids",
+          "description": "Single amino acids such as theanine and inositol."
+        },
+        {
+          "name": "Oils",
+          "description": "Supplemental oils."
+        },
+        {
+          "name": "Beauty",
+          "description": "Hair, skin, and nail supplements."
+        },
+        {
+          "name": "Antioxidants",
+          "description": "CoQ10 and other antioxidant supplements."
+        },
+        {
+          "name": "Fiber",
+          "description": "Psyllium and other fibre supplements."
+        },
+        {
+          "name": "Joint Support",
+          "description": "Glucosamine, chondroitin, and joint formulas."
+        }
+      ]
+    }
+  ],
+  "products": [
+    {
+      "name": "Doctor's Best, High Absorption Magnesium Lysinate Glycinate, Chelated, Albion® TRAACS®, 240 Tablets (100 mg per Tablet)",
+      "description": "Chelated magnesium lysinate glycinate from Albion TRAACS, 100 mg elemental magnesium per tablet. A 240-tablet bottle for muscle, nerve, and sleep support. Non-GMO, gluten free, soy free, and vegan.",
+      "brand": "Doctor's Best",
+      "price": "23.86",
+      "sku": "IHR-16567",
+      "slug": "doctor-s-best-high-absorption-magnesium-lysinate-g",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/drb/drb00087/u/214.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/doctor-s-best-high-absorption-magnesium-lysinate-glycinate-chelated-albion-traacs-240-tablets-100-mg-per-tablet/16567"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "Supports muscle relaxation and sleep\nChelated form aimed at higher absorption than magnesium oxide\nUsed in hundreds of enzyme systems involved in energy and nerve function",
+      "ingredients": "Per 2 tablets: magnesium 200 mg (48% DV) from 2,000 mg magnesium lysinate glycinate chelate (Albion). Other ingredients: microcrystalline cellulose, croscarmellose sodium, magnesium stearate (vegetable), stearic acid, hydroxypropyl cellulose, silicon dioxide, hypromellose. 120 servings.",
+      "how_to_use": "Adults: take 2 tablets twice daily, or as a clinician recommends. Store in a cool, dry place.",
+      "unit_weight": 400,
+      "meta_title": "Doctor's Best, High Absorption Magnesium Lysinate Glycinate, Chelated, Albion® TRAACS®, 240 Tablets (100 mg per Tablet)",
+      "meta_description": "Chelated magnesium lysinate glycinate from Albion TRAACS, 100 mg elemental magnesium per tablet. A 240-tablet bottle for muscle, nerve, and sleep support. Non-GMO, gluten free, soy free, and vegan."
+    },
+    {
+      "name": "NOW Foods, Magnesium Glycinate, 180 tablets (100 mg per tablet)",
+      "description": "Magnesium bisglycinate tablets from Albion, 100 mg elemental magnesium per tablet. A 180-tablet bottle. Vegetarian, vegan, kosher, and halal.",
+      "brand": "NOW Foods",
+      "price": "20.79",
+      "sku": "IHR-88819",
+      "slug": "now-foods-magnesium-glycinate-180-tablets-100-mg-p",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now01289/u/62.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-magnesium-glycinate-180-tablets-100-mg-per-tablet/88819"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "Supports muscle, nerve, and heart function\nGlycinate form is bound to glycine to aid absorption\nA cofactor for enzymes involved in energy, protein, and glucose metabolism",
+      "ingredients": "Per 2 tablets: magnesium 200 mg (48% DV) from 2,000 mg magnesium bisglycinate (Albion). Other ingredients: citric acid, hydroxypropyl cellulose, stearic acid (vegetable), silicon dioxide, vegetarian coating (hypromellose, stearic acid, sunflower lecithin, triethyl citrate, sunflower oil). 90 servings.",
+      "how_to_use": "Take 2 tablets 1 to 2 times daily with food. Adults only. Ask a clinician before use if pregnant, nursing, taking medication, or under care for a condition. Keep out of reach of children.",
+      "unit_weight": 250,
+      "meta_title": "NOW Foods, Magnesium Glycinate, 180 tablets (100 mg per tablet)",
+      "meta_description": "Magnesium bisglycinate tablets from Albion, 100 mg elemental magnesium per tablet. A 180-tablet bottle. Vegetarian, vegan, kosher, and halal."
+    },
+    {
+      "name": "Life Extension, BioActive Complete B-Complex, 60 Vegetarian Capsules",
+      "description": "A 60-capsule B-complex using active forms of the B vitamins, including methylcobalamin and L-5-methyltetrahydrofolate. Gluten free and non-GMO.",
+      "brand": "Life Extension",
+      "price": "8.25",
+      "sku": "IHR-67051",
+      "slug": "life-extension-bioactive-complete-b-complex-60-veg",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/lex/lex19456/u/126.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/life-extension-bioactive-complete-b-complex-60-vegetarian-capsules/67051"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "Covers the B-vitamin family in forms the body can use directly\nSupports energy metabolism\nIncludes a high dose of pantothenic acid, biotin, and methylated folate and B12",
+      "ingredients": "Per 2 capsules: thiamine 100 mg, riboflavin 75 mg, niacin 100 mg, vitamin B6 100 mg, folate 680 mcg DFE, vitamin B12 300 mcg, biotin 1,000 mcg, pantothenic acid 500 mg, calcium 50 mg, inositol 100 mg, PABA 50 mg. Other ingredients: vegetable cellulose capsule, microcrystalline cellulose, stearic acid, purified water, silica. 30 servings.",
+      "how_to_use": "Take 2 capsules daily with food. Temporary flushing or stomach upset can occur. Do not exceed the labeled dose. Store tightly closed in a cool, dry place.",
+      "unit_weight": 90,
+      "meta_title": "Life Extension, BioActive Complete B-Complex, 60 Vegetarian Capsules",
+      "meta_description": "A 60-capsule B-complex using active forms of the B vitamins, including methylcobalamin and L-5-methyltetrahydrofolate. Gluten free and non-GMO."
+    },
+    {
+      "name": "NOW Foods, Vitamin D3 & K2, 120 Capsules",
+      "description": "Vitamin D3 at 1,000 IU with vitamin K2 as MK-4 at 45 mcg per capsule. A 120-capsule bottle for bone and cardiovascular support. Non-GMO, kosher, and halal.",
+      "brand": "NOW Foods",
+      "price": "9.26",
+      "sku": "IHR-10056",
+      "slug": "now-foods-vitamin-d3-k2-120-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now00369/u/132.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-vitamin-d3-k2-120-capsules/10056"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "Vitamin D3 supports calcium absorption\nVitamin K2 as MK-4 supports bone matrix formation\nThe pair is used together for bone and arterial calcium balance",
+      "ingredients": "Per capsule: vitamin D3 (cholecalciferol from lanolin) 25 mcg (1,000 IU, 125% DV), vitamin K2 (menaquinone-4) 45 mcg. Other ingredients: rice flour, hypromellose capsule, ascorbyl palmitate, silicon dioxide.",
+      "how_to_use": "Take 1 capsule 1 to 2 times daily with food. Adults only. People taking anticoagulants such as warfarin should ask a clinician first. Keep out of reach of children.",
+      "unit_weight": 80,
+      "meta_title": "NOW Foods, Vitamin D3 & K2, 120 Capsules",
+      "meta_description": "Vitamin D3 at 1,000 IU with vitamin K2 as MK-4 at 45 mcg per capsule. A 120-capsule bottle for bone and cardiovascular support. Non-GMO, kosher, and halal."
+    },
+    {
+      "name": "California Gold Nutrition, Omega-3 Premium Fish Oil, 100 Fish Gelatine Softgels (1,100 mg per Softgel)",
+      "description": "Molecularly distilled fish oil in fish-gelatin softgels, 1,100 mg concentrate per softgel. Each softgel provides 180 mg EPA and 120 mg DHA. A 100-count bottle. Free of beef and pork gelatin.",
+      "brand": "California Gold Nutrition",
+      "price": "11.23",
+      "sku": "IHR-62118",
+      "slug": "california-gold-nutrition-omega-3-premium-fish-oil",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/mli/mli00952/u/392.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-omega-3-premium-fish-oil-100-fish-gelatin-softgels-1-100-mg-per-softgel/62118"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Omega-3"
+      ],
+      "benefits": "EPA and DHA support normal heart function\nDHA supports normal brain function and vision\nTested for heavy metals, PCBs, and dioxins",
+      "ingredients": "Per 2 softgels: fish oil concentrate 2,200 mg, total omega-3 640 mg, EPA 360 mg, DHA 240 mg, other omega-3s 40 mg. Other ingredients: fish gelatin softgel (gelatin, vegetable glycerin, water) and mixed tocopherols. Contains fish (anchovy, mackerel, sardine, tilapia) and soy. 50 servings.",
+      "how_to_use": "Take 2 softgels daily with food. Ask a clinician first if pregnant, under 18, on blood thinners, or under medical care. Store cool and dry, away from heat and light.",
+      "unit_weight": 180,
+      "meta_title": "California Gold Nutrition, Omega-3 Premium Fish Oil, 100 Fish Gelatine Softgels (1,100 mg per Softgel)",
+      "meta_description": "Molecularly distilled fish oil in fish-gelatin softgels, 1,100 mg concentrate per softgel. Each softgel provides 180 mg EPA and 120 mg DHA. A 100-count bottle. Free of beef and pork gelatin."
+    },
+    {
+      "name": "California Gold Nutrition, Omega 800, 30 Fish Gelatine Capsules (1,000 mg per Capsule)",
+      "description": "Ultra-concentrated triglyceride-form fish oil, 1,000 mg per softgel, with 480 mg EPA and 320 mg DHA. A 30-count bottle of KD-Pür oil processed in Germany, in a fish-gelatin softgel.",
+      "brand": "California Gold Nutrition",
+      "price": "7.16",
+      "sku": "IHR-82845",
+      "slug": "california-gold-nutrition-omega-800-30-fish-gelati",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01251/u/307.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-omega-800-30-fish-gelatin-softgels-1-000-mg-per-softgel/82845"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Omega-3"
+      ],
+      "benefits": "About 80% of the oil is EPA and DHA\nTriglyceride form\nEPA and DHA support heart function; DHA supports brain function and vision",
+      "ingredients": "Per softgel: omega-3 fish oil concentrate 1,000 mg, total omega-3 840 mg, EPA 480 mg, DHA 320 mg. Other ingredients: fish gelatin softgel (gelatin, vegetable glycerin, purified water) and mixed tocopherols. Contains fish (sardine, anchovy, mackerel, tilapia) and soy. 30 servings.",
+      "how_to_use": "Take 1 softgel daily with food. Ask a clinician before use. Do not use if the seal is broken. Store cool and dry.",
+      "unit_weight": 60,
+      "meta_title": "California Gold Nutrition, Omega 800, 30 Fish Gelatine Capsules (1,000 mg per Capsule)",
+      "meta_description": "Ultra-concentrated triglyceride-form fish oil, 1,000 mg per softgel, with 480 mg EPA and 320 mg DHA. A 30-count bottle of KD-Pür oil processed in Germany, in a fish-gelatin softgel."
+    },
+    {
+      "name": "California Gold Nutrition, CollagenUP®, Hydrolysed Marine Collagen Peptides with Hyaluronic Acid and Vitamin C, unflavoured, 206 g (7.26 oz)",
+      "description": "Unflavored marine collagen peptides with hyaluronic acid and vitamin C. A 206 g pouch, about 41 servings of 5 g. Types I and III collagen from hydrolyzed fish, with non-animal hyaluronic acid.",
+      "brand": "California Gold Nutrition",
+      "price": "16.07",
+      "sku": "IHR-64903",
+      "slug": "california-gold-nutrition-collagenup-hydrolysed-ma",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01033/u/478.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-collagenup-hydrolyzed-marine-collagen-peptides-with-hyaluronic-acid-unflavored-7-26-oz-206-g/64903"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Collagen"
+      ],
+      "benefits": "5 g hydrolyzed marine collagen per scoop\n60 mg hyaluronic acid and 90 mg vitamin C per scoop\nUsed for hair, skin, nails, joints, and bones",
+      "ingredients": "Per 5 g scoop: calories 20, protein 4 g, vitamin C (calcium ascorbate) 90 mg, sodium 20 mg, hydrolyzed marine collagen 5 g, hyaluronic acid (sodium hyaluronate) 60 mg. No other ingredients. Contains fish (one or more of barramundi, catfish, cod, haddock, ling, pangasius, red snapper, salmon, tilapia, trout).",
+      "how_to_use": "Mix 1 scoop in 6–8 oz room-temperature water or juice. Drink on an empty stomach, at least 1 hour before or 2 hours after meals. Scoop weight averages 5 g. Do not eat the moisture absorber.",
+      "unit_weight": 230,
+      "meta_title": "California Gold Nutrition, CollagenUP®, Hydrolysed Marine Collagen Peptides with Hyaluronic Acid and Vitamin C, unflavoured, 206 g (7.26 oz)",
+      "meta_description": "Unflavored marine collagen peptides with hyaluronic acid and vitamin C. A 206 g pouch, about 41 servings of 5 g. Types I and III collagen from hydrolyzed fish, with non-animal hyaluronic acid."
+    },
+    {
+      "name": "California Gold Nutrition, Vitamin D3 + K2 as MK-7, 180 Veggie Capsules",
+      "description": "Vitamin D3 at 5,000 IU with vitamin K2 as MK-7 at 120 mcg, in a vegetarian capsule that also contains MCT oil. A 180-capsule bottle, one capsule a day.",
+      "brand": "California Gold Nutrition",
+      "price": "14.91",
+      "sku": "IHR-124745",
+      "slug": "california-gold-nutrition-vitamin-d3-k2-as-mk-7-18",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn02333/u/63.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-vitamin-d3-k2-as-mk-7-180-veggie-capsules/124745"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "High-potency vitamin D3 with long-acting MK-7\nMCT oil is included in the capsule\nSupports calcium use for bones",
+      "ingredients": "Per capsule: vitamin D3 125 mcg (5,000 IU, 625% DV), vitamin K2 (menaquinone-7) 120 mcg. Other ingredients: microcrystalline cellulose, hypromellose capsule, magnesium stearate, dicalcium phosphate, silicon dioxide, MCT oil. 180 servings.",
+      "how_to_use": "Take 1 capsule daily with food. People who are pregnant, under 18, on blood thinners, or under medical care should ask a clinician first.",
+      "unit_weight": 60,
+      "meta_title": "California Gold Nutrition, Vitamin D3 + K2 as MK-7, 180 Veggie Capsules",
+      "meta_description": "Vitamin D3 at 5,000 IU with vitamin K2 as MK-7 at 120 mcg, in a vegetarian capsule that also contains MCT oil. A 180-capsule bottle, one capsule a day."
+    },
+    {
+      "name": "California Gold Nutrition, Sport, Pure Creatine Monohydrate, Unflavoured, 1 lb (454 g)",
+      "description": "Unflavored creatine monohydrate powder, 5 g per scoop. A 454 g tub, about 91 servings. One ingredient, with no sweeteners or fillers.",
+      "brand": "California Gold Nutrition",
+      "price": "16.03",
+      "sku": "IHR-71026",
+      "slug": "california-gold-nutrition-sport-pure-creatine-mono",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01059/u/380.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-sport-pure-creatine-monohydrate-unflavored-1-lb-454-g/71026"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Sports Nutrition"
+      ],
+      "benefits": "5 g creatine monohydrate per serving\nUnflavored, so it can go into water or a shake\nUsed for lean mass and short, high-intensity efforts",
+      "ingredients": "Per 5 g scoop: creatine monohydrate 5 g. No other ingredients. About 91 servings.",
+      "how_to_use": "Mix 1 level scoop daily in 6–8 oz of water or another drink. A shaker mixes it more evenly. Scoop weight averages 5 g. Store cool and dry. Do not eat the moisture absorber.",
+      "unit_weight": 580,
+      "meta_title": "California Gold Nutrition, Sport, Pure Creatine Monohydrate, Unflavoured, 1 lb (454 g)",
+      "meta_description": "Unflavored creatine monohydrate powder, 5 g per scoop. A 454 g tub, about 91 servings. One ingredient, with no sweeteners or fillers.",
+      "barcode": "898220010592"
+    },
+    {
+      "name": "Doctor's Best, High Absorption Magnesium Lysinate Glycinate, Chelated, Albion® TRAACS®, 120 Tablets (100 mg per Tablet)",
+      "description": "The 120-tablet size of Doctor's Best chelated magnesium lysinate glycinate, 100 mg elemental magnesium per tablet. Non-GMO, gluten free, soy free, and vegan.",
+      "brand": "Doctor's Best",
+      "price": "11.98",
+      "sku": "IHR-15",
+      "slug": "doctor-s-best-high-absorption-magnesium-lysinat-15",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/drb/drb00025/u/124.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/doctor-s-best-high-absorption-magnesium-lysinate-glycinate-chelated-albion-traacs-120-tablets-100-mg-per-tablet/15"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "Same Albion TRAACS chelate as the larger bottle\nSupports muscles, nerves, sleep, and mood\n100 mg elemental magnesium per tablet",
+      "ingredients": "Per 2 tablets: magnesium 200 mg (48% DV) from 2,000 mg magnesium lysinate glycinate chelate (Albion). Other ingredients: microcrystalline cellulose, croscarmellose sodium, magnesium stearate (vegetable), stearic acid, hydroxypropyl cellulose, silicon dioxide, hypromellose. 60 servings.",
+      "how_to_use": "Take 2 tablets twice daily, or as a clinician recommends. Store in a cool, dry place.",
+      "unit_weight": 200,
+      "meta_title": "Doctor's Best, High Absorption Magnesium Lysinate Glycinate, Chelated, Albion® TRAACS®, 120 Tablets (100 mg per Tablet)",
+      "meta_description": "The 120-tablet size of Doctor's Best chelated magnesium lysinate glycinate, 100 mg elemental magnesium per tablet. Non-GMO, gluten free, soy free, and vegan.",
+      "barcode": "753950000254"
+    },
+    {
+      "name": "California Gold Nutrition, Gold C®, USP-grade Vitamin C, 1,000 mg, 240 Veggie Capsules",
+      "description": "USP-grade vitamin C as ascorbic acid, 1,000 mg per vegetarian capsule. A 240-capsule bottle. Formulated without gluten, GMOs, or soy.",
+      "brand": "California Gold Nutrition",
+      "price": "15.54",
+      "sku": "IHR-61865",
+      "slug": "california-gold-nutrition-gold-c-usp-grade-vitamin",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn00932/u/298.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-gold-c-usp-grade-vitamin-c-1-000-mg-240-veggie-capsules/61865"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "1,000 mg vitamin C per capsule\nSupports normal immune function\nUsed in collagen formation and antioxidant protection",
+      "ingredients": "Per capsule: vitamin C (ascorbic acid) 1,000 mg (1,111% DV). Other ingredients: hypromellose capsule and magnesium stearate. 240 servings.",
+      "how_to_use": "Take 1 capsule daily, with or without food. Ask a clinician before use. Store cool and dry.",
+      "unit_weight": 330,
+      "meta_title": "California Gold Nutrition, Gold C®, USP-grade Vitamin C, 1,000 mg, 240 Veggie Capsules",
+      "meta_description": "USP-grade vitamin C as ascorbic acid, 1,000 mg per vegetarian capsule. A 240-capsule bottle. Formulated without gluten, GMOs, or soy.",
+      "barcode": "898220009329"
+    },
+    {
+      "name": "California Gold Nutrition, LactoBif® 30 Probiotics, 60 Veggie Capsules",
+      "description": "A shelf-stable probiotic with 30 billion CFU and 8 strains per vegetarian capsule. A 60-capsule blister pack. Suitable for vegetarians and made without dairy, gluten, GMOs, or soy.",
+      "brand": "California Gold Nutrition",
+      "price": "21.61",
+      "sku": "IHR-64009",
+      "slug": "california-gold-nutrition-lactobif-30-probiotics-6",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn00965/u/302.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-lactobif-30-probiotics-60-veggie-capsules/64009"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Probiotics"
+      ],
+      "benefits": "30 billion CFU per capsule\nFive Lactobacillus and three Bifidobacterium strains\nEach capsule is double-foil blister sealed",
+      "ingredients": "Per capsule: probiotic blend 136 mg providing 30 billion CFU of L. acidophilus, L. rhamnosus, B. lactis, B. longum, L. plantarum, L. casei, L. salivarius, and B. breve. Other ingredients: microcrystalline cellulose, hypromellose capsule, magnesium stearate, silicon dioxide. 60 servings.",
+      "how_to_use": "Take 1 capsule daily, with or without food. Refrigeration is optional but recommended. Potency is stated through the expiration date when kept at or below 25°C.",
+      "unit_weight": 70,
+      "meta_title": "California Gold Nutrition, LactoBif® 30 Probiotics, 60 Veggie Capsules",
+      "meta_description": "A shelf-stable probiotic with 30 billion CFU and 8 strains per vegetarian capsule. A 60-capsule blister pack. Suitable for vegetarians and made without dairy, gluten, GMOs, or soy.",
+      "barcode": "898220009657"
+    },
+    {
+      "name": "NOW Foods, Omega-3 Fish Oil, 100 Capsules",
+      "description": "Molecularly distilled fish oil, 1,000 mg per softgel, with 180 mg EPA and 120 mg DHA. A 100-softgel bottle. The softgel uses bovine gelatin.",
+      "brand": "NOW Foods",
+      "price": "8.03",
+      "sku": "IHR-102333",
+      "slug": "now-foods-omega-3-fish-oil-100-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now01650/u/58.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-omega-3-fish-oil-100-softgels/102333"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Omega-3"
+      ],
+      "benefits": "180 mg EPA and 120 mg DHA per softgel\nTested for PCBs, dioxins, mercury, and other heavy metals\nTaken with food",
+      "ingredients": "Per 2 softgels: fish oil concentrate 2,000 mg, EPA 360 mg, DHA 240 mg. Other ingredients: bovine gelatin softgel (BSE-free), glycerin, water, and d-alpha tocopherol from sunflower. Contains fish (anchovy, sardine, tuna). 50 servings.",
+      "how_to_use": "Take 2 softgels twice daily with food. Adults only. Ask a clinician if pregnant, nursing, taking medication, or under medical care.",
+      "unit_weight": 170,
+      "meta_title": "NOW Foods, Omega-3 Fish Oil, 100 Capsules",
+      "meta_description": "Molecularly distilled fish oil, 1,000 mg per softgel, with 180 mg EPA and 120 mg DHA. A 100-softgel bottle. The softgel uses bovine gelatin."
+    },
+    {
+      "name": "California Gold Nutrition, Gold C®, USP-grade Vitamin C, 1,000 mg, 60 Veggie Capsules",
+      "description": "The 60-capsule size of Gold C, USP-grade vitamin C as ascorbic acid, 1,000 mg per vegetarian capsule.",
+      "brand": "California Gold Nutrition",
+      "price": "5.38",
+      "sku": "IHR-61864",
+      "slug": "california-gold-nutrition-gold-c-usp-grade-v-61864",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn00931/u/383.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-gold-c-usp-grade-vitamin-c-1-000-mg-60-veggie-capsules/61864"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "1,000 mg vitamin C per capsule\nVegetarian capsule\nSupports immune function and collagen formation",
+      "ingredients": "Per capsule: vitamin C (ascorbic acid) 1,000 mg (1,111% DV). Other ingredients: hypromellose capsule and magnesium stearate. 60 servings.",
+      "how_to_use": "Take 1 capsule daily, with or without food. Ask a clinician before use. Store cool and dry.",
+      "unit_weight": 90,
+      "meta_title": "California Gold Nutrition, Gold C®, USP-grade Vitamin C, 1,000 mg, 60 Veggie Capsules",
+      "meta_description": "The 60-capsule size of Gold C, USP-grade vitamin C as ascorbic acid, 1,000 mg per vegetarian capsule.",
+      "barcode": "898220009312"
+    },
+    {
+      "name": "California Gold Nutrition, LactoBif® 30 Probiotics, 30 Billion CFU, 120 Veg Capsules",
+      "description": "The 120-capsule size of LactoBif 30, with 30 billion CFU and 8 strains in each vegetarian capsule. Double-foil blister sealed.",
+      "brand": "California Gold Nutrition",
+      "price": "25.87",
+      "sku": "IHR-143853",
+      "slug": "california-gold-nutrition-lactobif-30-probiotics-3",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn02523/u/22.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-lactobif-30-probiotics-30-billion-cfu-120-veggie-capsules/143853"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Probiotics"
+      ],
+      "benefits": "30 billion CFU per capsule\nSame 8-strain blend as the 60-count bottle\nA longer supply of the daily capsule",
+      "ingredients": "Per capsule: probiotic blend 136 mg providing 30 billion CFU of L. acidophilus, L. rhamnosus, B. lactis, B. longum, L. plantarum, L. casei, L. salivarius, and B. breve. Other ingredients: microcrystalline cellulose, hypromellose capsule, vegetable magnesium stearate, silicon dioxide. 120 servings.",
+      "how_to_use": "Take 1 capsule daily, with or without food. Best stored at 20–25°C. Refrigeration is optional but recommended.",
+      "unit_weight": 130,
+      "meta_title": "California Gold Nutrition, LactoBif® 30 Probiotics, 30 Billion CFU, 120 Veg Capsules",
+      "meta_description": "The 120-capsule size of LactoBif 30, with 30 billion CFU and 8 strains in each vegetarian capsule. Double-foil blister sealed.",
+      "barcode": "898220025237"
+    },
+    {
+      "name": "California Gold Nutrition, Omega 800, 90 Fish Gelatine Capsules (1,000 mg per Capsule)",
+      "description": "The 90-softgel size of Omega 800. Each softgel is 1,000 mg of triglyceride-form fish oil with 480 mg EPA and 320 mg DHA.",
+      "brand": "California Gold Nutrition",
+      "price": "24.73",
+      "sku": "IHR-85180",
+      "slug": "california-gold-nutrition-omega-800-90-fish-gelati",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01266/u/346.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-omega-800-90-fish-gelatin-softgels-1-000-mg-per-softgel/85180"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Omega-3"
+      ],
+      "benefits": "One softgel a day\n480 mg EPA and 320 mg DHA\nKD-Pür oil processed in Germany",
+      "ingredients": "Per softgel: omega-3 fish oil concentrate 1,000 mg, total omega-3 840 mg, EPA 480 mg, DHA 320 mg. Other ingredients: fish gelatin softgel and mixed tocopherols. Contains fish (sardine, anchovy, mackerel, tilapia) and soy. 90 servings.",
+      "how_to_use": "Take 1 softgel daily with food. Ask a clinician before use. Store cool and dry.",
+      "unit_weight": 150,
+      "meta_title": "California Gold Nutrition, Omega 800, 90 Fish Gelatine Capsules (1,000 mg per Capsule)",
+      "meta_description": "The 90-softgel size of Omega 800. Each softgel is 1,000 mg of triglyceride-form fish oil with 480 mg EPA and 320 mg DHA."
+    },
+    {
+      "name": "California Gold Nutrition, Vitamin D3, 125 mcg (5,000 IU), 90 Fish Gelatin Softgels",
+      "description": "High-potency vitamin D3, 5,000 IU (125 mcg) per fish-gelatin softgel. A 90-count bottle. Cholecalciferol in safflower oil.",
+      "brand": "California Gold Nutrition",
+      "price": "5.08",
+      "sku": "IHR-70316",
+      "slug": "california-gold-nutrition-vitamin-d3-125-mcg-5-000",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01065/u/404.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-vitamin-d3-125-mcg-5-000-iu-90-fish-gelatin-softgels/70316"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "5,000 IU vitamin D3 per softgel\nSupports bones, teeth, and immune function\nSmall fish-gelatin softgel",
+      "ingredients": "Per softgel: vitamin D3 (cholecalciferol) 125 mcg (5,000 IU, 625% DV). Other ingredients: safflower oil and fish gelatin softgel. Contains fish (tilapia). 90 servings.",
+      "how_to_use": "Take 1 softgel daily with food. Do not take more than one softgel a day or combine it with other vitamin D supplements. Ask a clinician first if pregnant, nursing, on medication, or if you have high blood calcium or kidney disease.",
+      "unit_weight": 40,
+      "meta_title": "California Gold Nutrition, Vitamin D3, 125 mcg (5,000 IU), 90 Fish Gelatin Softgels",
+      "meta_description": "High-potency vitamin D3, 5,000 IU (125 mcg) per fish-gelatin softgel. A 90-count bottle. Cholecalciferol in safflower oil.",
+      "barcode": "898220010653"
+    },
+    {
+      "name": "Life Extension, Neuro-Mag®, Magnesium L-Threonate, 90 Vegetarian Capsules (48 mg per Capsule)",
+      "description": "Magnesium L-threonate (Magtein), 48 mg elemental magnesium per vegetarian capsule. A 90-capsule bottle used for memory and cognitive support. Gluten free.",
+      "brand": "Life Extension",
+      "price": "29.46",
+      "sku": "IHR-40244",
+      "slug": "life-extension-neuro-mag-magnesium-l-threonate-90",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/lex/lex16039/u/276.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/life-extension-neuro-mag-magnesium-l-threonate-90-vegetarian-capsules-48-mg-per-capsule/40244"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "Magnesium L-threonate, studied for cognitive function\n144 mg elemental magnesium per 3-capsule serving\nLess of a laxative effect than some other magnesium salts",
+      "ingredients": "Per 3 capsules: magnesium 144 mg (34% DV) from 2,000 mg Magtein magnesium L-threonate. Other ingredients: vegetable cellulose capsule, microcrystalline cellulose, stearic acid, vegetable stearate, silica. 30 servings.",
+      "how_to_use": "Take 3 capsules daily, or as a clinician recommends. Store tightly closed in a cool, dry place.",
+      "unit_weight": 120,
+      "meta_title": "Life Extension, Neuro-Mag®, Magnesium L-Threonate, 90 Vegetarian Capsules (48 mg per Capsule)",
+      "meta_description": "Magnesium L-threonate (Magtein), 48 mg elemental magnesium per vegetarian capsule. A 90-capsule bottle used for memory and cognitive support. Gluten free."
+    },
+    {
+      "name": "Sports Research, Alaskan Omega-3 Fish Oil, 90 Capsules",
+      "description": "Wild Alaska pollock fish oil, 1,250 mg per softgel, with 1,040 mg omega-3 including 690 mg EPA and 260 mg DHA. A 90-softgel bottle from an MSC-certified fishery.",
+      "brand": "Sports Research",
+      "price": "39.74",
+      "sku": "IHR-90284",
+      "slug": "sports-research-alaskan-omega-3-fish-oil-90-capsul",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/sre/sre01183/u/127.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/sports-research-alaskan-omega-3-fish-oil-90-softgels/90284"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Omega-3"
+      ],
+      "benefits": "1,040 mg omega-3 per softgel in triglyceride form\nSingle-source wild Alaska pollock\nThird-party tested, including IFOS",
+      "ingredients": "Per softgel: wild Alaska pollock fish oil concentrate 1,250 mg, total omega-3 1,040 mg, EPA 690 mg, DHA 260 mg. Other ingredients: fish gelatin softgel (tilapia), vegetable glycerin, purified water, tocopherols. Contains fish (Alaska pollock). 90 servings.",
+      "how_to_use": "Adults: take 1 softgel daily with food. Ask a clinician first if pregnant, nursing, on blood thinners, or planning surgery. Store at room temperature.",
+      "unit_weight": 190,
+      "meta_title": "Sports Research, Alaskan Omega-3 Fish Oil, 90 Capsules",
+      "meta_description": "Wild Alaska pollock fish oil, 1,250 mg per softgel, with 1,040 mg omega-3 including 690 mg EPA and 260 mg DHA. A 90-softgel bottle from an MSC-certified fishery."
+    },
+    {
+      "name": "California Gold Nutrition, Vitamin D3 + K2, 60 Veg Capsules",
+      "description": "The 60-capsule size of vitamin D3 5,000 IU plus vitamin K2 as MK-7 at 120 mcg, in a vegetarian capsule with MCT oil.",
+      "brand": "California Gold Nutrition",
+      "price": "8.49",
+      "sku": "IHR-124743",
+      "slug": "california-gold-nutrition-vitamin-d3-k2-60-veg-cap",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn02332/u/78.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-vitamin-d3-k2-as-mk-7-60-veggie-capsules/124743"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "Same 5,000 IU D3 and 120 mcg MK-7 dose as the 180-count bottle\nMCT oil in the capsule\nA 60-day supply at one capsule a day",
+      "ingredients": "Per capsule: vitamin D3 125 mcg (5,000 IU, 625% DV), vitamin K2 (menaquinone-7) 120 mcg. Other ingredients: microcrystalline cellulose, hypromellose capsule, magnesium stearate, dicalcium phosphate, silicon dioxide, MCT oil. 60 servings.",
+      "how_to_use": "Take 1 capsule daily with food. People who are pregnant, under 18, on blood thinners, or under medical care should ask a clinician first.",
+      "unit_weight": 30,
+      "meta_title": "California Gold Nutrition, Vitamin D3 + K2, 60 Veg Capsules",
+      "meta_description": "The 60-capsule size of vitamin D3 5,000 IU plus vitamin K2 as MK-7 at 120 mcg, in a vegetarian capsule with MCT oil."
+    },
+    {
+      "name": "Life Extension, Two-a-Day Multivitamin, 120 Capsules",
+      "description": "A high-potency multivitamin and mineral, 120 capsules, taken as two capsules a day. Includes active forms of folate and vitamin B12, plus carotenoids and quercetin. Gluten free.",
+      "brand": "Life Extension",
+      "price": "17.01",
+      "sku": "IHR-86453",
+      "slug": "life-extension-two-a-day-multivitamin-120-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/lex/lex23141/u/102.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/life-extension-two-per-day-multivitamin-120-capsules/86453"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "Doses at or above the daily value for most vitamins where one is set\nMethylfolate and methylcobalamin\nIncludes zinc, selenium, vitamin D3, and mixed carotenoids",
+      "ingredients": "Per 2 capsules: vitamin A 1,500 mcg, vitamin C 470 mg, vitamin D3 50 mcg (2,000 IU), vitamin E 67 mg, thiamine 75 mg, riboflavin 50 mg, niacin 50 mg, vitamin B6 75 mg, folate 680 mcg DFE, vitamin B12 300 mcg, biotin 300 mcg, pantothenic acid 50 mg, iodine 150 mcg, magnesium 100 mg, zinc 25 mg, selenium 200 mcg, manganese 2 mg, chromium 200 mcg, molybdenum 100 mcg, plus inositol, alpha lipoic acid, mixed tocopherols, quercetin blend, lutein, zeaxanthin, apigenin, boron, and lycopene. Other ingredients: vegetable cellulose capsule, dicalcium phosphate, modified food starch, silica, vegetable stearate, microcrystalline cellulose, maltodextrin, sunflower lecithin, sunflower oil. 60 servings.",
+      "how_to_use": "Take 2 capsules daily in divided doses with meals. People using more than 2,000 IU of vitamin D a day from all sources should have vitamin D checked. Not recommended if blood calcium is high.",
+      "unit_weight": 160,
+      "meta_title": "Life Extension, Two-a-Day Multivitamin, 120 Capsules",
+      "meta_description": "A high-potency multivitamin and mineral, 120 capsules, taken as two capsules a day. Includes active forms of folate and vitamin B12, plus carotenoids and quercetin. Gluten free."
+    },
+    {
+      "name": "California Gold Nutrition, CollagenUP®, Hydrolyzed Marine Collagen Peptides with Hyaluronic Acid, Unflavored, 1.02 lb (464 g)",
+      "description": "The 464 g pouch of unflavored CollagenUP. Each 5 g scoop provides marine collagen peptides, hyaluronic acid, and vitamin C. About 93 servings.",
+      "brand": "California Gold Nutrition",
+      "price": "35.89",
+      "sku": "IHR-64902",
+      "slug": "california-gold-nutrition-collagenup-hydrolyzed-ma",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01032/u/530.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-collagenup-hydrolyzed-marine-collagen-peptides-with-hyaluronic-acid-unflavored-1-02-lb-464-g/64902"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Collagen"
+      ],
+      "benefits": "Same 5 g collagen, 60 mg hyaluronic acid, and 90 mg vitamin C as the smaller pouch\nTypes I and III marine collagen\nA larger resealable pouch",
+      "ingredients": "Per 5 g scoop: calories 20, protein 4 g, vitamin C (calcium ascorbate) 90 mg, sodium 20 mg, hydrolyzed marine collagen 5 g, hyaluronic acid 60 mg. No other ingredients. Contains fish. About 93 servings.",
+      "how_to_use": "Mix 1 scoop in 6–8 oz room-temperature water or juice. Drink on an empty stomach, at least 1 hour before or 2 hours after meals. Do not eat the moisture absorber.",
+      "unit_weight": 490,
+      "meta_title": "California Gold Nutrition, CollagenUP®, Hydrolyzed Marine Collagen Peptides with Hyaluronic Acid, Unflavored, 1.02 lb (464 g)",
+      "meta_description": "The 464 g pouch of unflavored CollagenUP. Each 5 g scoop provides marine collagen peptides, hyaluronic acid, and vitamin C. About 93 servings."
+    },
+    {
+      "name": "NOW Foods, Omega-3 Fish Oil, 1,000 mg, 200 Capsules",
+      "description": "The 200-softgel size of NOW omega-3 fish oil, 1,000 mg per softgel, with 180 mg EPA and 120 mg DHA. Molecularly distilled. The softgel uses bovine gelatin.",
+      "brand": "NOW Foods",
+      "price": "16.24",
+      "sku": "IHR-323",
+      "slug": "now-foods-omega-3-fish-oil-1-000-mg-200-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now01652/u/88.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-omega-3-fish-oil-1-000-mg-200-softgels/323"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Omega-3"
+      ],
+      "benefits": "Same 180 mg EPA and 120 mg DHA per softgel as the 100-count bottle\nTested for PCBs, dioxins, and heavy metals\nA larger bottle for the same daily use",
+      "ingredients": "Per 2 softgels: fish oil concentrate 2,000 mg, EPA 360 mg, DHA 240 mg. Other ingredients: bovine gelatin softgel (BSE-free), glycerin, water, and d-alpha tocopherol from sunflower. Contains fish (anchovy, sardine, tuna). 100 servings.",
+      "how_to_use": "Take 2 softgels twice daily with food. Adults only. Ask a clinician if pregnant, nursing, taking medication, or under medical care.",
+      "unit_weight": 350,
+      "meta_title": "NOW Foods, Omega-3 Fish Oil, 1,000 mg, 200 Capsules",
+      "meta_description": "The 200-softgel size of NOW omega-3 fish oil, 1,000 mg per softgel, with 180 mg EPA and 120 mg DHA. Molecularly distilled. The softgel uses bovine gelatin."
+    },
+    {
+      "name": "California Gold Nutrition, Sport, Pure Creatine Monohydrate, Unflavoured, 2.2 lbs (1 kg)",
+      "description": "Unflavored creatine monohydrate, 5 g per scoop, in a 1 kg tub. About 200 servings. A single-ingredient powder.",
+      "brand": "California Gold Nutrition",
+      "price": "26.91",
+      "sku": "IHR-143718",
+      "slug": "california-gold-nutrition-sport-pure-creati-143718",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn02521/u/260.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-sport-pure-creatine-monohydrate-unflavored-2-2-lbs-1-kg/143718"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Sports Nutrition"
+      ],
+      "benefits": "5 g creatine monohydrate per serving\nAbout 200 servings\nUnflavored, with no sweeteners or fillers",
+      "ingredients": "Per 5 g scoop: creatine monohydrate 5 g. No other ingredients. 200 servings.",
+      "how_to_use": "Mix 1 level scoop daily in 6–8 oz of water or another drink. Scoop weight averages 5 g. Store cool and dry. Do not eat the moisture absorber.",
+      "unit_weight": 1100,
+      "meta_title": "California Gold Nutrition, Sport, Pure Creatine Monohydrate, Unflavoured, 2.2 lbs (1 kg)",
+      "meta_description": "Unflavored creatine monohydrate, 5 g per scoop, in a 1 kg tub. About 200 servings. A single-ingredient powder.",
+      "barcode": "898220025213"
+    },
+    {
+      "name": "Nutricost, Women, Myo & D-Chiro Inositol, 120 Capsules",
+      "description": "A 40:1 blend of myo-inositol and D-chiro-inositol for women. Each 4-capsule serving provides 2,000 mg myo-inositol and 50 mg D-chiro-inositol. A 120-capsule bottle. Vegan and gluten free.",
+      "brand": "Nutricost",
+      "price": "14.14",
+      "sku": "IHR-124160",
+      "slug": "nutricost-women-myo-d-chiro-inositol-120-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/ncs/ncs67495/u/24.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/nutricost-women-myo-d-chiro-inositol-120-capsules/124160"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Amino Acids"
+      ],
+      "benefits": "2,000 mg myo-inositol per serving\n50 mg D-chiro-inositol per serving\nThe 40:1 ratio used in inositol blends",
+      "ingredients": "Per 4 capsules: myo-inositol 2,000 mg, D-chiro-inositol 50 mg. Other ingredients: hypromellose capsule, rice flour, vegetable magnesium stearate, silica. 30 servings.",
+      "how_to_use": "Take 4 capsules daily with 8–12 oz of water. For adults 18 and older. Ask a clinician first if pregnant, nursing, taking medication, or under medical care.",
+      "unit_weight": 110,
+      "meta_title": "Nutricost, Women, Myo & D-Chiro Inositol, 120 Capsules",
+      "meta_description": "A 40:1 blend of myo-inositol and D-chiro-inositol for women. Each 4-capsule serving provides 2,000 mg myo-inositol and 50 mg D-chiro-inositol. A 120-capsule bottle. Vegan and gluten free."
+    },
+    {
+      "name": "California Gold Nutrition, Magnesium Bisglycinate Chelate, Albion TRAACS®, 240 Veggie Capsules (100 mg per Capsule)",
+      "description": "Magnesium bisglycinate chelate using Albion TRAACS, 100 mg elemental magnesium per vegetarian capsule. A 240-capsule bottle. Suitable for vegetarians and vegans.",
+      "brand": "California Gold Nutrition",
+      "price": "26.17",
+      "sku": "IHR-103274",
+      "slug": "california-gold-nutrition-magnesium-bisglycinate-c",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01902/u/106.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-magnesium-bisglycinate-chelate-albion-traacs-240-veggie-capsules-100-mg-per-capsule/103274"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "Chelated bisglycinate, a gentler form than magnesium oxide\n200 mg elemental magnesium per 2-capsule serving\nUsed for bone, heart, nerve, muscle, and sleep support",
+      "ingredients": "Per 2 capsules: magnesium 200 mg (48% DV) from magnesium bisglycinate chelate and magnesium oxide. Other ingredients: hypromellose capsule, magnesium stearate, microcrystalline cellulose, silicon dioxide. 120 servings.",
+      "how_to_use": "Take 2 capsules daily with food. Ask a clinician first if pregnant, under 18, on medication, or under medical care.",
+      "unit_weight": 240,
+      "meta_title": "California Gold Nutrition, Magnesium Bisglycinate Chelate, Albion TRAACS®, 240 Veggie Capsules (100 mg per Capsule)",
+      "meta_description": "Magnesium bisglycinate chelate using Albion TRAACS, 100 mg elemental magnesium per vegetarian capsule. A 240-capsule bottle. Suitable for vegetarians and vegans.",
+      "barcode": "898220019021"
+    },
+    {
+      "name": "21st Century, Calcium Magnesium Zinc + D3, 90 Tablets",
+      "description": "Calcium, magnesium, zinc, and vitamin D3 in one tablet formula. A 90-tablet bottle. Gluten free and non-GMO.",
+      "brand": "21st Century",
+      "price": "4.44",
+      "sku": "IHR-10695",
+      "slug": "21st-century-calcium-magnesium-zinc-d3-90-tablets",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cen/cen22263/u/52.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/21st-century-calcium-magnesium-zinc-d3-90-tablets/10695"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "1,000 mg calcium, 400 mg magnesium, and 15 mg zinc per 3 tablets\n400 IU vitamin D3 per serving\nAimed at bones, muscles, and immune function",
+      "ingredients": "Per 3 tablets: vitamin D3 10 mcg (400 IU), calcium (carbonate) 1,000 mg, magnesium (oxide) 400 mg, zinc (oxide) 15 mg. Other ingredients: cellulose, croscarmellose sodium, gum acacia, and less than 2% magnesium silicate, magnesium stearate, polyethylene glycol, polyvinyl alcohol, silicon dioxide, stearic acid, titanium dioxide. 30 servings.",
+      "how_to_use": "Adults: take 3 tablets daily with a meal. Do not exceed that dose. Ask a clinician first if pregnant, nursing, on medication, or if you have kidney disease.",
+      "unit_weight": 150,
+      "meta_title": "21st Century, Calcium Magnesium Zinc + D3, 90 Tablets",
+      "meta_description": "Calcium, magnesium, zinc, and vitamin D3 in one tablet formula. A 90-tablet bottle. Gluten free and non-GMO."
+    },
+    {
+      "name": "California Gold Nutrition, LactoBif® 5 Probiotics, 5 Billion CFU, 60 Veg Capsules",
+      "description": "An introductory probiotic with 5 billion CFU and 8 strains per vegetarian capsule. A 60-capsule blister pack. Made without dairy, gluten, GMOs, or soy.",
+      "brand": "California Gold Nutrition",
+      "price": "6.73",
+      "sku": "IHR-64006",
+      "slug": "california-gold-nutrition-lactobif-5-probiotics-5",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn00963/u/382.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-lactobif-5-probiotics-5-billion-cfu-60-veggie-capsules/64006"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Probiotics"
+      ],
+      "benefits": "5 billion CFU per capsule\nThe same 8 strains as LactoBif 30, at a lower count\nDouble-foil blister sealed",
+      "ingredients": "Per capsule: probiotic blend 36 mg providing 5 billion CFU of L. acidophilus, L. rhamnosus, B. lactis, B. longum, L. plantarum, L. casei, L. salivarius, and B. breve. Other ingredients: microcrystalline cellulose, hypromellose capsule, magnesium stearate, silicon dioxide. 60 servings.",
+      "how_to_use": "Take 1 capsule daily, with or without food. Refrigeration is optional but recommended. Keep at or below 25°C.",
+      "unit_weight": 70,
+      "meta_title": "California Gold Nutrition, LactoBif® 5 Probiotics, 5 Billion CFU, 60 Veg Capsules",
+      "meta_description": "An introductory probiotic with 5 billion CFU and 8 strains per vegetarian capsule. A 60-capsule blister pack. Made without dairy, gluten, GMOs, or soy.",
+      "barcode": "898220009633"
+    },
+    {
+      "name": "NOW Foods, Ultra Omega-3 Fish Oil, 180 Softgels",
+      "description": "Enteric-coated, odor-controlled fish oil, 1,000 mg per softgel, with 500 mg EPA and 250 mg DHA. A 180-softgel bottle. Molecularly distilled.",
+      "brand": "NOW Foods",
+      "price": "34.15",
+      "sku": "IHR-8341",
+      "slug": "now-foods-ultra-omega-3-fish-oil-180-softgels",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now01662/u/97.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-ultra-omega-3-fish-oil-180-softgels/8341"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Omega-3"
+      ],
+      "benefits": "500 mg EPA and 250 mg DHA per softgel\nEnteric coating for people who get reflux from other fish oils\nTested for PCBs, dioxins, and heavy metals",
+      "ingredients": "Per softgel: fish oil concentrate 1,000 mg, EPA 500 mg, DHA 250 mg. Other ingredients: bovine gelatin softgel with an enteric coating, glycerin, water, sunflower lecithin, medium-chain triglycerides, and d-alpha tocopherol. Contains fish (anchovy, sardine). Servings equal the capsule count.",
+      "how_to_use": "Take 1 softgel 1 to 2 times daily with food. Adults only. Ask a clinician if pregnant, nursing, taking medication, or under medical care.",
+      "unit_weight": 340,
+      "meta_title": "NOW Foods, Ultra Omega-3 Fish Oil, 180 Softgels",
+      "meta_description": "Enteric-coated, odor-controlled fish oil, 1,000 mg per softgel, with 500 mg EPA and 250 mg DHA. A 180-softgel bottle. Molecularly distilled."
+    },
+    {
+      "name": "Thorne, Basic B Complex, 60 Capsules",
+      "description": "Thorne Basic B Complex, 60 capsules. Eight B vitamins in active forms, including riboflavin 5'-phosphate, pyridoxal 5'-phosphate, methylfolate, and methylcobalamin, plus choline. Gluten free.",
+      "brand": "Thorne",
+      "price": "21.77",
+      "sku": "IHR-18791",
+      "slug": "thorne-basic-b-complex-60-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/thr/thr10403/u/54.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/thorne-basic-b-complex-60-capsules/18791"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "Active B-vitamin forms rather than only the basic salts\nIncludes choline\nOne capsule, one to three times a day",
+      "ingredients": "Per capsule: thiamin 110 mg, riboflavin 5'-phosphate 10 mg, niacin 140 mg, vitamin B6 as pyridoxal 5'-phosphate 10 mg, folate 667 mcg DFE, vitamin B12 400 mcg, biotin 400 mcg, pantothenic acid 110 mg, choline 28 mg. Other ingredients: hypromellose capsule, microcrystalline cellulose, calcium laurate, magnesium citrate, silicon dioxide. 60 capsules.",
+      "how_to_use": "Take 1 capsule one to three times daily, or as a clinician recommends. If pregnant, ask a clinician first. Use only if the bottle is sealed.",
+      "unit_weight": 70,
+      "meta_title": "Thorne, Basic B Complex, 60 Capsules",
+      "meta_description": "Thorne Basic B Complex, 60 capsules. Eight B vitamins in active forms, including riboflavin 5'-phosphate, pyridoxal 5'-phosphate, methylfolate, and methylcobalamin, plus choline. Gluten free."
+    },
+    {
+      "name": "NOW Foods, Zinc, 50 mg, 250 Tablets",
+      "description": "Zinc gluconate tablets providing 50 mg elemental zinc. A 250-tablet bottle. Vegetarian, vegan, kosher, and halal.",
+      "brand": "NOW Foods",
+      "price": "11.12",
+      "sku": "IHR-883",
+      "slug": "now-foods-zinc-50-mg-250-tablets",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now01522/u/72.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-zinc-50-mg-250-tablets/883"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "50 mg elemental zinc per tablet\nSupports immune function and skin\nA cofactor for many enzymes",
+      "ingredients": "Per tablet: zinc 50 mg (455% DV) from 403 mg zinc gluconate. Other ingredients: microcrystalline cellulose, vegetarian coating, vegetable magnesium stearate, silicon dioxide.",
+      "how_to_use": "Take 1 tablet daily with a meal. Adults only, and not for long-term use beyond the label. Do not use if pregnant or nursing. Keep out of reach of children.",
+      "unit_weight": 170,
+      "meta_title": "NOW Foods, Zinc, 50 mg, 250 Tablets",
+      "meta_description": "Zinc gluconate tablets providing 50 mg elemental zinc. A 250-tablet bottle. Vegetarian, vegan, kosher, and halal."
+    },
+    {
+      "name": "California Gold Nutrition, L-Theanine, Featuring AlphaWave®, 200 mg, 60 Veg Capsules",
+      "description": "L-theanine as AlphaWave, 200 mg per vegetarian capsule. A 60-capsule bottle. Used for calm focus without drowsiness. Formulated without gluten, GMOs, or soy.",
+      "brand": "California Gold Nutrition",
+      "price": "9.26",
+      "sku": "IHR-83280",
+      "slug": "california-gold-nutrition-l-theanine-featuring-alp",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01242/u/171.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-l-theanine-featuring-alphawave-200-mg-60-veggie-capsules/83280"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Amino Acids"
+      ],
+      "benefits": "200 mg L-theanine per capsule\nAlphaWave L-theanine\nTaken any time of day",
+      "ingredients": "Per capsule: L-theanine 200 mg. Other ingredients: microcrystalline cellulose, hypromellose capsule, stearic acid, silicon dioxide. 60 servings.",
+      "how_to_use": "Take 1 capsule daily, with or without food. Ask a clinician before use. Store cool and dry.",
+      "unit_weight": 50,
+      "meta_title": "California Gold Nutrition, L-Theanine, Featuring AlphaWave®, 200 mg, 60 Veg Capsules",
+      "meta_description": "L-theanine as AlphaWave, 200 mg per vegetarian capsule. A 60-capsule bottle. Used for calm focus without drowsiness. Formulated without gluten, GMOs, or soy."
+    },
+    {
+      "name": "21st Century, Potassium Gluconate, 595 mg, 110 Tablets",
+      "description": "Potassium gluconate, 595 mg per tablet, providing 99 mg elemental potassium. A 110-tablet bottle. Gluten free and suitable for vegans.",
+      "brand": "21st Century",
+      "price": "3.89",
+      "sku": "IHR-41315",
+      "slug": "21st-century-potassium-gluconate-595-mg-110-tablet",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cen/cen21387/u/57.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/21st-century-potassium-gluconate-595-mg-110-tablets/41315"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "99 mg potassium per tablet\nAn electrolyte used for mineral balance\nOne tablet a day",
+      "ingredients": "Per tablet: potassium 99 mg (2% DV) from 595 mg potassium gluconate. Other ingredients: cellulose, croscarmellose sodium, silicon dioxide, stearic acid, and less than 2% magnesium stearate.",
+      "how_to_use": "Adults: take 1 tablet daily with a meal. Do not exceed that dose. Ask a clinician first if pregnant, nursing, on medication, or planning a procedure.",
+      "unit_weight": 110,
+      "meta_title": "21st Century, Potassium Gluconate, 595 mg, 110 Tablets",
+      "meta_description": "Potassium gluconate, 595 mg per tablet, providing 99 mg elemental potassium. A 110-tablet bottle. Gluten free and suitable for vegans."
+    },
+    {
+      "name": "Thorne, Magnesium Glycinate, 90 Capsules (120 mg per Capsule)",
+      "description": "Chelated magnesium glycinate, 120 mg elemental magnesium per capsule. A 90-capsule bottle. Gluten free. Aimed at muscle relaxation and sleep.",
+      "brand": "Thorne",
+      "price": "20.62",
+      "sku": "IHR-152148",
+      "slug": "thorne-magnesium-glycinate-90-capsules-120-mg-per",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/thr/thr01533/u/9.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/thorne-magnesium-glycinate-90-capsules-120-mg-per-capsule/152148"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "120 mg elemental magnesium per capsule\nGlycinate chelate\nCan be taken 1 to 4 times a day",
+      "ingredients": "Per capsule: magnesium (as magnesium glycinate) 120 mg (29% DV). Other ingredients: hypromellose capsule, medium-chain triglyceride oil, silicon dioxide. 90 capsules.",
+      "how_to_use": "Take 1 capsule one to four times daily, or as a clinician recommends. If pregnant, ask a clinician first. Use only if the bottle is sealed.",
+      "unit_weight": 140,
+      "meta_title": "Thorne, Magnesium Glycinate, 90 Capsules (120 mg per Capsule)",
+      "meta_description": "Chelated magnesium glycinate, 120 mg elemental magnesium per capsule. A 90-capsule bottle. Gluten free. Aimed at muscle relaxation and sleep."
+    },
+    {
+      "name": "NOW Foods, Inositol, 500 mg, 100 Veg Capsules",
+      "description": "Myo-inositol, 500 mg per vegetarian capsule. A 100-capsule bottle. The most common form of inositol, used for cell membranes and insulin signaling. Vegan and kosher.",
+      "brand": "NOW Foods",
+      "price": "9.26",
+      "sku": "IHR-684",
+      "slug": "now-foods-inositol-500-mg-100-veg-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now00475/u/70.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-inositol-500-mg-100-veg-capsules/684"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Amino Acids"
+      ],
+      "benefits": "500 mg myo-inositol per capsule\nFound in cell membranes, with high concentrations in the nervous system\nSupports insulin action and lipid metabolism",
+      "ingredients": "Per capsule: inositol 500 mg. Other ingredients: rice flour, hypromellose capsule, vegetable stearic acid, silicon dioxide.",
+      "how_to_use": "Take 1 capsule daily as needed. Adults only. Ask a clinician if pregnant, nursing, taking medication, or under medical care.",
+      "unit_weight": 110,
+      "meta_title": "NOW Foods, Inositol, 500 mg, 100 Veg Capsules",
+      "meta_description": "Myo-inositol, 500 mg per vegetarian capsule. A 100-capsule bottle. The most common form of inositol, used for cell membranes and insulin signaling. Vegan and kosher."
+    },
+    {
+      "name": "Thorne, Zinc Picolinate, 15 mg, 60 Capsules",
+      "description": "Zinc picolinate, 15 mg elemental zinc per capsule. A 60-capsule bottle. Gluten free and NSF contents certified.",
+      "brand": "Thorne",
+      "price": "11.80",
+      "sku": "IHR-18476",
+      "slug": "thorne-zinc-picolinate-15-mg-60-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/thr/thr21002/u/37.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/thorne-zinc-picolinate-15-mg-60-capsules/18476"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "15 mg zinc as picolinate, a well-absorbed form\nSupports immune function and connective tissue\nA moderate daily dose",
+      "ingredients": "Per capsule: zinc (as zinc picolinate) 15 mg (136% DV). Other ingredients: microcrystalline cellulose, hypromellose capsule, leucine, silicon dioxide. 60 capsules.",
+      "how_to_use": "Take 1 capsule one to two times daily, or as a clinician recommends. If pregnant, ask a clinician first. Use only if the bottle is sealed.",
+      "unit_weight": 40,
+      "meta_title": "Thorne, Zinc Picolinate, 15 mg, 60 Capsules",
+      "meta_description": "Zinc picolinate, 15 mg elemental zinc per capsule. A 60-capsule bottle. Gluten free and NSF contents certified."
+    },
+    {
+      "name": "Life Extension, Magnesium Caps, 500 mg, 100 Vegetarian Capsules",
+      "description": "Magnesium as oxide, citrate, and succinate, 500 mg elemental magnesium per vegetarian capsule. A 100-capsule bottle. Gluten free.",
+      "brand": "Life Extension",
+      "price": "7.25",
+      "sku": "IHR-48803",
+      "slug": "life-extension-magnesium-caps-500-mg-100-vegetaria",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/lex/lex14591/u/212.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/life-extension-magnesium-caps-500-mg-100-vegetarian-capsules/48803"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "500 mg elemental magnesium per capsule from three salts\nSupports energy metabolism, nerves, muscles, bones, and teeth\nOne capsule, up to three times a day",
+      "ingredients": "Per capsule: magnesium 500 mg (119% DV) as magnesium oxide, citrate, and succinate. Other ingredients: vegetable cellulose capsule, microcrystalline cellulose, stearic acid, silica.",
+      "how_to_use": "Take 1 capsule one to three times daily. High doses can loosen stools; split the dose or take less if that happens. Store tightly closed in a cool, dry place.",
+      "unit_weight": 160,
+      "meta_title": "Life Extension, Magnesium Caps, 500 mg, 100 Vegetarian Capsules",
+      "meta_description": "Magnesium as oxide, citrate, and succinate, 500 mg elemental magnesium per vegetarian capsule. A 100-capsule bottle. Gluten free."
+    },
+    {
+      "name": "NOW Foods, Iron, 36 mg, 90 Veg Capsules",
+      "description": "Double-strength iron as Ferrochel ferrous bisglycinate, 36 mg elemental iron per vegetarian capsule. A 90-capsule bottle. Gentle and less constipating than many iron salts. Vegan and kosher.",
+      "brand": "NOW Foods",
+      "price": "9.88",
+      "sku": "IHR-54089",
+      "slug": "now-foods-iron-36-mg-90-veg-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now01444/u/61.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-iron-36-mg-90-veg-capsules/54089"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "36 mg elemental iron per capsule\nBisglycinate chelate rather than a simple iron salt\nSupports hemoglobin and oxygen transport",
+      "ingredients": "Per capsule: iron 36 mg (200% DV) from 180 mg ferrous bisglycinate (Ferrochel). Other ingredients: rice flour, hypromellose capsule, vegetable stearic acid, silicon dioxide. 90 servings.",
+      "how_to_use": "Take 1 capsule daily with a meal. Do not exceed that dose unless a physician says to. Iron overdose is dangerous for children under 6. Keep the bottle out of their reach.",
+      "unit_weight": 70,
+      "meta_title": "NOW Foods, Iron, 36 mg, 90 Veg Capsules",
+      "meta_description": "Double-strength iron as Ferrochel ferrous bisglycinate, 36 mg elemental iron per vegetarian capsule. A 90-capsule bottle. Gentle and less constipating than many iron salts. Vegan and kosher."
+    },
+    {
+      "name": "NOW Foods, Pumpkin Seed Oil, 100 Capsules (1,000 mg per Capsule)",
+      "description": "Cold-pressed pumpkin seed oil, 1,000 mg per softgel. A 100-softgel bottle. A source of unsaturated fats and phytosterols. The softgel uses bovine gelatin.",
+      "brand": "NOW Foods",
+      "price": "12.36",
+      "sku": "IHR-755",
+      "slug": "now-foods-pumpkin-seed-oil-100-capsules-1-000-mg-p",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now01840/u/62.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-pumpkin-seed-oil-100-softgels-1-000-mg-per-softgel/755"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Oils"
+      ],
+      "benefits": "1,000 mg pumpkin seed oil per softgel\nCold pressed, without solvents\nProvides polyunsaturated and monounsaturated fat",
+      "ingredients": "Per 2 softgels: pumpkin seed oil (Cucurbita pepo) 2,000 mg, with 1 g polyunsaturated fat and 0.5 g monounsaturated fat. Other ingredients: bovine gelatin softgel, glycerin, water. 50 servings.",
+      "how_to_use": "Take 2 softgels 1 to 2 times daily with food. Adults only. Dark specks in the oil can occur and do not mean the oil is spoiled.",
+      "unit_weight": 180,
+      "meta_title": "NOW Foods, Pumpkin Seed Oil, 100 Capsules (1,000 mg per Capsule)",
+      "meta_description": "Cold-pressed pumpkin seed oil, 1,000 mg per softgel. A 100-softgel bottle. A source of unsaturated fats and phytosterols. The softgel uses bovine gelatin."
+    },
+    {
+      "name": "California Gold Nutrition, Vitamin D3, 50 mcg (2,000 IU), 90 Fish Gelatin Softgels",
+      "description": "Vitamin D3, 2,000 IU (50 mcg) per fish-gelatin softgel. A 90-count bottle. Cholecalciferol in safflower oil.",
+      "brand": "California Gold Nutrition",
+      "price": "4.67",
+      "sku": "IHR-77548",
+      "slug": "california-gold-nutrition-vitamin-d3-50-mcg-2-000",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01179/u/191.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-vitamin-d3-50-mcg-2-000-iu-90-fish-gelatin-softgels/77548"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Vitamins"
+      ],
+      "benefits": "2,000 IU vitamin D3 per softgel\nSupports bones, teeth, and immune function\nA moderate daily dose",
+      "ingredients": "Per softgel: vitamin D3 (cholecalciferol) 50 mcg (2,000 IU, 250% DV). Other ingredients: safflower oil and fish gelatin softgel. Contains fish (tilapia). 90 servings.",
+      "how_to_use": "Take 1 softgel daily with food. Ask a clinician before use. Store cool and dry.",
+      "unit_weight": 50,
+      "meta_title": "California Gold Nutrition, Vitamin D3, 50 mcg (2,000 IU), 90 Fish Gelatin Softgels",
+      "meta_description": "Vitamin D3, 2,000 IU (50 mcg) per fish-gelatin softgel. A 90-count bottle. Cholecalciferol in safflower oil.",
+      "barcode": "898220011797"
+    },
+    {
+      "name": "California Gold Nutrition, Magnesium Bisglycinate, Formulated with TRAACS®, 60 Veg Capsules (100 mg per Capsule)",
+      "description": "The 60-capsule size of Albion TRAACS magnesium bisglycinate, 100 mg elemental magnesium per vegetarian capsule.",
+      "brand": "California Gold Nutrition",
+      "price": "8.49",
+      "sku": "IHR-103273",
+      "slug": "california-gold-nutrition-magnesium-bisglycinate-f",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01901/u/77.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-magnesium-bisglycinate-chelate-albion-traacs-60-veggie-capsules-100-mg-per-capsule/103273"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Minerals"
+      ],
+      "benefits": "Same chelated bisglycinate as the 240-count bottle\n200 mg elemental magnesium per 2 capsules\nA smaller bottle",
+      "ingredients": "Per 2 capsules: magnesium 200 mg (48% DV) from magnesium bisglycinate chelate and magnesium oxide. Other ingredients: hypromellose capsule, magnesium stearate, microcrystalline cellulose, silicon dioxide. 30 servings.",
+      "how_to_use": "Take 2 capsules daily with food. Ask a clinician first if pregnant, under 18, on medication, or under medical care.",
+      "unit_weight": 70,
+      "meta_title": "California Gold Nutrition, Magnesium Bisglycinate, Formulated with TRAACS®, 60 Veg Capsules (100 mg per Capsule)",
+      "meta_description": "The 60-capsule size of Albion TRAACS magnesium bisglycinate, 100 mg elemental magnesium per vegetarian capsule.",
+      "barcode": "898220019014"
+    },
+    {
+      "name": "Nature's Way, Alive!® Hair, Skin & Nails Gummies, Strawberry, 60 Gummies",
+      "description": "Strawberry pectin gummies with hydrolyzed collagen, biotin, and vitamins C and E. A 60-gummy bottle, 30 servings of 2 gummies. Not for children.",
+      "brand": "Nature's Way",
+      "price": "11.70",
+      "sku": "IHR-86731",
+      "slug": "nature-s-way-alive-hair-skin-nails-gummies-strawbe",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/nwy/nwy11534/u/72.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/nature-s-way-alive-hair-skin-nails-gummies-strawberry-60-gummies/86731"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Beauty"
+      ],
+      "benefits": "100 mg hydrolyzed collagen and 2,500 mcg biotin per 2 gummies\n135 mg vitamin C and 30 mg vitamin E per serving\nPlant-based pectin, strawberry flavor",
+      "ingredients": "Per 2 gummies: calories 20, carbohydrate 4 g, added sugars 3 g, vitamin C 135 mg, vitamin E 30 mg, biotin 2,500 mcg, sodium 10 mg, hydrolyzed collagen 100 mg, orchard fruit and garden vegetable powder blend 50 mg. Other ingredients: glucose syrup, sucrose, water, pectin, citric acid, sodium citrate, natural flavors, vegetable and fruit juice color, coconut oil, carnauba wax. 30 servings.",
+      "how_to_use": "Adults: chew 2 gummies daily. Not formulated for children. Biotin can interfere with lab tests, so tell a clinician before bloodwork. If pregnant, nursing, or on medication, ask first.",
+      "unit_weight": 230,
+      "meta_title": "Nature's Way, Alive!® Hair, Skin & Nails Gummies, Strawberry, 60 Gummies",
+      "meta_description": "Strawberry pectin gummies with hydrolyzed collagen, biotin, and vitamins C and E. A 60-gummy bottle, 30 servings of 2 gummies. Not for children."
+    },
+    {
+      "name": "Doctor's Best, High Absorption CoQ10, 100 mg, 120 Soft Gel Capsules",
+      "description": "Naturally fermented CoQ10, 100 mg per softgel, with 5 mg BioPerine black pepper extract. A 120-softgel bottle. Non-GMO and gluten free.",
+      "brand": "Doctor's Best",
+      "price": "19.60",
+      "sku": "IHR-10930",
+      "slug": "doctor-s-best-high-absorption-coq10-100-mg-120-sof",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/drb/drb00183/u/131.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/doctor-s-best-high-absorption-coq10-100-mg-120-softgels/10930"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Antioxidants"
+      ],
+      "benefits": "100 mg ubiquinone per softgel\nBioPerine is included to support absorption\nUsed for heart and cellular energy",
+      "ingredients": "Per softgel: coenzyme Q10 (ubiquinone) 100 mg, black pepper extract (95% piperine, BioPerine) 5 mg. Other ingredients: extra virgin olive oil, gelatin softgel, glycerin, purified water, beeswax, soy lecithin, rosemary extract. Contains soy. 120 servings.",
+      "how_to_use": "Adults: take 1 softgel daily, preferably with food. This is not a substitute for statin medicine. Store in a cool, dry place.",
+      "unit_weight": 90,
+      "meta_title": "Doctor's Best, High Absorption CoQ10, 100 mg, 120 Soft Gel Capsules",
+      "meta_description": "Naturally fermented CoQ10, 100 mg per softgel, with 5 mg BioPerine black pepper extract. A 120-softgel bottle. Non-GMO and gluten free.",
+      "barcode": "753950001831"
+    },
+    {
+      "name": "NOW Foods, Whole Psyllium Husks, 454 g (16 oz)",
+      "description": "Whole psyllium seed husks, a soluble fiber. A 454 g pouch, about 45 servings of 2 tablespoons. Non-GMO, vegan, and kosher.",
+      "brand": "NOW Foods",
+      "price": "12.10",
+      "sku": "IHR-37841",
+      "slug": "now-foods-whole-psyllium-husks-454-g-16-oz",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/now/now05981/u/22.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/now-foods-whole-psyllium-husks-16-oz-454-g/37841"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Fiber"
+      ],
+      "benefits": "7 g dietary fiber per serving, 6 g of it soluble\nTaken in water for regularity\nA single-ingredient husk",
+      "ingredients": "Per 2 level tablespoons (10 g): calories 35, total carbohydrate 8 g, dietary fiber 7 g (soluble 6 g, insoluble 1 g), sodium 10 mg, iron 1.7 mg, potassium 97 mg. Ingredient: psyllium seed husk. About 45 servings.",
+      "how_to_use": "Mix 1–2 level tablespoons into at least 12 oz of water or juice and drink it immediately. Start with less and increase over several weeks. Drink more fluid through the day. Do not take it if you have trouble swallowing. Taking it without enough liquid can cause choking.",
+      "unit_weight": 480,
+      "meta_title": "NOW Foods, Whole Psyllium Husks, 454 g (16 oz)",
+      "meta_description": "Whole psyllium seed husks, a soluble fiber. A 454 g pouch, about 45 servings of 2 tablespoons. Non-GMO, vegan, and kosher."
+    },
+    {
+      "name": "California Gold Nutrition, Glucosamine, Chondroitin, MSM Plus Hyaluronic Acid, 120 Veg Caps",
+      "description": "A joint formula with plant-based glucosamine, bovine chondroitin, OptiMSM, and hyaluronic acid. A 120-capsule bottle, two capsules a day. Formulated without gluten, GMOs, or soy.",
+      "brand": "California Gold Nutrition",
+      "price": "16.51",
+      "sku": "IHR-69436",
+      "slug": "california-gold-nutrition-glucosamine-chondroitin",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/cgn/cgn01071/u/95.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/california-gold-nutrition-glucosamine-chondroitin-msm-plus-hyaluronic-acid-120-veggie-caps/69436"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Joint Support"
+      ],
+      "benefits": "750 mg glucosamine, 600 mg chondroitin, 500 mg MSM, and 50 mg hyaluronic acid per 2 capsules\nGreenGrown plant glucosamine and OptiMSM\nA 60-day supply",
+      "ingredients": "Per 2 capsules: glucosamine HCl 750 mg, chondroitin sulfate 600 mg, MSM 500 mg, hyaluronic acid (sodium hyaluronate) 50 mg. Other ingredients: hypromellose capsule and magnesium stearate. 60 servings.",
+      "how_to_use": "Take 2 capsules daily, with or without food. Ask a clinician before use. Store cool and dry.",
+      "unit_weight": 160,
+      "meta_title": "California Gold Nutrition, Glucosamine, Chondroitin, MSM Plus Hyaluronic Acid, 120 Veg Caps",
+      "meta_description": "A joint formula with plant-based glucosamine, bovine chondroitin, OptiMSM, and hyaluronic acid. A 120-capsule bottle, two capsules a day. Formulated without gluten, GMOs, or soy.",
+      "barcode": "898220010714"
+    },
+    {
+      "name": "Sports Research, Omega-3 Fish Oil, Triple Strength, 180 soft gel capsules",
+      "description": "Wild-caught fish oil concentrate, 1,250 mg per softgel, with 1,055 mg omega-3 including 690 mg EPA and 310 mg DHA. A 180-softgel bottle in triglyceride form.",
+      "brand": "Sports Research",
+      "price": "62.18",
+      "sku": "IHR-113871",
+      "slug": "sports-research-omega-3-fish-oil-triple-strength-1",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/sre/sre09153/u/95.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/sports-research-omega-3-fish-oil-180-softgels/113871"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Omega-3"
+      ],
+      "benefits": "1,055 mg omega-3 per softgel\n690 mg EPA and 310 mg DHA\nOne softgel a day, third-party tested",
+      "ingredients": "Per softgel: wild-caught fish oil concentrate 1,250 mg, total omega-3 1,055 mg, EPA 690 mg, DHA 310 mg. Other ingredients: fish gelatin softgel (tilapia), vegetable glycerin, purified water, tocopherols. Contains fish (anchovy, sardine, mackerel). 180 servings.",
+      "how_to_use": "Adults: take 1 softgel daily with food. Ask a clinician first if pregnant, nursing, on blood thinners, or planning surgery. Store at room temperature.",
+      "unit_weight": 360,
+      "meta_title": "Sports Research, Omega-3 Fish Oil, Triple Strength, 180 soft gel capsules",
+      "meta_description": "Wild-caught fish oil concentrate, 1,250 mg per softgel, with 1,055 mg omega-3 including 690 mg EPA and 310 mg DHA. A 180-softgel bottle in triglyceride form."
+    },
+    {
+      "name": "Nutricost, L-Theanine, 200 mg, 120 capsules",
+      "description": "L-theanine, 200 mg per capsule. A 120-capsule bottle. The amino acid found in tea, used for calm focus. Non-GMO. The capsule is gelatin.",
+      "brand": "Nutricost",
+      "price": "7.95",
+      "sku": "IHR-140230",
+      "slug": "nutricost-l-theanine-200-mg-120-capsules",
+      "image_urls": [
+        "https://cloudinary.images-iherb.com/image/upload/f_auto,q_auto:eco/images/ncs/ncs67937/u/32.jpg"
+      ],
+      "supplier_order_urls": [
+        "https://uk.iherb.com/pr/nutricost-l-theanine-200-mg-120-capsules/140230"
+      ],
+      "category": "Supplements",
+      "subcategories": [
+        "Amino Acids"
+      ],
+      "benefits": "200 mg L-theanine per capsule\nA 120-day supply at one capsule a day\nThird-party tested",
+      "ingredients": "Per capsule: L-theanine 200 mg. Other ingredients: gelatin capsule, vegetable magnesium stearate, silica. 120 servings.",
+      "how_to_use": "Take 1 capsule daily with 8–12 oz of water. For adults 18 and older. Ask a clinician first if pregnant, nursing, taking medication, or under medical care.",
+      "unit_weight": 60,
+      "meta_title": "Nutricost, L-Theanine, 200 mg, 120 capsules",
+      "meta_description": "L-theanine, 200 mg per capsule. A 120-capsule bottle. The amino acid found in tea, used for calm focus. Non-GMO. The capsule is gelatin.",
+      "barcode": "810014679372"
+    }
+  ]
+}

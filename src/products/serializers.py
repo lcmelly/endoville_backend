@@ -9,6 +9,7 @@ from django.core.validators import URLValidator
 from django.db.models import Q
 from rest_framework import serializers
 
+from orders.models import Order
 from .models import (
     Brand,
     Category,
@@ -176,6 +177,7 @@ def reviews_for_viewer(product, request):
 class ProductReviewSerializer(serializers.ModelSerializer):
     user_display = serializers.SerializerMethodField()
     is_flagged = serializers.SerializerMethodField()
+    order = serializers.SlugRelatedField(slug_field="public_id", queryset=Order.objects.all())
 
     class Meta:
         model = ProductReview

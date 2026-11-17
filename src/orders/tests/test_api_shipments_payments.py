@@ -81,7 +81,7 @@ def test_payment_create_owner_only(api_client, order, other_user):
     api_client.force_authenticate(user=other_user)
     resp = api_client.post(
         "/api/orders/payments/",
-        {"order": order.id, "provider": "intasend", "method": "link"},
+        {"order": order.public_id, "provider": "intasend", "method": "link"},
         format="json",
     )
     assert resp.status_code == status.HTTP_403_FORBIDDEN
@@ -105,7 +105,7 @@ def test_payment_create_calls_provider_client(monkeypatch, api_client, order, us
     api_client.force_authenticate(user=user)
     resp = api_client.post(
         "/api/orders/payments/",
-        {"order": order.id, "provider": "intasend", "method": "link"},
+        {"order": order.public_id, "provider": "intasend", "method": "link"},
         format="json",
     )
     assert resp.status_code == status.HTTP_201_CREATED
@@ -122,7 +122,7 @@ def test_payment_create_cash_manual(api_client, order, user):
     api_client.force_authenticate(user=user)
     resp = api_client.post(
         "/api/orders/payments/",
-        {"order": order.id, "provider": "cash", "method": "manual"},
+        {"order": order.public_id, "provider": "cash", "method": "manual"},
         format="json",
     )
     assert resp.status_code == status.HTTP_201_CREATED
@@ -151,7 +151,7 @@ def test_payment_create_rejected_if_order_fully_paid(api_client, order, user):
     api_client.force_authenticate(user=user)
     resp = api_client.post(
         "/api/orders/payments/",
-        {"order": order.id, "provider": "cash", "method": "manual"},
+        {"order": order.public_id, "provider": "cash", "method": "manual"},
         format="json",
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -160,7 +160,7 @@ def test_payment_create_rejected_if_order_fully_paid(api_client, order, user):
 def test_user_can_cancel_own_unpaid_order(api_client, order, user):
     api_client.force_authenticate(user=user)
     resp = api_client.patch(
-        f"/api/orders/orders/{order.id}/",
+        f"/api/orders/orders/{order.public_id}/",
         {"status": "CANCELLED"},
         format="json",
     )
@@ -184,7 +184,7 @@ def test_user_cannot_cancel_paid_order(api_client, order, user):
 
     api_client.force_authenticate(user=user)
     resp = api_client.patch(
-        f"/api/orders/orders/{order.id}/",
+        f"/api/orders/orders/{order.public_id}/",
         {"status": "CANCELLED"},
         format="json",
     )
@@ -194,7 +194,7 @@ def test_user_cannot_cancel_paid_order(api_client, order, user):
 def test_staff_can_cancel_any_order(api_client, order, staff_user):
     api_client.force_authenticate(user=staff_user)
     resp = api_client.patch(
-        f"/api/orders/orders/{order.id}/",
+        f"/api/orders/orders/{order.public_id}/",
         {"status": "CANCELLED"},
         format="json",
     )

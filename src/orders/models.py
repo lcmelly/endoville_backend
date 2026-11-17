@@ -296,14 +296,27 @@ class Order(models.Model):
     is_fully_paid = models.BooleanField(default=False, db_index=True)
 
     notes = models.TextField(blank=True)
+    public_id = models.CharField(
+        max_length=32,
+        unique=True,
+        editable=False,
+        help_text="Unguessable id used in the API. Not a counter.",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Order #{self.id} - {self.user}"
+        return f"Order {self.public_id or self.pk} - {self.user}"
 
     def save(self, *args, **kwargs):
+        if not self.public_id:
+            from .public_ids import allocate_order_public_id
+
+            self.public_id = allocate_order_public_id()
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = set(update_fields) | {"public_id"}
         update_fields = kwargs.get("update_fields")
         writing_status = _writes_status(update_fields)
         previous_status = None
@@ -1380,3 +1393,27 @@ class OrderRefund(models.Model):
             return
         order = Order.objects.get(pk=self.order_id)
         order.derive_refunded_status()
+
+
+class CustomerMessage(models.Model):
+    """A shopper's message. The text is stored after tags and control characters are removed."""
+
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=16, blank=True)
+    message = models.TextField()
+    order = models.ForeignKey(
+        Order,
+        related_name="customer_messages",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Customer message"
+
+    def __str__(self):
+        contact = self.email or self.phone
+        return f"Message from {contact}"

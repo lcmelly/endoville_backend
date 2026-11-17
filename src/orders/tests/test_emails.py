@@ -87,7 +87,7 @@ def test_send_order_confirmation_email_uses_zeptomail_template(user, product, se
     assert call_kwargs["to_email"] == "john@example.com"
     assert call_kwargs["template_key"] == "order-template-key"
     assert call_kwargs["to_name"] == "John Doe"
-    assert call_kwargs["merge_data"]["order_id"] == str(order.id)
+    assert call_kwargs["merge_data"]["order_id"] == order.public_id
     assert call_kwargs["merge_data"]["checkout_url"] == "https://example.com/checkout"
     assert call_kwargs["merge_data"]["payment_invoice_id"] == "INV-123"
     assert call_kwargs["merge_data"]["shipping_address"]["full_name"] == "John Doe"

@@ -103,7 +103,7 @@ def test_staff_changes_to_orders_payments_prices_and_refunds_are_logged(api_clie
     payment = api_client.post(
         "/api/orders/staff/payments/",
         {
-            "order": order.id,
+            "order": order.public_id,
             "provider": PaymentProvider.CASH,
             "status": "completed",
             "amount": "10.00",
@@ -116,7 +116,7 @@ def test_staff_changes_to_orders_payments_prices_and_refunds_are_logged(api_clie
     order.refresh_from_db()
     assert order.status == OrderStatus.PROCESSING
 
-    removed = api_client.post(f"/api/orders/orders/{order.id}/items/{order.items.get().id}/remove/", {}, format="json")
+    removed = api_client.post(f"/api/orders/orders/{order.public_id}/items/{order.items.get().id}/remove/", {}, format="json")
     assert removed.status_code == status.HTTP_200_OK
 
     replaced_item = OrderItem.objects.create(
@@ -124,7 +124,7 @@ def test_staff_changes_to_orders_payments_prices_and_refunds_are_logged(api_clie
     )
     order.recalculate_totals()
     replaced = api_client.post(
-        f"/api/orders/orders/{order.id}/items/{replaced_item.id}/replace/",
+        f"/api/orders/orders/{order.public_id}/items/{replaced_item.id}/replace/",
         {"product": product.id, "quantity": 1},
         format="json",
     )
@@ -137,7 +137,7 @@ def test_staff_changes_to_orders_payments_prices_and_refunds_are_logged(api_clie
     )
     assert dispatched.status_code == status.HTTP_201_CREATED
 
-    cancelled = api_client.patch(f"/api/orders/orders/{order.id}/", {"status": "CANCELLED"}, format="json")
+    cancelled = api_client.patch(f"/api/orders/orders/{order.public_id}/", {"status": "CANCELLED"}, format="json")
     assert cancelled.status_code == status.HTTP_200_OK
     refund_id = order.refunds.order_by("-id").first().id
     completed = api_client.patch(

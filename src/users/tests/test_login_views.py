@@ -113,6 +113,27 @@ def test_login_view_invalid_credentials(api_client, active_user):
 
 
 @pytest.mark.django_db
+def test_login_view_rejects_otp_sent_to_a_different_email(api_client, active_user):
+    """A code sent to one account must not sign in a different email."""
+    other = User.objects.create_user(
+        email='other@example.com',
+        password='testpass123',
+        is_active=True,
+    )
+    otp = OTP.create_otp(email=active_user.email)
+
+    response = api_client.post(
+        '/api/users/login/',
+        {'email': other.email, 'otp': otp.otp},
+        format='json',
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'access' not in response.data
+    otp.refresh_from_db()
+    assert otp.is_used is False
+
+
 def test_login_view_invalid_otp(api_client, active_user):
     """Login view rejects invalid OTP (code login only)"""
     OTP.create_otp(email=active_user.email)

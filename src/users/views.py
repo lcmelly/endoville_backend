@@ -2,8 +2,9 @@
 API views for user management
 """
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
+from rest_framework.throttling import SimpleRateThrottle
 from django.contrib.auth import get_user_model
 
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, BasePermission
@@ -16,6 +17,8 @@ from .serializers import (
     ResendOTPSerializer,
     RequestLoginOTPSerializer,
     LoginSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
     UserSerializer,
     UserProfileSerializer,
     StaffAccountSerializer,
@@ -143,9 +146,9 @@ def send_otp_view(request):
         from .utils import send_otp_email
         
         otp_instance = OTP.create_otp(email=user.email)
-        user_name = user.get_full_name() or user.email
+        user_name = user.get_full_name() or otp_instance.email
         send_otp_email(
-            email=user.email,
+            email=otp_instance.email,
             otp_code=otp_instance.otp,
             name=user_name,
             action="Activate your account",
@@ -155,7 +158,7 @@ def send_otp_view(request):
         return Response(
             {
                 'message': 'OTP has been sent to your email address.',
-                'email': user.email
+                'email': otp_instance.email
             },
             status=status.HTTP_200_OK
         )
@@ -179,9 +182,9 @@ def request_login_otp_view(request):
         from .utils import send_otp_email
 
         otp_instance = OTP.create_otp(email=user.email)
-        user_name = user.get_full_name() or user.email
+        user_name = user.get_full_name() or otp_instance.email
         send_otp_email(
-            email=user.email,
+            email=otp_instance.email,
             otp_code=otp_instance.otp,
             name=user_name,
             action="Sign in to your account",
@@ -190,7 +193,7 @@ def request_login_otp_view(request):
         return Response(
             {
                 'message': 'OTP has been sent to your email address.',
-                'email': user.email,
+                'email': otp_instance.email,
             },
             status=status.HTTP_200_OK,
         )
@@ -242,6 +245,64 @@ def login_view(request):
         )
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PasswordResetThrottle(SimpleRateThrottle):
+    scope = "password_reset"
+
+    def get_cache_key(self, request, view):
+        return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([PasswordResetThrottle])
+def password_reset_request_view(request):
+    """
+    Email a password reset link.
+
+    POST /api/users/password-reset/
+    Body: { "email": "user@example.com" }
+
+    The message is sent only to an existing active account's own email.
+    The response is the same when no account matches, so the call does not
+    reveal which addresses are registered.
+    """
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    user = serializer.validated_data.get("_user")
+    if user is not None and user.is_active and user.email:
+        from .utils import send_password_reset_email
+
+        send_password_reset_email(user)
+
+    return Response(
+        {"message": "A password reset link has been sent to your email address."},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([PasswordResetThrottle])
+def password_reset_confirm_view(request):
+    """
+    Set a new password from the link in the reset email.
+
+    POST /api/users/password-reset/confirm/
+    Body: { "uid": "...", "token": "...", "password": "newpassword123" }
+    """
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer.save()
+    return Response(
+        {"message": "Password updated. You can sign in with your new password."},
+        status=status.HTTP_200_OK,
+    )
 
 
 @api_view(['POST'])

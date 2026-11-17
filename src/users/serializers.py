@@ -3,10 +3,36 @@ Serializers for User and OTP models
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import OTP
+from .models import OTP, normalize_email_address
 from .roles import STAFF_ROLES
 
 User = get_user_model()
+
+
+def user_for_email(email):
+    """Return the one account whose address matches this email."""
+    normalized = normalize_email_address(email)
+    if not normalized:
+        return None
+    matches = [
+        user
+        for user in User.objects.filter(email__iexact=normalized)
+        if normalize_email_address(user.email) == normalized
+    ]
+    if len(matches) != 1:
+        return None
+    return matches[0]
+
+
+def otp_matches_login_email(otp, user, email):
+    """True only when the code, the account, and the submitted address are the same."""
+    normalized = normalize_email_address(email)
+    if otp is None or user is None or not normalized:
+        return False
+    return (
+        normalize_email_address(otp.email) == normalized
+        and normalize_email_address(user.email) == normalized
+    )
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -97,7 +123,7 @@ class VerifyOTPSerializer(serializers.Serializer):
 
     def validate(self, data):
         """Validate OTP is valid"""
-        email = data.get('email', '').strip().lower()
+        email = normalize_email_address(data.get('email', ''))
         phone = data.get('phone', '').strip()
         otp_code = data.get('otp')
 
@@ -107,7 +133,9 @@ class VerifyOTPSerializer(serializers.Serializer):
         # Find OTP record
         try:
             if email:
-                otp = OTP.objects.get(email=email, is_used=False)
+                otp = OTP.unused_for_email(email)
+                if otp is None or normalize_email_address(otp.email) != email:
+                    raise OTP.DoesNotExist
             else:
                 otp = OTP.objects.get(phone=phone, is_used=False)
         except OTP.DoesNotExist:
@@ -158,7 +186,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'email': 'Email is required'})
         
         # Check if user already exists
-        if User.objects.filter(email=email).exists():
+        if User.objects.filter(email__iexact=email).exists():
             raise serializers.ValidationError({'email': 'A user with this email already exists.'})
         
         data['email'] = email
@@ -194,10 +222,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         otp_instance = OTP.create_otp(email=user.email)
         user_name = user.get_full_name() or user.email
         send_otp_email(
-            email=user.email,
+            email=otp_instance.email,
             otp_code=otp_instance.otp,
             name=user_name,
-            action="Activate your account?",
+            action="Activate your account",
             purpose="activation",
         )
         
@@ -218,26 +246,24 @@ class ActivateAccountSerializer(serializers.Serializer):
 
     def validate(self, data):
         """Validate OTP and find user"""
-        email = data.get('email', '').strip().lower()
+        email = normalize_email_address(data.get('email', ''))
         otp_code = data.get('otp')
 
         if not email:
             raise serializers.ValidationError({'email': 'Email is required'})
 
         # Find user
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+        user = user_for_email(email)
+        if user is None:
             raise serializers.ValidationError({'email': 'User with this email does not exist.'})
 
         # Check if already activated
         if user.is_active:
             raise serializers.ValidationError({'email': 'Account is already activated.'})
 
-        # Find and verify OTP
-        try:
-            otp = OTP.objects.get(email=email, is_used=False)
-        except OTP.DoesNotExist:
+        # Find and verify OTP issued to this same address
+        otp = OTP.unused_for_email(email)
+        if not otp_matches_login_email(otp, user, email):
             raise serializers.ValidationError({'otp': 'No valid OTP found. Please request a new one.'})
 
         # Verify OTP code
@@ -266,15 +292,14 @@ class ResendOTPSerializer(serializers.Serializer):
 
     def validate(self, data):
         """Validate user exists and is not activated"""
-        email = data.get('email', '').strip().lower()
+        email = normalize_email_address(data.get('email', ''))
 
         if not email:
             raise serializers.ValidationError({'email': 'Email is required'})
 
         # Find user
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+        user = user_for_email(email)
+        if user is None:
             raise serializers.ValidationError({'email': 'User with this email does not exist.'})
 
 
@@ -297,13 +322,12 @@ class RequestLoginOTPSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
     def validate(self, data):
-        email = data.get('email', '').strip().lower()
+        email = normalize_email_address(data.get('email', ''))
         if not email:
             raise serializers.ValidationError({'email': 'Email is required.'})
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+        user = user_for_email(email)
+        if user is None:
             raise serializers.ValidationError({'email': 'User with this email does not exist.'})
 
         if not user.is_active:
@@ -327,7 +351,7 @@ class LoginSerializer(serializers.Serializer):
     otp = serializers.CharField(max_length=6, required=False, allow_blank=True)
 
     def validate(self, data):
-        email = (data.get('email') or '').strip().lower()
+        email = normalize_email_address(data.get('email'))
         password = (data.get('password') or '').strip()
         otp_code = (data.get('otp') or '').strip()
 
@@ -342,9 +366,8 @@ class LoginSerializer(serializers.Serializer):
                 {'non_field_errors': ['Provide either password or code to login.']}
             )
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+        user = user_for_email(email)
+        if user is None:
             raise serializers.ValidationError({'email': 'Invalid email or password.'})
 
         if not user.is_active:
@@ -358,10 +381,9 @@ class LoginSerializer(serializers.Serializer):
             data['_user'] = user
             return data
 
-        # Code (OTP) login
-        try:
-            otp = OTP.objects.get(email=email, is_used=False)
-        except OTP.DoesNotExist:
+        # Code login only accepts the OTP issued to this same address.
+        otp = OTP.unused_for_email(email)
+        if not otp_matches_login_email(otp, user, email):
             raise serializers.ValidationError(
                 {'otp': 'No valid OTP found. Please request a new one.'}
             )
@@ -454,3 +476,55 @@ class StaffAccountSerializer(serializers.Serializer):
         if value is None or value == "":
             return None
         return value
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Ask for a reset link. The view emails it only when this address is an account."""
+
+    email = serializers.EmailField(required=True)
+
+    def validate(self, data):
+        email = normalize_email_address(data.get("email"))
+        if not email:
+            raise serializers.ValidationError({"email": "Email is required."})
+        data["email"] = email
+        data["_user"] = user_for_email(email)
+        return data
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Set a new password from the uid and token in the reset link."""
+
+    uid = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
+    password = serializers.CharField(write_only=True, min_length=8, required=True)
+
+    def validate(self, data):
+        from django.contrib.auth.password_validation import validate_password
+        from django.contrib.auth.tokens import default_token_generator
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        from django.utils.encoding import force_str
+        from django.utils.http import urlsafe_base64_decode
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(data["uid"]))
+            user = User.objects.get(pk=user_id)
+        except (User.DoesNotExist, ValueError, TypeError, OverflowError):
+            raise serializers.ValidationError({"token": "This reset link is invalid or has expired."})
+
+        if not user.is_active or not user.email or not default_token_generator.check_token(user, data["token"]):
+            raise serializers.ValidationError({"token": "This reset link is invalid or has expired."})
+
+        try:
+            validate_password(data["password"], user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": list(exc.messages)})
+
+        data["_user"] = user
+        return data
+
+    def save(self):
+        user = self.validated_data["_user"]
+        user.set_password(self.validated_data["password"])
+        user.save(update_fields=["password"])
+        return user

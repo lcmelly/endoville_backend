@@ -1,0 +1,174 @@
+<!--
+  ZeptoMail — Order confirmation
+  Template key env: ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY
+  Sent only after a payment first becomes completed.
+  Paste into the template HTML / source view.
+
+  Merge keys from send_order_confirmation_email():
+    name, team, support_email, support_phone, current_year,
+    order_id, order_date, order_status, product_name,
+    currency, subtotal, shipping_fee, total,
+    payment_status, payment_status_color, payment_provider, payment_invoice_id, checkout_url,
+    carrier, tracking_number, tracking_url, image_url,
+    item.product_name, item.variant_description, item.barcode,
+    item.quantity, item.unit_price, item.line_total, item.image_url,
+    shipping_address.full_name, shipping_address.phone, shipping_address.email,
+    shipping_address.address_line_1, shipping_address.address_line_2,
+    shipping_address.city, shipping_address.postal_code, shipping_address.country
+
+  product_name is the first line, plus " +N more" when the order has extra items.
+  item.* is that first line only. image_url is available if you add an <img>.
+  Tracking fields are empty until a shipment exists.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order confirmed</title>
+</head>
+<body style="margin:0;padding:0;background-color:#F4F0F2;">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F4F0F2;">
+    Order {{order_id}} is confirmed. We are preparing it now.
+  </div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#F4F0F2" style="background-color:#F4F0F2;width:100%;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;background-color:#ffffff;">
+          <tr>
+            <td height="4" bgcolor="#C4A574" style="height:4px;background-color:#C4A574;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td bgcolor="#361340" align="center" style="background-color:#361340;padding:36px 40px 32px;">
+              <img src="https://endovillehealth.com/logo_dark.png" width="180" height="45" alt="{{team}}" style="display:block;margin:0 auto;border:0;outline:none;text-decoration:none;width:180px;height:45px;">
+              <p style="margin:12px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.4;letter-spacing:2.4px;text-transform:uppercase;color:#C4A574;">Order confirmed</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:36px 40px 8px;font-family:Georgia,'Times New Roman',Times,serif;font-size:28px;line-height:1.25;color:#241820;">
+              Thank you, {{name}}.
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 40px 0;font-family:Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#6E646A;">
+              Payment is complete and order <strong style="color:#241820;">{{order_id}}</strong> is in our hands. Placed {{order_date}}.
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 40px 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="padding:6px 12px;border:1px solid #E8E0E4;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#361340;">
+                    {{order_status}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 40px 0;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:#8A8086;">
+              Your order
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 40px 0;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-top:1px solid #E8E0E4;border-bottom:1px solid #E8E0E4;">
+                <tr>
+                  <td valign="top" style="padding:16px 12px 16px 0;">
+                    <p style="margin:0;font-family:Georgia,'Times New Roman',Times,serif;font-size:16px;line-height:1.35;color:#241820;">{{product_name}}</p>
+                    <p style="margin:6px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#6E646A;">{{item.variant_description}}</p>
+                    <p style="margin:6px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#8A8086;">Qty {{item.quantity}} &middot; {{currency}} {{item.unit_price}} each</p>
+                  </td>
+                  <td width="120" valign="top" align="right" style="width:120px;padding:16px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:#361340;">
+                    {{currency}} {{item.line_total}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 40px 0;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#6E646A;">Subtotal</td>
+                  <td align="right" style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#241820;">{{currency}} {{subtotal}}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#6E646A;">Shipping</td>
+                  <td align="right" style="padding:8px 0;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#241820;">{{currency}} {{shipping_fee}}</td>
+                </tr>
+                <tr>
+                  <td bgcolor="#F8F5F6" style="padding:16px 18px;background-color:#F8F5F6;font-family:Helvetica,Arial,sans-serif;font-size:13px;letter-spacing:0.6px;text-transform:uppercase;color:#6E646A;">Total paid</td>
+                  <td bgcolor="#F8F5F6" align="right" style="padding:16px 18px;background-color:#F8F5F6;font-family:Georgia,'Times New Roman',Times,serif;font-size:20px;color:#361340;">{{currency}} {{total}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 40px 0;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td width="50%" valign="top" style="width:50%;padding-right:12px;">
+                    <p style="margin:0 0 8px;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:#8A8086;">Ship to</p>
+                    <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#241820;">
+                      {{shipping_address.full_name}}<br>
+                      {{shipping_address.address_line_1}}<br>
+                      {{shipping_address.address_line_2}}<br>
+                      {{shipping_address.city}} {{shipping_address.postal_code}}<br>
+                      {{shipping_address.country}}<br>
+                      {{shipping_address.phone}}
+                    </p>
+                  </td>
+                  <td width="50%" valign="top" style="width:50%;padding-left:12px;">
+                    <p style="margin:0 0 8px;font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:#8A8086;">Payment</p>
+                    <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#241820;">
+                      <span style="color:{{payment_status_color}};font-weight:600;">{{payment_status}}</span><br>
+                      {{payment_provider}}<br>
+                      {{payment_invoice_id}}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 40px 0;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#F8F5F6" style="background-color:#F8F5F6;">
+                <tr>
+                  <td style="padding:16px 18px;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6E646A;">
+                    <span style="letter-spacing:1.4px;text-transform:uppercase;font-size:11px;color:#8A8086;">Shipment</span><br>
+                    These details appear once the order ships.<br>
+                    Carrier: {{carrier}}<br>
+                    Tracking number: {{tracking_number}}<br>
+                    Tracking link: {{tracking_url}}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 40px 32px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-top:1px solid #E8E0E4;">
+                <tr>
+                  <td style="padding-top:20px;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6E646A;">
+                    Need a hand with this order? Write to
+                    <a href="mailto:{{support_email}}" style="color:#361340;text-decoration:none;">{{support_email}}</a>
+                    or call
+                    <a href="tel:{{support_phone}}" style="color:#361340;text-decoration:none;">{{support_phone}}</a>.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="#361340" style="background-color:#361340;padding:22px 40px;">
+              <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#E4D5C4;">You are receiving this because a payment was completed at {{team}}.</p>
+              <p style="margin:14px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:11px;line-height:1.5;color:#C4A574;">&copy; {{current_year}} {{team}}. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

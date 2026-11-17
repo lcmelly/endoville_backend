@@ -39,7 +39,7 @@ class CustomUserManager(BaseUserManager):
 
         # Normalize and set email and phone if provided
         if email:
-            email = self.normalize_email(email)
+            email = normalize_email_address(self.normalize_email(email))
         if phone:
             phone_validator = RegexValidator(regex=r'^\+?1?\d{9,17}$', message="Phone number must be entered in the format: '+1299999999'. Up to 17 digits allowed.")
             phone_validator(phone)
@@ -119,6 +119,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         """Override save to ensure clean is called."""
+        if self.email:
+            self.email = normalize_email_address(self.email)
         self.full_clean()
         super().save(*args, **kwargs)
         if self.is_staff and not kwargs.get("raw"):
@@ -155,6 +157,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             return age
         return None
 
+
+
+def normalize_email_address(value):
+    """Return the email used for OTP delivery and login checks."""
+    return (value or "").strip().lower()
 
 
 class OTP(models.Model):
@@ -209,9 +216,9 @@ class OTP(models.Model):
         if not email and not phone:
             raise ValueError('Either email or phone number must be provided.')
         if email:
-            email = email.lower()
+            email = normalize_email_address(email)
             # Delete existing OTP for the same email
-            cls.objects.filter(email=email).delete()
+            cls.objects.filter(email__iexact=email).delete()
         if phone:
             # Delete existing OTP for the same phone number
             cls.objects.filter(phone=phone).delete()
@@ -219,7 +226,22 @@ class OTP(models.Model):
         # Create a new OTP instance
         code = cls.generate_code()
         expires_at = timezone.now() + timedelta(minutes=5)
-        return cls.objects.create(email=email, phone=phone, otp=cls.generate_code(), expires_at=expires_at)
+        return cls.objects.create(email=email, phone=phone, otp=code, expires_at=expires_at)
+
+    @classmethod
+    def unused_for_email(cls, email):
+        """Return the single unused OTP issued to this email, if there is one."""
+        normalized = normalize_email_address(email)
+        if not normalized:
+            return None
+        rows = [
+            otp
+            for otp in cls.objects.filter(email__iexact=normalized, is_used=False)
+            if normalize_email_address(otp.email) == normalized
+        ]
+        if len(rows) != 1:
+            return None
+        return rows[0]
 
     def is_expired(self):
         """Check if OTP has expired"""

@@ -94,12 +94,12 @@ class IntaSendAPI:
             order = payment.order
             ship = getattr(order, "shipping_address", None)
             phone_number = phone_number or (getattr(ship, "phone", None) or "")
-            email = email or (getattr(ship, "email", None) or "") or f"order-{order.id}@endovillehealth.com"
+            email = email or (getattr(ship, "email", None) or "") or f"order-{order.public_id}@endovillehealth.com"
             if phone_number:
                 phone_number = self._format_phone_number(phone_number)
 
             redirect_url = self._get_redirect_url(payment)
-            comment = f"Order #{order.id}"
+            comment = f"Order {order.public_id}"
 
             response = self.service.collect.checkout(
                 phone_number=phone_number or None,
@@ -167,8 +167,8 @@ class IntaSendAPI:
         """
         try:
             order = payment.order
-            email = email or getattr(order.shipping_address, "email", None) or f"order-{order.id}@endovillehealth.com"
-            narrative = narrative or f"Order #{order.id}"
+            email = email or getattr(order.shipping_address, "email", None) or f"order-{order.public_id}@endovillehealth.com"
+            narrative = narrative or f"Order {order.public_id}"
 
             phone_number = self._format_phone_number(phone_number)
             amount_kes = self._amount_to_kes(Decimal(str(payment.amount)), payment.currency)

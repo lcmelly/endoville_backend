@@ -11,14 +11,18 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from rest_framework import mixins, status, viewsets
 from rest_framework.permissions import AllowAny, SAFE_METHODS
+from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError as SerializerValidationError
 
 from .currency_utils import order_total_in_currency, snapshot_usd_rate
+from .customer_messages import CustomerMessageReadSerializer, CustomerMessageSerializer, MESSAGE_MAX_LENGTH
 from .models import (
     CLOSED_PAYMENT_STATUSES,
     Cart,
+    CustomerMessage,
     CartItem,
     Order,
     OrderItem,
@@ -76,6 +80,8 @@ from .serializers import (
 
 
 class OrderViewSet(viewsets.ModelViewSet):
+    lookup_field = "public_id"
+    lookup_url_kwarg = "pk"
     """
     Users can create and view their own orders.
     Staff can view/manage all orders.
@@ -710,6 +716,61 @@ def intasend_test_connection(request):
             {"status": "error", "message": str(e)},
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
+
+
+class CustomerMessageThrottle(SimpleRateThrottle):
+    """Five message submissions per hour for one IP address."""
+
+    scope = "customer_messages"
+
+    def get_cache_key(self, request, view):
+        if request.method != "POST":
+            return None
+        return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}
+
+
+class CustomerMessageView(APIView):
+    """
+    Anyone can send a message.
+    A submission needs an email or a phone number, a short message, and a captcha token.
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get_throttles(self):
+        if self.request.method == "POST":
+            return [CustomerMessageThrottle()]
+        return []
+
+    def get(self, request):
+        return Response(
+            {
+                "message_max_length": MESSAGE_MAX_LENGTH,
+                "captcha_site_key": getattr(settings, "CUSTOMER_MESSAGE_CAPTCHA_SITE_KEY", ""),
+                "captcha_provider": "turnstile",
+            }
+        )
+
+    def post(self, request):
+        serializer = CustomerMessageSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        try:
+            message = serializer.save()
+        except SerializerValidationError as exc:
+            return Response(exc.detail, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            CustomerMessageReadSerializer(message).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class StaffCustomerMessageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """Staff read customer messages. Shoppers cannot list them."""
+
+    permission_classes = [IsStaffOnly]
+    serializer_class = CustomerMessageReadSerializer
+    queryset = CustomerMessage.objects.select_related("order").order_by("-created_at")
 
 
 class ShippingRatesView(APIView):

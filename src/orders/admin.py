@@ -2,6 +2,7 @@ from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
 
 from .models import (
+    CustomerMessage,
     Order,
     OrderItem,
     OrderPayment,
@@ -51,9 +52,10 @@ class ShippingAddressAdmin(ImportExportModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(ImportExportModelAdmin):
-    list_display = ["id", "user", "status", "warehouse", "total", "created_at", "updated_at"]
+    list_display = ["public_id", "user", "status", "warehouse", "total", "created_at", "updated_at"]
     list_filter = ["status", "warehouse", "created_at"]
-    search_fields = ["id", "user__email", "user__phone", "warehouse__name"]
+    search_fields = ["public_id", "user__email", "user__phone", "warehouse__name"]
+    readonly_fields = ["public_id"]
     ordering = ["-created_at"]
     inlines = [OrderItemInline]
     raw_id_fields = ["user", "shipping_address", "warehouse"]
@@ -64,7 +66,7 @@ class OrderAdmin(ImportExportModelAdmin):
 class ShipmentAdmin(ImportExportModelAdmin):
     list_display = ["order", "status", "carrier", "tracking_number", "updated_at"]
     list_filter = ["status", "carrier", "updated_at"]
-    search_fields = ["order__id", "tracking_number", "carrier"]
+    search_fields = ["order__public_id", "tracking_number", "carrier"]
     ordering = ["-created_at"]
     inlines = [ShipmentEventInline]
     raw_id_fields = ["order"]
@@ -75,7 +77,7 @@ class ShipmentAdmin(ImportExportModelAdmin):
 class OrderItemAdmin(ImportExportModelAdmin):
     list_display = ["order", "product_name", "availability", "quantity", "unit_price", "line_total"]
     list_filter = ["availability"]
-    search_fields = ["order__id", "product_name", "barcode", "availability_note"]
+    search_fields = ["order__public_id", "product_name", "barcode", "availability_note"]
     ordering = ["-id"]
     raw_id_fields = ["order", "product", "variant", "replaces", "decided_by"]
     list_select_related = ["order", "product", "variant"]
@@ -102,7 +104,7 @@ class PaymentCredentialsAdmin(ImportExportModelAdmin):
 class OrderRefundAdmin(ImportExportModelAdmin):
     list_display = ["order", "payment", "status", "amount", "currency", "transaction_id", "reason", "completed_at", "updated_at"]
     list_filter = ["status", "currency", "created_at"]
-    search_fields = ["order__id", "payment__provider_payment_id", "transaction_id", "provider_refund_id", "reason"]
+    search_fields = ["order__public_id", "payment__provider_payment_id", "transaction_id", "provider_refund_id", "reason"]
     ordering = ["-created_at"]
     raw_id_fields = ["order", "payment", "initiated_by"]
     list_select_related = ["order", "payment", "initiated_by"]
@@ -112,7 +114,18 @@ class OrderRefundAdmin(ImportExportModelAdmin):
 class OrderPaymentAdmin(ImportExportModelAdmin):
     list_display = ["order", "provider", "status", "amount", "currency", "transaction_id", "updated_at"]
     list_filter = ["provider", "status", "created_at", "updated_at"]
-    search_fields = ["order__id", "transaction_id", "provider_payment_id", "provider_invoice_id"]
+    search_fields = ["order__public_id", "transaction_id", "provider_payment_id", "provider_invoice_id"]
     ordering = ["-created_at"]
     raw_id_fields = ["order"]
     list_select_related = ["order"]
+
+
+@admin.register(CustomerMessage)
+class CustomerMessageAdmin(admin.ModelAdmin):
+    list_display = ["created_at", "email", "phone", "order", "message"]
+    search_fields = ["email", "phone", "message", "order__public_id"]
+    raw_id_fields = ["order"]
+    readonly_fields = ["email", "phone", "message", "order", "created_at"]
+
+    def has_add_permission(self, request):
+        return False

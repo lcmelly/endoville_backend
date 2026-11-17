@@ -25,6 +25,9 @@
         <loc>https://api.endovillehealth.com/api/login/</loc>
       </url>
       <url>
+        <loc>https://api.endovillehealth.com/api/password-reset/</loc>
+      </url>
+      <url>
         <loc>https://api.endovillehealth.com/api/google-login/</loc>
       </url>
       <url>
@@ -53,6 +56,9 @@
       </url>
       <url>
         <loc>https://api.endovillehealth.com/api/shipping-rates/</loc>
+      </url>
+      <url>
+        <loc>https://api.endovillehealth.com/api/messages/</loc>
       </url>
       <url>
         <loc>https://api.endovillehealth.com/api/warehouses/</loc>

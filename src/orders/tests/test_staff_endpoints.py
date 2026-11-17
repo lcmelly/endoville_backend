@@ -102,7 +102,7 @@ def test_staff_cannot_record_payment_for_cancelled_or_fully_paid_order(api_clien
 
     api_client.force_authenticate(user=staff_user)
     payload = {
-        "order": order.id,
+        "order": order.public_id,
         "provider": PaymentProvider.CASH,
         "status": "completed",
         "amount": "10.00",
@@ -201,7 +201,7 @@ def test_staff_new_payment_checks_open_stripe_sessions(api_client, staff_user, o
     resp = api_client.post(
         "/api/orders/staff/payments/",
         {
-            "order": order.id,
+            "order": order.public_id,
             "provider": PaymentProvider.CASH,
             "status": "completed",
             "amount": "10.00",
@@ -220,7 +220,7 @@ def test_staff_new_payment_checks_open_stripe_sessions(api_client, staff_user, o
 def test_staff_payment_transaction_id_is_optional_and_unique_when_set(api_client, staff_user, order):
     api_client.force_authenticate(user=staff_user)
     payload = {
-        "order": order.id,
+        "order": order.public_id,
         "provider": PaymentProvider.CASH,
         "status": "pending",
         "amount": "1.00",
@@ -251,7 +251,7 @@ def test_staff_payment_transaction_id_is_optional_and_unique_when_set(api_client
     row = next(item for item in listed.json() if item["id"] == created.json()["id"])
     assert row["transaction_id"] == "txn-unique-1"
 
-    order_body = api_client.get(f"/api/orders/orders/{order.id}/")
+    order_body = api_client.get(f"/api/orders/orders/{order.public_id}/")
     assert order_body.status_code == status.HTTP_200_OK
     assert order_body.json()["payments"][0]["transaction_id"] == "txn-unique-1"
 
@@ -326,7 +326,7 @@ def test_staff_refund_initiated_then_completed_reflects_on_order(api_client, sta
     body = resp.json()
     assert body["status"] == RefundStatus.INITIATED
     assert body["amount"] == "10.00"
-    assert body["order"] == order.id
+    assert body["order"] == order.public_id
     assert body["initiated_by"] == staff_user.id
     assert body["transaction_id"] == "txn-cancel-1"
     assert body["reason"] == "Customer cancelled after paying"
@@ -337,7 +337,7 @@ def test_staff_refund_initiated_then_completed_reflects_on_order(api_client, sta
     assert order.status == OrderStatus.CANCELLED
     assert order.is_fully_paid is True
 
-    order_resp = api_client.get(f"/api/orders/orders/{order.id}/")
+    order_resp = api_client.get(f"/api/orders/orders/{order.public_id}/")
     assert order_resp.status_code == status.HTTP_200_OK
     refunds = order_resp.json()["refunds"]
     assert len(refunds) == 1
@@ -493,7 +493,7 @@ def test_marking_order_refunded_writes_refund_records(api_client, staff_user, or
     )
     api_client.force_authenticate(user=staff_user)
     resp = api_client.patch(
-        f"/api/orders/orders/{order.id}/",
+        f"/api/orders/orders/{order.public_id}/",
         {"status": "REFUNDED"},
         format="json",
     )
@@ -522,7 +522,7 @@ def test_marking_order_refunded_derives_status_after_every_payment(api_client, s
         order=order, provider=PaymentProvider.CASH, status=PaymentStatus.COMPLETED, amount="4.00", currency="KES"
     )
     api_client.force_authenticate(user=staff_user)
-    resp = api_client.patch(f"/api/orders/orders/{order.id}/", {"status": "REFUNDED"}, format="json")
+    resp = api_client.patch(f"/api/orders/orders/{order.public_id}/", {"status": "REFUNDED"}, format="json")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["status"] == OrderStatus.REFUNDED
     assert len(resp.json()["refunds"]) == 2
@@ -677,7 +677,7 @@ def test_staff_can_create_order_for_customer(api_client, staff_user, user):
 
     from orders.models import Order
 
-    order = Order.objects.get(pk=body["id"])
+    order = Order.objects.get(public_id=body["id"])
     assert order.user_id == user.id
     assert order.shipping_address.user_id == user.id
     customer_cart.refresh_from_db()
@@ -793,11 +793,11 @@ def test_staff_remove_unavailable_product_issues_partial_refund(api_client, staf
     )
 
     api_client.force_authenticate(user=user)
-    denied = api_client.post(f"/api/orders/orders/{order.id}/items/{removed.id}/remove/", format="json")
+    denied = api_client.post(f"/api/orders/orders/{order.public_id}/items/{removed.id}/remove/", format="json")
     assert denied.status_code == status.HTTP_403_FORBIDDEN
 
     api_client.force_authenticate(user=staff_user)
-    resp = api_client.post(f"/api/orders/orders/{order.id}/items/{removed.id}/remove/", format="json")
+    resp = api_client.post(f"/api/orders/orders/{order.public_id}/items/{removed.id}/remove/", format="json")
     assert resp.status_code == status.HTTP_200_OK
     body = resp.json()
     assert body["total"] == "20.00"
@@ -843,7 +843,7 @@ def test_staff_replace_product_refunds_the_price_difference(api_client, staff_us
 
     api_client.force_authenticate(user=staff_user)
     resp = api_client.post(
-        f"/api/orders/orders/{order.id}/items/{line.id}/replace/",
+        f"/api/orders/orders/{order.public_id}/items/{line.id}/replace/",
         {"product": cheaper.id},
         format="json",
     )
@@ -887,7 +887,7 @@ def test_replacing_with_a_dearer_product_does_not_refund(api_client, staff_user,
 
     api_client.force_authenticate(user=staff_user)
     resp = api_client.post(
-        f"/api/orders/orders/{order.id}/items/{line.id}/replace/",
+        f"/api/orders/orders/{order.public_id}/items/{line.id}/replace/",
         {"product": dearer.id},
         format="json",
     )
@@ -926,7 +926,7 @@ def test_shipping_waits_until_every_item_is_confirmed_unavailable_or_replaced(ap
     assert order.status == OrderStatus.PROCESSING
 
     confirmed = api_client.post(
-        f"/api/orders/orders/{order.id}/items/{ready.id}/confirm/",
+        f"/api/orders/orders/{order.public_id}/items/{ready.id}/confirm/",
         {"note": "Packed"},
         format="json",
     )
@@ -935,7 +935,7 @@ def test_shipping_waits_until_every_item_is_confirmed_unavailable_or_replaced(ap
     assert confirmed.json()["items"][0]["availability_note"] == "Packed"
 
     unavailable = api_client.post(
-        f"/api/orders/orders/{order.id}/items/{absent.id}/unavailable/",
+        f"/api/orders/orders/{order.public_id}/items/{absent.id}/unavailable/",
         {"note": "Supplier is out"},
         format="json",
     )
@@ -947,7 +947,7 @@ def test_shipping_waits_until_every_item_is_confirmed_unavailable_or_replaced(ap
     assert missing_line["availability_note"] == "Supplier is out"
 
     swapped = api_client.post(
-        f"/api/orders/orders/{order.id}/items/{ready.id}/replace/",
+        f"/api/orders/orders/{order.public_id}/items/{ready.id}/replace/",
         {"product": replacement.id, "quantity": 1},
         format="json",
     )
@@ -974,6 +974,6 @@ def test_completed_order_lines_stay_unchanged(api_client, staff_user, user):
     )
 
     api_client.force_authenticate(user=staff_user)
-    resp = api_client.post(f"/api/orders/orders/{order.id}/items/{line.id}/remove/", format="json")
+    resp = api_client.post(f"/api/orders/orders/{order.public_id}/items/{line.id}/remove/", format="json")
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
     assert OrderItem.objects.filter(pk=line.id).exists()

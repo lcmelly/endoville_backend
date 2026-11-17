@@ -31,7 +31,7 @@ If you have not called the API before, start with [Get started](../guides/gettin
 
     ---
 
-    Cart, orders, the receiving warehouse, payments, and shipments.
+    Cart, orders, messages, the receiving warehouse, payments, and shipments.
 
     [:octicons-arrow-right-24: Orders](orders.md)
 

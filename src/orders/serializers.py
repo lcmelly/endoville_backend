@@ -14,6 +14,7 @@ from users.models import CustomUser
 from users.roles import has_staff_role
 
 from .currency_utils import order_total_in_currency
+from .fields import OrderPublicIdField
 from .shipping_fees import cart_shipping, quote_shipping, weight_grams
 from .models import (
     Cart,
@@ -223,6 +224,7 @@ class OrderPaymentSummarySerializer(serializers.ModelSerializer):
 
 class OrderRefundSerializer(serializers.ModelSerializer):
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    order = OrderPublicIdField(read_only=True)
 
     def validate_reason(self, value):
         cleaned = (value or "").strip()
@@ -313,6 +315,7 @@ class OrderRefundSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(source="public_id", read_only=True)
     shipping_address = ShippingAddressSerializer(read_only=True)
     warehouse = WarehouseSerializer(read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
@@ -755,6 +758,8 @@ class CreateOrderSerializer(serializers.Serializer):
 
 
 class OrderPaymentSerializer(serializers.ModelSerializer):
+    order = OrderPublicIdField()
+
     class Meta:
         model = OrderPayment
         fields = [
@@ -795,7 +800,7 @@ class CreateOrderPaymentSerializer(serializers.Serializer):
     Amount defaults to order total. For IntaSend link, optional phone_number/email are passed to checkout.
     """
 
-    order = serializers.PrimaryKeyRelatedField(queryset=Order.objects.all())
+    order = OrderPublicIdField()
     provider = serializers.ChoiceField(choices=PaymentProvider.choices)
     method = serializers.ChoiceField(
         choices=[
@@ -905,6 +910,7 @@ class StaffOrderPaymentUpdateSerializer(serializers.ModelSerializer):
     Staff record a payment. transaction_id is optional and is returned with the payment.
     """
 
+    order = OrderPublicIdField()
     transaction_id = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
 
     def validate_transaction_id(self, value):

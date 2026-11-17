@@ -13,6 +13,7 @@ from .views import (
     PaymentCredentialsViewSet,
     ShipmentViewSet,
     StaffBackgroundTaskViewSet,
+    StaffCustomerMessageViewSet,
     StaffOrderPaymentViewSet,
     StaffOrderRefundViewSet,
     StaffShipmentEventViewSet,
@@ -40,10 +41,12 @@ router.register(
     StaffBackgroundTaskViewSet,
     basename="staff-background-task",
 )
+router.register(r"staff/messages", StaffCustomerMessageViewSet, basename="staff-customer-message")
 
 urlpatterns = [
     path("payments/stripe/webhook/", views.stripe_webhook_view, name="stripe-webhook"),
     path("payments/intasend/test/", views.intasend_test_connection, name="intasend-test"),
+    path("messages/", views.CustomerMessageView.as_view(), name="customer-messages"),
     path("shipping-rates/", views.ShippingRatesView.as_view(), name="shipping-rates"),
     path("shipping-rates/quote/", views.ShippingQuoteView.as_view(), name="shipping-quote"),
     path("", include(router.urls)),

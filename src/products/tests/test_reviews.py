@@ -81,7 +81,7 @@ def test_review_requires_completed_order_containing_the_product(api_client, cust
     api_client.force_authenticate(user=customer)
     resp = api_client.post(
         "/api/products/product-reviews/",
-        {"product": product.id, "order": pending.id, "rating": 5, "body": "Too soon"},
+        {"product": product.id, "order": pending.public_id, "rating": 5, "body": "Too soon"},
         format="json",
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -90,7 +90,7 @@ def test_review_requires_completed_order_containing_the_product(api_client, cust
     other = _order(customer, product, include_product=False)
     resp = api_client.post(
         "/api/products/product-reviews/",
-        {"product": product.id, "order": other.id, "rating": 5, "body": "Wrong order"},
+        {"product": product.id, "order": other.public_id, "rating": 5, "body": "Wrong order"},
         format="json",
     )
     assert resp.status_code == status.HTTP_400_BAD_REQUEST
@@ -98,11 +98,11 @@ def test_review_requires_completed_order_containing_the_product(api_client, cust
     completed = _order(customer, product)
     resp = api_client.post(
         "/api/products/product-reviews/",
-        {"product": product.id, "order": completed.id, "rating": 4, "body": "Good"},
+        {"product": product.id, "order": completed.public_id, "rating": 4, "body": "Good"},
         format="json",
     )
     assert resp.status_code == status.HTTP_201_CREATED
-    assert resp.json()["order"] == completed.id
+    assert resp.json()["order"] == completed.public_id
     product.refresh_from_db()
     assert product.review_count == 1
     assert str(product.avg_rating) == "4.00"
@@ -118,7 +118,7 @@ def test_staff_flag_hides_review_and_drops_it_from_the_rating(api_client, custom
     api_client.force_authenticate(user=other)
     other_review = api_client.post(
         "/api/products/product-reviews/",
-        {"product": product.id, "order": other_order.id, "rating": 5, "body": "Fine"},
+        {"product": product.id, "order": other_order.public_id, "rating": 5, "body": "Fine"},
         format="json",
     )
     assert other_review.status_code == status.HTTP_201_CREATED
@@ -127,7 +127,7 @@ def test_staff_flag_hides_review_and_drops_it_from_the_rating(api_client, custom
     api_client.force_authenticate(user=customer)
     created = api_client.post(
         "/api/products/product-reviews/",
-        {"product": product.id, "order": order.id, "rating": 1, "body": "abuse"},
+        {"product": product.id, "order": order.public_id, "rating": 1, "body": "abuse"},
         format="json",
     )
     review_id = created.json()["id"]
@@ -227,7 +227,7 @@ def test_review_author_can_delete_their_own_review(api_client, customer, product
     api_client.force_authenticate(user=customer)
     created = api_client.post(
         "/api/products/product-reviews/",
-        {"product": product.id, "order": order.id, "rating": 5, "body": "Great"},
+        {"product": product.id, "order": order.public_id, "rating": 5, "body": "Great"},
         format="json",
     )
     review_id = created.json()["id"]
@@ -274,7 +274,7 @@ def test_review_follows_the_product_that_was_shipped(api_client, customer, staff
     for skipped in (product, missing):
         refused = api_client.post(
             "/api/products/product-reviews/",
-            {"product": skipped.id, "order": order.id, "rating": 5, "body": "Did not arrive"},
+            {"product": skipped.id, "order": order.public_id, "rating": 5, "body": "Did not arrive"},
             format="json",
         )
         assert refused.status_code == status.HTTP_400_BAD_REQUEST
@@ -282,7 +282,7 @@ def test_review_follows_the_product_that_was_shipped(api_client, customer, staff
 
     accepted = api_client.post(
         "/api/products/product-reviews/",
-        {"product": stand_in.id, "order": order.id, "rating": 4, "body": "This one arrived"},
+        {"product": stand_in.id, "order": order.public_id, "rating": 4, "body": "This one arrived"},
         format="json",
     )
     assert accepted.status_code == status.HTTP_201_CREATED

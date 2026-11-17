@@ -138,7 +138,7 @@ def send_order_confirmation_email(order_id):
             "postal_code": order.shipping_address.postal_code,
             "email": recipient_email,
         },
-        "order_id": str(order.id),
+        "order_id": order.public_id,
         "tracking_url": shipment.tracking_url if shipment else "",
     }
 
@@ -161,22 +161,20 @@ def _cart_reminder_item_rows_html(summaries, currency_code: str) -> str:
         lt = escape(row.get("line_total") or "")
         rows.append(
             "<tr>"
-            '<td style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;'
-            'mso-table-lspace:0pt;mso-table-rspace:0pt;padding:15px 12px;'
-            'border-bottom:1px solid #F0F0F0;vertical-align:top;" valign="top">'
-            f'<p style="font-weight:500;margin:0 0 4px;font-size:14px;color:#333;">{name}</p>'
+            '<td style="padding:16px 0;border-bottom:1px solid #E8E0E4;vertical-align:top;" valign="top">'
+            f'<p style="margin:0;font-family:Georgia,Times New Roman,Times,serif;font-size:15px;'
+            f'line-height:1.4;color:#241820;">{name}</p>'
             "</td>"
-            '<td style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;'
-            'mso-table-lspace:0pt;mso-table-rspace:0pt;padding:15px 12px;'
-            'text-align:center;font-size:14px;color:#333;border-bottom:1px solid #F0F0F0;'
+            '<td width="56" style="width:56px;padding:16px 8px;border-bottom:1px solid #E8E0E4;'
+            'text-align:center;font-family:Helvetica,Arial,sans-serif;font-size:14px;color:#241820;'
             'vertical-align:top;" align="center" valign="top">'
             f"{qty}</td>"
-            '<td style="-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;'
-            'mso-table-lspace:0pt;mso-table-rspace:0pt;padding:15px 12px;'
-            'text-align:right;border-bottom:1px solid #F0F0F0;vertical-align:top;" '
-            'align="right" valign="top">'
-            f'<p style="font-weight:500;margin:0 0 2px;font-size:14px;color:#333;">{cur} {lt}</p>'
-            f'<p style="margin:0;font-size:11px;color:#888;">{cur} {up} each</p>'
+            '<td width="128" style="width:128px;padding:16px 0 16px 8px;border-bottom:1px solid #E8E0E4;'
+            'text-align:right;vertical-align:top;" align="right" valign="top">'
+            f'<p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:14px;'
+            f'font-weight:600;color:#361340;">{cur} {lt}</p>'
+            f'<p style="margin:4px 0 0;font-family:Helvetica,Arial,sans-serif;font-size:11px;'
+            f'letter-spacing:0.2px;color:#8A8086;">{cur} {up} each</p>'
             "</td>"
             "</tr>"
         )

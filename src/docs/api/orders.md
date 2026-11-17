@@ -7,6 +7,8 @@ icon: lucide/receipt
 
 Place an order, then come back and read it. A shopper sees only their own orders. Staff can see every order.
 
+The order `id` is a random string, not a counter. A request that uses a guessed number does not find an order. Use that same `id` when you record a payment or a review.
+
 === "Base URL"
 
     ```
@@ -36,7 +38,7 @@ Place an order, then come back and read it. A shopper sees only their own orders
     ```json
     [
       {
-        "id": 123,
+        "id": "k3nR8wQp0sL2aB9x",
         "user": 1,
         "status": "PLACED",
         "shipping_address": {
@@ -173,7 +175,7 @@ Place an order, then come back and read it. A shopper sees only their own orders
 
     ```json
     {
-      "id": 123,
+      "id": "k3nR8wQp0sL2aB9x",
       "user": 1,
       "status": "CANCELLED",
       "shipping_address": {
@@ -298,7 +300,7 @@ Place an order, then come back and read it. A shopper sees only their own orders
 
     ```json
     {
-      "id": 123,
+      "id": "k3nR8wQp0sL2aB9x",
       "user": 1,
       "status": "PLACED",
       "shipping_address": {
@@ -423,7 +425,7 @@ Place an order, then come back and read it. A shopper sees only their own orders
 
     ```json
     {
-      "id": 123,
+      "id": "k3nR8wQp0sL2aB9x",
       "status": "PROCESSING",
       "subtotal": "20.00",
       "shipping_fee": "0.00",

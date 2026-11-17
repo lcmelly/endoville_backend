@@ -76,7 +76,19 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        'customer_messages': '5/hour',
+        'password_reset': '5/hour',
+    },
 }
+
+# Customer messages. Turnstile siteverify. Leave the secret empty and submissions are refused.
+CUSTOMER_MESSAGE_CAPTCHA_SECRET = config('CUSTOMER_MESSAGE_CAPTCHA_SECRET', default='')
+CUSTOMER_MESSAGE_CAPTCHA_SITE_KEY = config('CUSTOMER_MESSAGE_CAPTCHA_SITE_KEY', default='')
+CUSTOMER_MESSAGE_CAPTCHA_VERIFY_URL = config(
+    'CUSTOMER_MESSAGE_CAPTCHA_VERIFY_URL',
+    default='https://challenges.cloudflare.com/turnstile/v0/siteverify',
+)
 
 # JWT settings
 from datetime import timedelta
@@ -105,6 +117,12 @@ ZEPTOMAIL_ORDER_CONFIRMATION_TEMPLATE_KEY = config('ZEPTOMAIL_ORDER_CONFIRMATION
 ZEPTOMAIL_CART_REMINDER_TEMPLATE_KEY = config('ZEPTOMAIL_CART_REMINDER_TEMPLATE_KEY', default='')
 # Cart reminder CTA (ZeptoMail merge tag {{cart_url}})
 FRONTEND_CART_URL = config('FRONTEND_CART_URL', default='')
+# Storefront origin used in password-reset links. No trailing slash.
+FRONTEND_URL = config('FRONTEND_URL', default='https://endovillehealth.com')
+# Optional ZeptoMail template. When empty, the reset email is sent as HTML.
+ZEPTOMAIL_PASSWORD_RESET_TEMPLATE_KEY = config('ZEPTOMAIL_PASSWORD_RESET_TEMPLATE_KEY', default='')
+# Seconds a password-reset link stays valid. Django's token generator reads this.
+PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', cast=int, default=3600)
 SUPPORT_EMAIL = config('SUPPORT_EMAIL', default=DEFAULT_FROM_EMAIL)
 SUPPORT_PHONE = config('SUPPORT_PHONE', default='')
 
@@ -160,6 +178,7 @@ _dev_origins = [
 CORS_ALLOWED_ORIGINS = list(dict.fromkeys([
     "https://endovillehealth.com",
     "https://www.endovillehealth.com",
+    "https://app.endovillehealth.com",
     *_configured_origins,
     *_dev_origins,
 ]))

@@ -199,6 +199,86 @@ def _send_otp_html_email(email, otp_code, name):
         return False
 
 
+def password_reset_link(user):
+    """Build the storefront link for this account's reset token."""
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.encoding import force_bytes
+    from django.utils.http import urlsafe_base64_encode
+
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    base = (getattr(settings, "FRONTEND_URL", "") or "https://endovillehealth.com").strip().rstrip("/")
+    return f"{base}/reset-password?uid={uid}&token={token}"
+
+
+def send_password_reset_email(user):
+    """
+    Email a reset link to the account's own address.
+
+    Does nothing when the account has no email. The caller must already have
+    confirmed this address belongs to an existing user.
+    """
+    to_email = (user.email or "").strip()
+    if not to_email:
+        return False
+
+    reset_url = password_reset_link(user)
+    name = user.get_full_name() or to_email
+    template_key = (getattr(settings, "ZEPTOMAIL_PASSWORD_RESET_TEMPLATE_KEY", "") or "").strip()
+    if template_key:
+        return send_template_email(
+            to_email=to_email,
+            template_key=template_key,
+            merge_data={
+                "name": name,
+                "reset_url": reset_url,
+                "team": "Endoville Health Team",
+                "product_name": "Endoville Health",
+            },
+            to_name=name,
+        )
+    return _send_password_reset_html_email(to_email, name, reset_url)
+
+
+def _send_password_reset_html_email(email, name, reset_url):
+    html_message = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Reset your password</h2>
+        <p>Hello {name},</p>
+        <p>Use the link below to choose a new password. It expires in one hour.</p>
+        <p><a href="{reset_url}">Reset your password</a></p>
+        <p>If you didn't ask for this, you can ignore this email.</p>
+        <br>
+        <p>Best regards,<br>Endoville Health</p>
+    </div>
+    """
+    message = f"""
+    Hello {name},
+
+    Use this link to choose a new password. It expires in one hour.
+    {reset_url}
+
+    If you didn't ask for this, you can ignore this email.
+
+    Best regards,
+    Endoville Health
+    """
+    try:
+        from django.core.mail import send_mail
+        send_mail(
+            subject="Reset your Endoville password",
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        print(f"Failed to send password reset email: {e}")
+        return False
+
+
 def send_otp_sms(phone, otp_code):
     """
     Send OTP via SMS.

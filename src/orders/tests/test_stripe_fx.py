@@ -361,7 +361,7 @@ def test_checkout_charges_the_displayed_price_and_stores_the_rate(monkeypatch):
     client.force_authenticate(user=user)
     resp = client.post(
         "/api/orders/payments/",
-        {"order": order.id, "provider": "stripe", "method": "checkout", "currency": "KES"},
+        {"order": order.public_id, "provider": "stripe", "method": "checkout", "currency": "KES"},
         format="json",
     )
     assert resp.status_code == 201
