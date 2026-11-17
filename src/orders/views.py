@@ -747,8 +747,7 @@ class CustomerMessageView(APIView):
         return Response(
             {
                 "message_max_length": MESSAGE_MAX_LENGTH,
-                "captcha_site_key": getattr(settings, "CUSTOMER_MESSAGE_CAPTCHA_SITE_KEY", ""),
-                "captcha_provider": "turnstile",
+                "captcha_required": not settings.DEBUG,
             }
         )
 

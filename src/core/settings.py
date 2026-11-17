@@ -82,9 +82,8 @@ REST_FRAMEWORK = {
     },
 }
 
-# Customer messages. Both values come from the environment. An empty secret refuses submissions.
+# Customer messages. The secret comes from the environment. An empty secret refuses submissions.
 CUSTOMER_MESSAGE_CAPTCHA_SECRET = config('CUSTOMER_MESSAGE_CAPTCHA_SECRET', default='')
-CUSTOMER_MESSAGE_CAPTCHA_SITE_KEY = config('CUSTOMER_MESSAGE_CAPTCHA_SITE_KEY', default='')
 CUSTOMER_MESSAGE_CAPTCHA_VERIFY_URL = config(
     'CUSTOMER_MESSAGE_CAPTCHA_VERIFY_URL',
     default='https://challenges.cloudflare.com/turnstile/v0/siteverify',

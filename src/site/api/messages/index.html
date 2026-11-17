@@ -1577,7 +1577,8 @@
 
 <h1 id="messages">Messages<a class="headerlink" href="#messages" title="Permanent link">&para;</a></h1>
 <p>A shopper can send a message without signing in. It can be a question, a note about an order, or anything else they need to tell the shop. The text is stored as plain text, at most 500 characters. HTML tags and control characters are removed before it is saved.</p>
-<p>Send an email address or a phone number. A phone number is 8 to 15 digits and may start with <code>+</code>. Send <code>captcha_token</code> from the Cloudflare Turnstile widget. The site key is on the read endpoint. The server checks the token with Turnstile before it saves the message.</p>
+<p>Send an email address or a phone number. A phone number is 8 to 15 digits and may start with <code>+</code>. Send <code>captcha_token</code> from the Cloudflare Turnstile widget. The storefront keeps the public site key and renders Turnstile itself. It does not ask this API for the key. The server checks the token with Turnstile before it saves the message.</p>
+<p>When the API is running with <code>DEBUG</code> on, <code>captcha_required</code> is false and the server does not call Cloudflare. The local storefront leaves its site key empty, so it does not load Turnstile. A non-empty <code>captcha_token</code> is still accepted. Production still verifies the token.</p>
 <p><code>order_number</code> is optional. When you send one, it must be the order <code>id</code> from the orders API. A counter such as <code>1</code> or <code>2</code> is not accepted.</p>
 <p>One IP address can send 5 messages an hour. One email address or phone number can send 3 a day.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Base URL</label><label for="__tabbed_1_2">Authentication</label></div>
@@ -1596,7 +1597,7 @@
 </thead>
 <tbody>
 <tr>
-<td>Read the form limits and captcha site key</td>
+<td>Read the form limits</td>
 <td>Anyone</td>
 </tr>
 <tr>
@@ -1621,11 +1622,10 @@
 <p>Success (200):</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;message_max_length&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;captcha_site_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0x4AAAAAAA&quot;</span><span class="p">,</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">&quot;captcha_provider&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;turnstile&quot;</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">}</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;captcha_required&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Set <code>CUSTOMER_MESSAGE_CAPTCHA_SITE_KEY</code> and <code>CUSTOMER_MESSAGE_CAPTCHA_SECRET</code> from the Turnstile widget. Without the secret, sending a message is refused.</p>
+<p>Set <code>CUSTOMER_MESSAGE_CAPTCHA_SECRET</code> from the Turnstile widget. Put the site key in the storefront. Without the secret, sending a message is refused, except while <code>DEBUG</code> is on.</p>
 </div>
 <div class="tabbed-block">
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>POST /api/orders/messages/

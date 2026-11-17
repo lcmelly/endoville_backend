@@ -135,6 +135,32 @@ def test_message_length_is_limited(api_client, human):
     assert "500" in str(resp.json()["message"])
 
 
+def test_local_debug_does_not_call_cloudflare(api_client, monkeypatch):
+    from django.test import override_settings
+    from rest_framework.serializers import ValidationError
+
+    import orders.customer_messages as customer_messages
+
+    def refuse_network(*args, **kwargs):
+        raise AssertionError("Cloudflare should not be called in local debug")
+
+    monkeypatch.setattr(customer_messages.requests, "post", refuse_network)
+
+    with override_settings(DEBUG=True):
+        customer_messages.verify_human("local-dev", "127.0.0.1")
+        form = api_client.get(MESSAGES)
+
+    assert form.status_code == status.HTTP_200_OK
+    assert form.json()["captcha_required"] is False
+
+    with override_settings(DEBUG=False, CUSTOMER_MESSAGE_CAPTCHA_SECRET=""):
+        with pytest.raises(ValidationError):
+            customer_messages.verify_human("local-dev", "127.0.0.1")
+        form = api_client.get(MESSAGES)
+
+    assert form.json()["captcha_required"] is True
+
+
 def test_failed_human_check_is_rejected(api_client, monkeypatch):
     monkeypatch.setattr(
         "orders.customer_messages.verify_human",
