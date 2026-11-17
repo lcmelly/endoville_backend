@@ -82,7 +82,7 @@ REST_FRAMEWORK = {
     },
 }
 
-# Customer messages. Turnstile siteverify. Leave the secret empty and submissions are refused.
+# Customer messages. Both values come from the environment. An empty secret refuses submissions.
 CUSTOMER_MESSAGE_CAPTCHA_SECRET = config('CUSTOMER_MESSAGE_CAPTCHA_SECRET', default='')
 CUSTOMER_MESSAGE_CAPTCHA_SITE_KEY = config('CUSTOMER_MESSAGE_CAPTCHA_SITE_KEY', default='')
 CUSTOMER_MESSAGE_CAPTCHA_VERIFY_URL = config(
